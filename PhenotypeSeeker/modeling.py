@@ -1,11 +1,11 @@
 #!/usr/bin/python2.7
 
 __author__ = "Erki Aun"
-__version__ = "1.0"
+__version__ = "2.0"
 __maintainer__ = "Erki Aun"
 __email__ = "erki.aun@ut.ee"
 
-from itertools import permutations
+from itertools import chain, izip, permutations, 
 from subprocess import call, Popen, PIPE
 import math
 import sys
@@ -15,7 +15,8 @@ warnings.filterwarnings("ignore", category=UserWarning)
 from Bio.Phylo.TreeConstruction import DistanceTreeConstructor, _DistanceMatrix
 from cogent import LoadTree
 from cogent.align.weights.methods import GSC
-from multiprocessing import Pool, Value
+from collections import Counter
+from multiprocessing import Manager, Pool, Value
 from scipy import stats
 from sklearn.externals import joblib
 from sklearn.linear_model import Lasso, LogisticRegression, Ridge
@@ -31,6 +32,8 @@ import numpy as np
 
 # Global variables
 currentSampleNum = Value("i", 0)
+currentKmerNum = Value("i", 0)
+previousPercent = Value("i", 0)
 
 class Printer():
     # Print things to stdout on one line dynamically.
@@ -38,6 +41,16 @@ class Printer():
         sys.stderr.write("\r\x1b[K"+data.__str__())
         sys.stderr.flush()
 
+def write_to_stderr_parallel(
+        prevPer, curKmerNum, totalKmers, text, phenotype=""
+        ):
+    currentPercent = curKmerNum/totalKmers*100
+    if int(currentPercent) > prevPer:
+        output = "\t" + phenotype + "%d%% of %d " % (
+            currentPercent,totalKmers
+            ) + text
+        Printer(output)
+        previousPercent.value = int(currentPercent)
 
 def write_to_stderr_if(
         previousPercent, currentKmerNum, totalKmers, text, phenotype=""
@@ -132,27 +145,35 @@ def kmer_frequencies(samples):
         currentSampleNum += 1
     return(dict_of_frequencies)
 
-def kmer_filtering_by_frequency(dict_of_frequencies, min_freq, max_freq):
+def kmer_filtering_by_frequency(dict_of_frequencies, min_freq, max_freq, num_threads):
     #Filters k-mers by their frequency in samples.
     sys.stderr.write(
         "\nFiltering the k-mers based on their " \
         "presence frequencies in samples:\n"
         )
     kmers_passed = 0
-    totalKmers = len(dict_of_frequencies)
-    currentKmerNum = 1.0
-    previousPercent = 0.0
+    counter = 0
+    totalKmers = float(len(dict_of_frequencies))
+    checkpoint = int(totalKmers/(100*num_threads))    
+
     f1 = open("K-mer_lists/k-mers_filtered_by_freq.txt", "a")
     for key, value in dict_of_frequencies.iteritems():
         if int(value) >= int(min_freq) and int(value) <= int(max_freq):
             f1.write(key + "\n")
             kmers_passed += 1
-        previousPercent, currentKmerNum = write_to_stderr_if(
-            previousPercent, currentKmerNum, totalKmers, "k-mers filtered."
-            )
+        counter +=1
+        if counter%checkpoint == 0:
+            currentKmerNum.value += checkpoint
+            write_to_stderr_parallel(
+                previousPercent.value, currentKmerNum.value, totalKmers, "k-mers filtered."
+                )
+    currentKmerNum.value += counter%checkpoint
+    write_to_stderr_parallel(
+       previousPercent.value, currentKmerNum.value, totalKmers, "k-mers filtered." 
+       )
     sys.stderr.write("\nBuilding the feature vector from filtered k-mers.\n")
     f1.close()
-    return(kmers_passed) 
+    return(float(kmers_passed))
 
 def map_samples_modeling(sample_names, kmer_length):
     # Takes k-mers, which passed frequency filtering as feature space 
@@ -268,334 +289,282 @@ def newick_to_GSC_weights(newick_tree):
     return(weights)
 
 def weighted_t_test(
-	    kmer_matrix, samples, samples_order, weights, number_of_phenotypes, 
-	    phenotypes, kmers_to_analyse, phenotypes_to_analyze=False, FDR=False, 
-        headerline=False
-	    ):
+        checkpoint, k, l, samples, samples_order, weights, number_of_phenotypes,
+        phenotypes, k_t_a, FDR, headerline, kmer_matrix
+        ):
     # Calculates weighted Welch t-tests results for every k-mer
-    sys.stderr.write(
-        "\nConducting the k-mer specific weighted Welch t-tests:\n"
-        )
-    pvalues_all_phenotypes = []
-    nr_of_kmers_tested_all_phenotypes = []
-    outputfiles = []
-    if not phenotypes_to_analyze:
-        phenotypes_to_analyze = range(1,number_of_phenotypes+1)
-    for k in phenotypes_to_analyze:
-        currentKmerNum = 1.0
-        previousPercent = 0.0
-        pvalues = []
-        counter = 0
-        NA = False
-        with open(kmer_matrix) as f1:
-            if headerline:
-                outputfile = "t-test_results_" + phenotypes[k-1] + ".txt"
-                f2 = open(outputfile, "w+")
-                phenotype = phenotypes[k-1] + ": " 
-            elif number_of_phenotypes > 1:
-                outputfile = "t-test_results_" + str(k) + ".txt"
-                f2 = open(outputfile, "w+")
-                phenotype = "phenotype " + str(k) + ": "
-            else:
-                outputfile = "t-test_results.txt"
-                f2 = open(outputfile, "w+")
-                phenotype = ""
-            outputfiles.append(outputfile)
-            for line in f1:
-                samp_w_pheno_specified = 0
-                samples_x = []
-                x = []
-                y = []
-                x_weights = []
-                y_weights = []
-                line=line.strip()
-                kmer=line.split()[0]
-                list1=line.split()[1:]
-                for j in range(len(list1)):
-                    if samples[samples_order[j]][k] != "NA":
-                        samp_w_pheno_specified += 1
-                        if list1[j] == "0":
-                            y.append(float(samples[samples_order[j]][k]))
-                            y_weights.append(weights[samples_order[j]])
-                        else:
-                            x.append(float(samples[samples_order[j]][k]))
-                            x_weights.append(weights[samples_order[j]])
-                            samples_x.append(samples_order[j])
+    pvalues = []
+    counter = 0
+    NA = False
+    if headerline:
+        outputfile = "t-test_results_" + phenotypes[k-1] + "_" + kmer_matrix[-5:] + ".txt"
+        phenotype = phenotypes[k-1] + ": "
+    elif number_of_phenotypes > 1:
+        outputfile = "t-test_results_" +  str(k) + "_" + kmer_matrix[-5:] + ".txt"
+        phenotype = "phenotype " + str(k) + ": "
+    else:
+        outputfile = "t-test_results_" + kmer_matrix[-5:] + ".txt"
+        phenotype = ""
+    f2 = open(outputfile, "w+")
+    with open(kmer_matrix) as f1:
+        for line in f1:
+            counter += 1
+            samp_w_pheno_specified = 0
+            samples_x = []
+            x = []
+            y = []
+            x_weights = []
+            y_weights = []
+            line=line.strip()
+            kmer=line.split()[0]
+            list1=line.split()[1:]
+            for j in range(len(list1)):
+                if samples[samples_order[j]][k] != "NA":
+                    samp_w_pheno_specified += 1
+                    if list1[j] == "0":
+                        y.append(float(samples[samples_order[j]][k]))
+                        y_weights.append(weights[samples_order[j]])
                     else:
-                        NA = True
-                if NA == True:
-                    if len(x) < 2 or len(y) < 2:
-                        continue
-                    elif (len(x) >= samp_w_pheno_specified - 1 
-                    	    or len(y) >= samp_w_pheno_specified -1):
-                        continue
-                counter += 1
-
-                #Parametes for group containig the k-mer
-                wtd_mean_y = np.average(y, weights=y_weights)
-                sumofweightsy = sum(y_weights)
-                sumofweightsy2 = sum(i**2 for i in y_weights)
-                vary = (
-                	(sumofweightsy / (sumofweightsy**2 - sumofweightsy2))
-                	* sum(y_weights * (y - wtd_mean_y)**2)
-                	)
+                        x.append(float(samples[samples_order[j]][k]))
+                        x_weights.append(weights[samples_order[j]])
+                        samples_x.append(samples_order[j])
+                else:
+                    NA = True
+            if NA == True:
+                if len(x) < 2 or len(y) < 2:
+                    continue
+                elif len(x) >= samp_w_pheno_specified - 1 or len(y) >= samp_w_pheno_specified -1:
+                    continue
+                
+            #Parametes for group containig the k-mer
+            wtd_mean_y = np.average(y, weights=y_weights)
+            sumofweightsy = sum(y_weights)
+            sumofweightsy2 = sum(i**2 for i in y_weights)
+            vary = (sumofweightsy / (sumofweightsy**2 - sumofweightsy2)) * sum(y_weights * (y - wtd_mean_y)**2)
     
-                #Parameters for group not containig the k-mer
-                wtd_mean_x = np.average(x, weights=x_weights)
-                sumofweightsx = sum(x_weights)
-                sumofweightsx2 = sum(i**2 for i in x_weights)
-                varx = (
-                	(sumofweightsx / (sumofweightsx**2 - sumofweightsx2))
-                	* sum(x_weights * (x - wtd_mean_x)**2)
-                	)
+            #Parameters for group not containig the k-mer
+            wtd_mean_x = np.average(x, weights=x_weights)
+            sumofweightsx = sum(x_weights)
+            sumofweightsx2 = sum(i**2 for i in x_weights)
+            varx = (sumofweightsx / (sumofweightsx**2 - sumofweightsx2)) * sum(x_weights * (x - wtd_mean_x)**2)
 
-                #Calculating the weighted Welch's t-test results
-                dif = wtd_mean_x-wtd_mean_y
-                sxy = math.sqrt((varx/sumofweightsx)+(vary/sumofweightsy))
-                df = (
-                	(((varx/sumofweightsx)+(vary/sumofweightsy))**2)
-                	/ (
-                		(((varx/sumofweightsx)**2) / (sumofweightsx - 1))
-                		+ ((vary/sumofweightsy)**2 / (sumofweightsy - 1))
-                		)
-                	)
-                t = dif/sxy
-                pvalue = stats.t.sf(abs(t), df)*2
-                pvalues.append(pvalue)
-
-                f2.write(
-                	kmer + "\t" + str(round(t, 2)) + "\t" + "%.2E" % pvalue
-                	+ "\t" + str(round(wtd_mean_x, 2)) + "\t"
-                	+ str(round(wtd_mean_y,2)) + "\t" + str(len(samples_x))
-                	+ "\t| " + " ".join(samples_x) + "\n"
-                	)
-                previousPercent, currentKmerNum = write_to_stderr_if(
-                    previousPercent, currentKmerNum, 
-                    kmers_to_analyse, "tests conducted.", phenotype
-                    )
-        pvalues_all_phenotypes.append(pvalues)
-        nr_of_kmers_tested_all_phenotypes.append(counter)
-        if len(phenotypes_to_analyze) > 1 and k != phenotypes_to_analyze[-1]:
-            sys.stderr.write("\n")
+            #Calculating the weighted Welch's t-test results
+            dif = wtd_mean_x-wtd_mean_y
+            sxy = math.sqrt((varx/sumofweightsx)+(vary/sumofweightsy))
+            df = (((varx/sumofweightsx)+(vary/sumofweightsy))**2)/((((varx/sumofweightsx)**2)/(sumofweightsx-1))+((vary/sumofweightsy)**2/(sumofweightsy-1)))
+            t = dif/sxy
+            pvalue = stats.t.sf(abs(t), df)*2
+                
+            pvalues.append(pvalue)
+            f2.write(kmer + "\t" + str(round(t, 2)) + "\t" + "%.2E" % pvalue + "\t" + str(round(wtd_mean_x, 2)) + "\t" + str(round(wtd_mean_y,2)) + "\t" + str(len(samples_x)) + "\t| " + " ".join(samples_x) + "\n")
+            if counter%checkpoint == 0:
+                l.acquire()
+                currentKmerNum.value += checkpoint
+                l.release()
+                write_to_stderr_parallel(
+                    previousPercent.value, currentKmerNum.value, k_t_a, "tests conducted.", phenotype
+                )
+        l.acquire()
+        currentKmerNum.value += counter%checkpoint
+        l.release()
+        write_to_stderr_parallel(
+            previousPercent.value, currentKmerNum.value, k_t_a, "tests conducted.", phenotype
+        )
     f1.close()
     f2.close()
-    return(
-    	pvalues_all_phenotypes, nr_of_kmers_tested_all_phenotypes, outputfiles
-    	)
+    return(pvalues)
 
 def t_test(
-	    kmer_matrix, samples, samples_order, number_of_phenotypes, phenotypes,
-	    kmers_to_analyse, phenotypes_to_analyze=False, FDR=False, 
-        headerline=False
-	    ):
+        checkpoint, k, l, samples, samples_order, number_of_phenotypes,
+        phenotypes, k_t_a, FDR, headerline, kmer_matrix  
+        ):
     # Calculates Welch t-test results for every k-mer
-    sys.stderr.write("\nConducting the k-mer specific Welch t-tests:\n")
-    pvalues_all_phenotypes = []
-    nr_of_kmers_tested_all_phenotypes = []
-    outputfiles = []
-    if not phenotypes_to_analyze:
-        phenotypes_to_analyze = range(1,number_of_phenotypes+1)
-    for k in phenotypes_to_analyze:
-        currentKmerNum = 1.0
-        previousPercent = 0.0
-        pvalues = []
-        counter = 0
-        NA = False
-        with open(kmer_matrix) as f1:
-            if headerline:
-                outputfile = "t-test_results_" + phenotypes[k-1] + ".txt"
-                f2 = open(outputfile, "w+")
-                phenotype = phenotypes[k-1] + ": "
-            elif number_of_phenotypes > 1:
-                outputfile = "t-test_results_" + str(k) + ".txt"
-                f2 = open(outputfile, "w+")
-                phenotype = "phenotype " + str(k) + ": "
-            else:
-                outputfile = "t-test_results.txt"
-                f2 = open(outputfile, "w+")
-                phenotype = ""
-            outputfiles.append(outputfile)
-            for line in f1:
-                samp_w_pheno_specified = 0
-                samples_x = []
-                x = []
-                y = []
-                line=line.strip()
-                kmer=line.split()[0]
-                list1=line.split()[1:]
-                for j in range(len(list1)):
-                    if samples[samples_order[j]][k] != "NA":
-                        samp_w_pheno_specified += 1
-                        if list1[j] == "0":
-                            y.append(float(samples[samples_order[j]][k]))
-                        else:
-                            x.append(float(samples[samples_order[j]][k]))
-                            samples_x.append(samples_order[j])
+    pvalues = []
+    counter = 0
+    NA = False
+    if headerline:
+        outputfile = "t-test_results_" + phenotypes[k-1] + "_" + kmer_matrix[-5:] + ".txt"
+        phenotype = phenotypes[k-1] + ": "
+    elif number_of_phenotypes > 1:
+        outputfile = "t-test_results_" +  str(k) + "_" + kmer_matrix[-5:] + ".txt"
+        phenotype = "phenotype " + str(k) + ": "
+    else:
+    outputfile = "t-test_results_" + kmer_matrix[-5:] + ".txt"
+        phenotype = ""
+    f2 = open(outputfile, "w+")
+    with open(kmer_matrix) as f1:
+        for line in f1:
+            counter += 1
+            samp_w_pheno_specified = 0
+            samples_x = []
+            x = []
+            y = []
+            line=line.strip()
+            kmer=line.split()[0]
+            list1=line.split()[1:]
+            for j in range(len(list1)):
+                if samples[samples_order[j]][k] != "NA":
+                    samp_w_pheno_specified += 1
+                    if list1[j] == "0":
+                        y.append(float(samples[samples_order[j]][k]))
                     else:
-                        NA = True 
-                if NA == True:
-                    if len(x) < 2 or len(y) < 2:
-                        continue
-                    elif (len(x) >= samp_w_pheno_specified - 1 
-                    	    or len(y) >= samp_w_pheno_specified -1):
-                        continue
-                counter += 1
+                        x.append(float(samples[samples_order[j]][k]))
+                        samples_x.append(samples_order[j])
+                else:
+                    NA = True 
+            if NA == True:
+                if len(x) < 2 or len(y) < 2:
+                    continue
+                elif (len(x) >= samp_w_pheno_specified - 1 
+                    or len(y) >= samp_w_pheno_specified -1):
+                    continue
  
-                #Calculating the Welch's t-test results using scipy.stats
-                meanx = round((sum(x)/len(x)), 2)
-                meany = round((sum(y)/len(y)), 2)
-                ttest = stats.ttest_ind(x, y, equal_var=False)
+            #Calculating the Welch's t-test results using scipy.stats
+            meanx = round((sum(x)/len(x)), 2)
+            meany = round((sum(y)/len(y)), 2)
+            ttest = stats.ttest_ind(x, y, equal_var=False)
 
-                pvalues.append(ttest[1])
-
-                f2.write(
-                	kmer + "\t%.2f\t%.2E\t" % ttest + str(meanx) + "\t"
-                	+ str(meany) + "\t" + str(len(samples_x))  +"\t| "
-                	+ " ".join(samples_x) + "\n"
-                	)
-                previousPercent, currentKmerNum = write_to_stderr_if(
-                    previousPercent, currentKmerNum, 
-                    kmers_to_analyse, "tests conducted.", phenotype
-                    )
-        pvalues_all_phenotypes.append(pvalues)
-        nr_of_kmers_tested_all_phenotypes.append(counter)
-        if len(phenotypes_to_analyze) > 1 and k != phenotypes_to_analyze[-1]:
-            sys.stderr.write("\n")
+            pvalues.append(ttest[1])
+            f2.write(
+                kmer + "\t%.2f\t%.2E\t" % ttest + str(meanx) + "\t"
+                + str(meany) + "\t" + str(len(samples_x))  +"\t| "
+                + " ".join(samples_x) + "\n"
+                )
+            if counter%checkpoint == 0:
+                l.acquire()
+                currentKmerNum.value += checkpoint
+                l.release()
+                write_to_stderr_parallel(
+                    previousPercent.value, currentKmerNum.value, k_t_a, "tests conducted.", phenotype
+                )
+        l.acquire()
+        currentKmerNum.value += counter%checkpoint
+        l.release()
+        write_to_stderr_parallel(
+            previousPercent.value, currentKmerNum.value, k_t_a, "tests conducted.", phenotype
+        )
     f1.close()
     f2.close()
-    return(
-    	pvalues_all_phenotypes, nr_of_kmers_tested_all_phenotypes, outputfiles
-    	)
+    return(pvalues)
 
 def weighted_chi_squared(
-	    kmer_matrix, samples, samples_order, weights, number_of_phenotypes,
-	    phenotypes, phenotypes_to_analyze, kmers_to_analyse, FDR=False, 
-        headerline=False
-	    ):
+    checkpoint, k, l, samples, samples_order, weights, number_of_phenotypes,
+    phenotypes, k_t_a, FDR, headerline, kmer_matrix
+        ):
     # Calculates Chi-squared tests for every k-mer
-    sys.stderr.write(
-        "\nConducting the k-mer specific weighted chi-square tests:\n"
-        )
-    nr_of_kmers_tested_all_phenotypes = []
-    pvalues_all_phenotypes = []
-    outputfiles = []
-    if not phenotypes_to_analyze:
-        phenotypes_to_analyze = range(1,number_of_phenotypes+1)
-    for k in phenotypes_to_analyze:
-        currentKmerNum = 1.0
-        previousPercent = 0.0
-        counter = 0
-        pvalues = []
-        with open(kmer_matrix) as f1:
-            if headerline:
-                outputfile = ("chi-squared_test_results_" 
-                	          + phenotypes[k-1] + ".txt")
-                f2 = open(outputfile, "w+")
-                phenotype = phenotypes[k-1] + ": "
-            elif number_of_phenotypes > 1:
-                outputfile = "chi-squared_test_results_" + str(k) + ".txt"
-                f2 = open(outputfile, "w+")
-                phenotype = "phenotype " + str(k) + ": "
-            else:
-                outputfile = "chi-squared_test_results.txt"
-                f2 = open(outputfile, "w+")
-                phenotype = ""
-            outputfiles.append(outputfile)
-            for line in f1:
-                samples_x = []
+    pvalues = []
+    counter = 0
+    NA = False
+    if headerline:
+        outputfile = "chi-squared_test_results_" + phenotypes[k-1] + "_" + kmer_matrix[-5:] + ".txt"
+        phenotype = phenotypes[k-1] + ": "
+    elif number_of_phenotypes > 1:
+        outputfile = "chi-squared_test_results_" +  str(k) + "_" + kmer_matrix[-5:] + ".txt"
+        phenotype = "phenotype " + str(k) + ": "
+    else:
+        outputfile = "chi-squared_test_results_" + kmer_matrix[-5:] + ".txt"
+        phenotype = ""    
+    f2 = open(outputfile, "w+")
+    with open(kmer_matrix) as f1:
+        for line in f1:
+            counter += 1
+            samples_x = []
 
-                line=line.strip()
-                kmer=line.split()[0]
-                list1=line.split()[1:]
+            line=line.strip()
+            kmer=line.split()[0]
+            list1=line.split()[1:]
 
-                weights_of_res_w_kmer = 0
-                weights_of_res_wo_kmer = 0
-                weights_of_sens_w_kmer = 0
-                weights_of_sens_wo_kmer = 0
+            weights_of_res_w_kmer = 0
+            weights_of_res_wo_kmer = 0
+            weights_of_sens_w_kmer = 0
+            weights_of_sens_wo_kmer = 0
 
-                for j in range(len(list1)):
-                    if samples[samples_order[j]][k] != "NA":
-                        if (list1[j] != "0" 
-                        	    and samples[samples_order[j]][k] == "1"):
-                            weights_of_res_w_kmer += weights[samples_order[j]]
-                            samples_x.append(samples_order[j])
-                        if (list1[j] == "0" 
-                        	    and samples[samples_order[j]][k] == "1"):
-                            weights_of_res_wo_kmer += weights[samples_order[j]]
-                        if (list1[j] != "0" 
-                        	    and samples[samples_order[j]][k] == "0"):
-                            weights_of_sens_w_kmer += weights[samples_order[j]]
-                            samples_x.append(samples_order[j])
-                        if (list1[j] == "0" 
-                        	    and samples[samples_order[j]][k] == "0"):
-                            weights_of_sens_wo_kmer += weights[
-                                samples_order[j]
-                                ]
+            for j in range(len(list1)):
+                if samples[samples_order[j]][k] != "NA":
+                    if (list1[j] != "0" 
+                            and samples[samples_order[j]][k] == "1"):
+                        weights_of_res_w_kmer += weights[samples_order[j]]
+                        samples_x.append(samples_order[j])
+                    if (list1[j] == "0" 
+                            and samples[samples_order[j]][k] == "1"):
+                        weights_of_res_wo_kmer += weights[samples_order[j]]
+                    if (list1[j] != "0" 
+                            and samples[samples_order[j]][k] == "0"):
+                        weights_of_sens_w_kmer += weights[samples_order[j]]
+                        samples_x.append(samples_order[j])
+                    if (list1[j] == "0" 
+                            and samples[samples_order[j]][k] == "0"):
+                        weights_of_sens_wo_kmer += weights[
+                            samples_order[j]
+                            ]
 
-                weights_of_res_samples = (weights_of_res_w_kmer
-                	                     + weights_of_res_wo_kmer)
-                weights_of_sens_samples = (weights_of_sens_w_kmer
-                	                      + weights_of_sens_wo_kmer)
-                weights_of_samples_w_kmer = (weights_of_res_w_kmer
-                	                        + weights_of_sens_w_kmer)
-                weights_of_samples_wo_kmer = (weights_of_res_wo_kmer
-                	                         + weights_of_sens_wo_kmer)
-                weights_of_samples_total = (weights_of_res_samples
-                	                       + weights_of_sens_samples)
+            weights_of_res_samples = (weights_of_res_w_kmer
+                                     + weights_of_res_wo_kmer)
+            weights_of_sens_samples = (weights_of_sens_w_kmer
+                                      + weights_of_sens_wo_kmer)
+            weights_of_samples_w_kmer = (weights_of_res_w_kmer
+                                        + weights_of_sens_w_kmer)
+            weights_of_samples_wo_kmer = (weights_of_res_wo_kmer
+                                         + weights_of_sens_wo_kmer)
+            weights_of_samples_total = (weights_of_res_samples
+                                       + weights_of_sens_samples)
 
-                weights_of_res_w_kmer_exp = (
-                	(weights_of_res_samples*weights_of_samples_w_kmer) 
-                	/ float(weights_of_samples_total)
-                	)
-                weights_of_res_wo_kmer_exp = (
-                	(weights_of_res_samples*weights_of_samples_wo_kmer)
-                	/ float(weights_of_samples_total)
-                	)
-                weights_of_sens_w_kmer_exp = (
-                	(weights_of_sens_samples*weights_of_samples_w_kmer)
-                	/ float(weights_of_samples_total)
-                	)
-                weights_of_sens_wo_kmer_exp = (
-                	(weights_of_sens_samples*weights_of_samples_wo_kmer)
-                	/ float(weights_of_samples_total)
-                	) 
+            weights_of_res_w_kmer_exp = (
+                (weights_of_res_samples*weights_of_samples_w_kmer) 
+                / float(weights_of_samples_total)
+                )
+            weights_of_res_wo_kmer_exp = (
+                (weights_of_res_samples*weights_of_samples_wo_kmer)
+                / float(weights_of_samples_total)
+                )
+            weights_of_sens_w_kmer_exp = (
+                (weights_of_sens_samples*weights_of_samples_w_kmer)
+                / float(weights_of_samples_total)
+                )
+            weights_of_sens_wo_kmer_exp = (
+                (weights_of_sens_samples*weights_of_samples_wo_kmer)
+                / float(weights_of_samples_total)
+                ) 
 
-                chisquare_results = stats.chisquare(
-                	[
-                	weights_of_res_w_kmer, weights_of_res_wo_kmer,
-                	weights_of_sens_w_kmer, weights_of_sens_wo_kmer
-                	],
-                	[
-                	weights_of_res_w_kmer_exp, weights_of_res_wo_kmer_exp,
-                	weights_of_sens_w_kmer_exp, weights_of_sens_wo_kmer_exp
-                	],
-                	1
-                	)
+            chisquare_results = stats.chisquare(
+                [
+                weights_of_res_w_kmer, weights_of_res_wo_kmer,
+                weights_of_sens_w_kmer, weights_of_sens_wo_kmer
+             ],
+                [
+                weights_of_res_w_kmer_exp, weights_of_res_wo_kmer_exp,
+                weights_of_sens_w_kmer_exp, weights_of_sens_wo_kmer_exp
+                ],
+                1
+                )
                 
-                pvalues.append(chisquare_results[1])
+            pvalues.append(chisquare_results[1])
 
-                f2.write(
-                	kmer + "\t%.2f\t%.2E\t" % chisquare_results 
-                	+ str(len(samples_x)) +"\t| " + " ".join(samples_x) + "\n"
-                	)
-                previousPercent, currentKmerNum = write_to_stderr_if(
-                    previousPercent, currentKmerNum, 
-                    kmers_to_analyse, "tests conducted.", phenotype
+            f2.write(
+                kmer + "\t%.2f\t%.2E\t" % chisquare_results 
+                + str(len(samples_x)) +"\t| " + " ".join(samples_x) + "\n"
+                )
+            if counter%checkpoint == 0:
+                l.acquire()
+                currentKmerNum.value += checkpoint
+                l.release()
+                write_to_stderr_parallel(
+                    previousPercent.value, currentKmerNum.value, k_t_a, "tests conducted.", phenotype
                     )
-        pvalues_all_phenotypes.append(pvalues)
-        nr_of_kmers_tested_all_phenotypes.append(counter)
-        if len(phenotypes_to_analyze) > 1 and k != phenotypes_to_analyze[-1]:
-            sys.stderr.write("\n")
+    l.acquire()
+    currentKmerNum.value += counter%checkpoint
+    l.release()
+    write_to_stderr_parallel(
+        previousPercent.value, currentKmerNum.value, k_t_a, "tests conducted.", phenotype
+        )                
     f1.close()
     f2.close()
-    return(
-    	pvalues_all_phenotypes, nr_of_kmers_tested_all_phenotypes, outputfiles
-    	)
+    return(pvalues)
 
 def chi_squared(
-	    kmer_matrix, samples, samples_order, number_of_phenotypes, phenotypes,
-	    phenotypes_to_analyze, kmers_to_analyse, FDR=False, headerline=False
-	    ):
+        kmer_matrix, samples, samples_order, number_of_phenotypes, phenotypes,
+    phenotypes_to_analyze, kmers_to_analyse, FDR=False, headerline=False
+        ):
     # Calculates Chi-squared tests for every k-mer
     sys.stderr.write("\nConducting the k-mer specific chi-square tests:\n")
     nr_of_kmers_tested_all_phenotypes = []
@@ -611,7 +580,7 @@ def chi_squared(
         with open(kmer_matrix) as f1:
             if headerline:
                 outputfile = ("chi-squared_test_results_" 
-                	+ phenotypes[k-1] + ".txt")
+                    + phenotypes[k-1] + ".txt")
                 f2 = open(outputfile, "w+")
                 phenotype = phenotypes[k-1] + ": "
             elif number_of_phenotypes > 1:
@@ -639,18 +608,18 @@ def chi_squared(
                 for j in range(len(list1)):
                     if samples[samples_order[j]][k] != "NA":
                         if (list1[j] != "0" 
-                        	    and samples[samples_order[j]][k] == "1"):
+                                and samples[samples_order[j]][k] == "1"):
                             res_w_kmer += 1
                             samples_x.append(samples_order[j])
                         if (list1[j] == "0" 
-                        	    and samples[samples_order[j]][k] == "1"):
+                                and samples[samples_order[j]][k] == "1"):
                             res_wo_kmer += 1
                         if (list1[j] != "0" 
-                        	    and samples[samples_order[j]][k] == "0"):
+                                and samples[samples_order[j]][k] == "0"):
                             sens_w_kmer += 1
                             samples_x.append(samples_order[j])
                         if (list1[j] == "0" 
-                        	    and samples[samples_order[j]][k] == "0"):
+                                and samples[samples_order[j]][k] == "0"):
                             sens_wo_kmer += 1
 
                 res_samples = (res_w_kmer + res_wo_kmer)
@@ -660,86 +629,127 @@ def chi_squared(
                 samples_total = res_samples+sens_samples
 
                 res_w_kmer_exp = ((res_samples * samples_w_kmer)
-                	             / float(samples_total))
+                                 / float(samples_total))
                 res_wo_kmer_exp = ((res_samples * samples_wo_kmer) 
-                	              / float(samples_total))
+                                  / float(samples_total))
                 sens_w_kmer_exp = ((sens_samples * samples_w_kmer)
-                	              / float(samples_total))
+                                  / float(samples_total))
                 sens_wo_kmer_exp = ((sens_samples * samples_wo_kmer)
-                	               / float(samples_total))
+                                   / float(samples_total))
 
                 chisquare_results = stats.chisquare(
-                	[res_w_kmer, res_wo_kmer, sens_w_kmer, sens_wo_kmer],
-                	[
-                	res_w_kmer_exp, res_wo_kmer_exp, 
-                	sens_w_kmer_exp, sens_wo_kmer_exp
-                	],
-                	1
-                	)
+                    [res_w_kmer, res_wo_kmer, sens_w_kmer, sens_wo_kmer],
+                    [
+                    res_w_kmer_exp, res_wo_kmer_exp, 
+                    sens_w_kmer_exp, sens_wo_kmer_exp
+                    ],
+                    1
+                    )
                 
                 pvalues.append(chisquare_results[1])
 
                 f2.write(
-                	kmer + "\t%.2f\t%.2E\t" % chisquare_results 
-                	+ str(len(samples_x))  +"\t| " + " ".join(samples_x) + "\n"
-                	)
+                    kmer + "\t%.2f\t%.2E\t" % chisquare_results 
+                    + str(len(samples_x))  +"\t| " + " ".join(samples_x) + "\n"
+                    )
                 previousPercent, currentKmerNum = write_to_stderr_if(
                     previousPercent, currentKmerNum, 
                     kmers_to_analyse, "tests conducted.", phenotype
-                    )
-        pvalues_all_phenotypes.append(pvalues)
-        nr_of_kmers_tested_all_phenotypes.append(counter)
-        if len(phenotypes_to_analyze) > 1 and k != phenotypes_to_analyze[-1]:
-            sys.stderr.write("\n")
-    return(
-    	pvalues_all_phenotypes, nr_of_kmers_tested_all_phenotypes, outputfiles)
+                    ) 
+                if counter%checkpoint == 0:
+                    l.acquire()
+                    currentKmerNum.value += checkpoint
+                    l.release()
+                    write_to_stderr_parallel(
+                        previousPercent.value, currentKmerNum.value, k_t_a, "tests conducted.", phenotype
+                        )
+    l.acquire()
+    currentKmerNum.value += counter%checkpoint
+    l.release()
+    write_to_stderr_parallel(
+        previousPercent.value, currentKmerNum.value, k_t_a, "tests conducted.", phenotype
+        )                
+    f2.close()
+    return(pvalues)
+
+def concatenate_test_files(headerline, k, n_o_p, num_threads, phenotype_scale, phenotypes, phenotypes_2_analyse):
+    if phenotype_scale == "continuous": 
+        if headerline:
+            for k in phenotypes_2_analyse:
+                call(["cat t-test_results_" + phenotypes[k-1] + "_* > t-test_results_" + phenotypes[k-1] + ".txt"], shell=True)
+                for l in range(num_threads):
+                    call(["rm t-test_results_" + phenotypes[k-1] + "_%05d.txt" %l], shell=True)
+        elif n_o_p > 1:
+            for k in phenotypes_2_analyse:
+                call(["cat t-test_results_" + str(k) + "_* > t-test_results_" + str(k) + ".txt"], shell=True)
+                for l in range(num_threads):
+                    call(["rm t-test_results_" + str(k) + "_%05d.txt" %l], shell=True)     
+        else:
+            call(["cat t-test_results_* > t-test_results.txt && rm t-test_results_*"], shell=True)
+    elif phenotype_scale == "binary":
+        if headerline:
+            for k in phenotypes_2_analyse:
+                call(["cat chi-squared_test_results_" + phenotypes[k-1] + "_* > chi-squared_test_results_" + phenotypes[k-1] + ".txt"], shell=True)
+                for l in range(num_threads):
+                    call(["rm chi-squared_test_results_" + phenotypes[k-1] + "_%05d.txt" %l], shell=True)
+        elif n_o_p > 1:
+            for k in phenotypes_2_analyse:
+                call(["cat chi-squared_test_results_" + str(k) + "_* > chi-squared_test_results_" + str(k) + ".txt"], shell=True)
+                for l in range(num_threads):
+                    call(["rm chi-squared_test_results_" + str(k) + "_%05d.txt" %l], shell=True)
+        else:
+            call(["cat chi-squared_test_results_* > chi-squared_test_results.txt && rm chi-squared_test_results_*"], shell=True)
 
 def kmer_filtering_by_pvalue(
-	    test_results, pvalue, number_of_phenotypes, phenotype_scale,
-	    nr_of_kmers_tested_all_phenotypes, pvalues_all_phenotypes, phenotypes, 
-        kmer_limit, kmers_to_analyse, phenotypes_to_analyze=False, FDR=False, 
+        pvalue, number_of_phenotypes, phenotype_scale, pvalues_all_phenotypes,
+        phenotypes, kmer_limit, kmers_to_analyse, p_t_a, FDR=False, 
         B=False, headerline=False
-	    ):
+        ):
     # Filters the k-mers by their p-value achieved in statistical 
     # testing.
-    sys.stderr.write("\nFiltering the k-mers by p-value:\n")
+    sys.stderr.write("Filtering the k-mers by p-value:\n")
     kmers_passed_all_phenotypes = []
-    counter = 0
-    if not phenotypes_to_analyze:
-        phenotypes_to_analyze = range(1,number_of_phenotypes+1)
-    for j, k in enumerate(phenotypes_to_analyze):
+    for j, k in enumerate(p_t_a):
+        nr_of_kmers_tested = len(pvalues_all_phenotypes[j])
         currentKmerNum = 1.0
         previousPercent = 0.0
         kmers_passed = []
-        f1 = open(test_results[j])
+        if phenotype_scale == "continuous":
+            test = "t-test"
+        elif phenotype_scale == "binary":
+            test = "chi-squared_test"
         if headerline:
+            f1 = open(test + "_results_" + phenotypes[k-1] + ".txt")
             f2 = open(
-            	"k-mers_filtered_by_pvalue_" + phenotypes[k-1] + ".txt", "w+")
+                "k-mers_filtered_by_pvalue_" + phenotypes[k-1] + ".txt", "w+")
             phenotype = phenotypes[k-1] + ": "
         elif number_of_phenotypes > 1:
+            f1 = open(test + "_results_" + str(k) + ".txt")
             f2 = open("k-mers_filtered_by_pvalue_" + str(k) + ".txt", "w+")
             phenotype = "phenotype " + str(k) + ": "
         else:
+            f1 = open(test + "_results.txt")
             f2 = open("k-mers_filtered_by_pvalue.txt", "w+")
             phenotype = ""
+
         if phenotype_scale == "continuous":
             f2.write(
-            	"K-mer\tWelch's_t-statistic\tp-value\t+_group_mean\
-            	\t-_group_mean\tNo._of_samples_with_k-mer\
-            	\tSamples_with_k-mer\n"
-            	)
+                "K-mer\tWelch's_t-statistic\tp-value\t+_group_mean\
+                \t-_group_mean\tNo._of_samples_with_k-mer\
+                \tSamples_with_k-mer\n"
+                )
         else:
             f2.write(
-            	"K-mer\tChi-square_statistic\tp-value\
-            	\tNo._of_samples_with_k-mer\tSamples_with_k-mer\n"
-            	)
+                "K-mer\tChi-square_statistic\tp-value\
+                \tNo._of_samples_with_k-mer\tSamples_with_k-mer\n"
+                )
         number_of_kmers = 0
-        pvalues_ascending = sorted(pvalues_all_phenotypes[counter])
+        pvalues_ascending = sorted(pvalues_all_phenotypes[j])
         max_pvalue_by_limit = float('%.2E' % pvalues_ascending[kmer_limit-1])
         if B:
             for line in f1:
                 max_pvalue_by_B = (
-                    pvalue/nr_of_kmers_tested_all_phenotypes[counter]
+                    pvalue/nr_of_kmers_tested
                     )
                 list1 = line.split()
                 if float(list1[2]) < (max_pvalue_by_B):
@@ -756,9 +766,9 @@ def kmer_filtering_by_pvalue(
             max_pvalue_by_FDR = 0
             for i, item in enumerate(pvalues_ascending):
                 if  (item  < (
-                	    (float(i+1) 
-                	    / nr_of_kmers_tested_all_phenotypes[counter]) * pvalue
-                	    )):
+                        (float(i+1) 
+                        / nr_of_kmers_tested) * pvalue
+                        )):
                     highest_sign_pvalue = item
                 elif item > pvalue:
                     break
@@ -787,11 +797,10 @@ def kmer_filtering_by_pvalue(
                     previousPercent, currentKmerNum, 
                     kmers_to_analyse, "k-mers filtered.", phenotype
                     )
-        if len(phenotypes_to_analyze) > 1 and k != phenotypes_to_analyze[-1]:
+        if len(p_t_a) > 1 and k != p_t_a[-1]:
             sys.stderr.write("\n")
         if len(kmers_passed) == 0:
             f2.write("\nNo k-mers passed the filtration by p-value.\n")
-        counter += 1
         f1.close()
         f2.close()
         kmers_passed_all_phenotypes.append(kmers_passed)
@@ -1422,9 +1431,12 @@ def modeling(args):
     p.map(partial(kmer_list_generator, samples, args.length, args.cutoff), mt_split)
     dict_of_frequencies = kmer_frequencies(samples_order)
     kmers_to_analyse = kmer_filtering_by_frequency(
-        dict_of_frequencies , args.min, args.max
+        dict_of_frequencies , args.min, args.max, args.num_threads
         )
-    map_samples_modeling(samples, args.length)
+
+    sys.stderr.write("Mapping samples to the feature vector space:\n")
+    p.map(partial(map_samples, samples, args.l), samples_splitted_4_multithreading)
+
     vectors_to_matrix_modeling(samples_order)
     
     call(["rm -r K-mer_lists/"], shell = True)
@@ -1437,48 +1449,66 @@ def modeling(args):
         distance_matrix_to_phyloxml(samples_order, dist_mat)   
         phyloxml_to_newick("tree_xml.txt")
         weights = newick_to_GSC_weights("tree_newick.txt")
-   
-    if phenotype_scale == "continuous":
-        if args.weights == "+":
-            (
-                pvalues_all_phenotypes, nr_of_kmers_tested_all_phenotypes,
-                test_result_files
-                ) = weighted_t_test(
-                "k-mer_matrix.txt", samples, samples_order, weights, n_o_p,
-                phenotypes, kmers_to_analyse, args.mpheno, args.FDR, headerline
-                )
-        else:
-            (
-            pvalues_all_phenotypes, nr_of_kmers_tested_all_phenotypes,
-            test_result_files
-            ) = t_test(
-            "k-mer_matrix.txt", samples, samples_order, n_o_p, phenotypes,
-            kmers_to_analyse, args.mpheno, args.FDR, headerline
-            )
-    elif phenotype_scale == "binary":
-        if args.weights == "+":
-            (
-            pvalues_all_phenotypes, nr_of_kmers_tested_all_phenotypes,
-            test_result_files
-            ) = weighted_chi_squared(
-            "k-mer_matrix.txt", samples, samples_order, weights, n_o_p,
-            phenotypes, args.mpheno, kmers_to_analyse, args.FDR, headerline
-            )
-        else:
-            (
-            pvalues_all_phenotypes, nr_of_kmers_tested_all_phenotypes,
-            test_result_files
-            ) = chi_squared(
-            "k-mer_matrix.txt", samples, samples_order, n_o_p, phenotypes,
-            args.mpheno, kmers_to_analyse, args.FDR, headerline
-            )   
+
+    call(["split -a 5 -d -n l/" + str(args.num_threads) + " k-mer_matrix.txt k-mer_matrix_segment_"], shell=True)
+    kmer_matrix_segments = ["k-mer_matrix_segment_%05d" %i for i in range(args.num_threads)]
+
+    pvalues_all = []
+    checkpoint = int(kmers_to_analyse/(100*args.num_threads))
+    for j, k in enumerate(phenotypes_2_analyse):
+        currentKmerNum.value = 0
+        previousPercent.value = 0
+
+        if phenotype_scale == "continuous":
+            if args.weights == "+":
+                if j == 0:
+                    sys.stderr.write(
+                        "\nConducting the k-mer specific weighted Welch t-tests:\n"
+                        )
+                pvalues_from_all_threads = p.map(
+                    partial(
+                        weighted_t_test, checkpoint, k, l, samples, samples_order, weights,
+                        n_o_p, phenotypes, kmers_to_analyse, args.FDR, headerline
+                        ), 
+                    kmer_matrix_segments
+                    )            
+            else:
+                if j == 0:
+                    sys.stderr.write(
+                        "\nConducting the k-mer specific Welch t-tests:\n"
+                        )
+                pvalues_from_all_threads = p.map(
+                    partial(
+                        t_test, checkpoint, k, l, samples, samples_order, n_o_p,
+                        phenotypes, kmers_to_analyse, args.FDR, headerline
+                        ), 
+                    kmer_matrix_segments
+                    ) 
+        elif phenotype_scale == "binary":
+            if args.weights == "+":
+                if j == 0:
+                    sys.stderr.write(
+                        "\nConducting the k-mer specific weighted chi-square tests:\n"
+                    )
+                pvalues_from_all_threads = p.map(
+                    partial(
+                        weighted_chi_squared, checkpoint, k, l, samples, samples_order, weights,
+                        n_o_p, phenotypes, kmers_to_analyse, args.FDR, headerline
+                        ),
+                    kmer_matrix_segments
+                    )
+        pvalues_all.append(list(chain(*pvalues_from_all_threads)))
+        sys.stderr.write("\n")
+
 
     kmers_passed_all_phenotypes = kmer_filtering_by_pvalue(
-        test_result_files, args.pvalue, n_o_p, phenotype_scale, 
-        nr_of_kmers_tested_all_phenotypes, pvalues_all_phenotypes, phenotypes,
-        args.n_kmers, kmers_to_analyse, args.mpheno, args.FDR, args.Bonferroni, 
-        headerline
+        args.pvalue, n_o_p, phenotype_scale, pvalues_all, phenotypes,
+        args.n_kmers, kmers_to_analyse, phenotypes_2_analyse, args.FDR,
+        args.Bonferroni, headerline
         )
+
+    concatenate_test_files(headerline, k, n_o_p, args.num_threads, phenotype_scale, phenotypes, phenotypes_2_analyse)
+
     
     if phenotype_scale == "continuous":
         linear_regression(
