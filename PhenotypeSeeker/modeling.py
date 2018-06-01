@@ -1405,6 +1405,13 @@ def modeling(args):
     else: 
         alphas = np.array(args.alphas)
 
+    if not args.mpheno:
+        phenotypes_2_analyse = range(1, n_o_p+1)
+    else: 
+        phenotypes_2_analyse = args.mpheno
+
+    l = Manager().Lock()
+
     (
         samples, samples_order, n_o_s, n_o_p, phenotype_scale, headerline, phenotypes
         ) = parse_modeling_input_file(args.inputfile)
