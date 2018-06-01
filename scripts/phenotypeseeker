@@ -77,7 +77,7 @@ def Main():
     	)
 
     kmer_lists.add_argument(
-    	"-l", '--length', type=str, metavar="", default="16", 
+    	"-l", '--length', type=str, metavar="", default="13", 
     	help="K-mer length. Must be an integer between (1-32, default = 16)"
     	)
     kmer_lists.add_argument(
@@ -189,7 +189,7 @@ def Main():
     	(k-mers_and_coefficients_in_*_reg_model*.txt) file addresses.'
     	)
     parser_b.add_argument(
-    	"-l", type=str, metavar="INT (1-32)", default="16",
+    	"-l", type=str, metavar="INT (1-32)", default="13",
     	help="Specify the k-mer length (default = 13). Must match with the \
     	length used in models generation."
     	)

@@ -1405,13 +1405,6 @@ def modeling(args):
     else: 
         alphas = np.array(args.alphas)
 
-    if not args.mpheno:
-        phenotypes_2_analyse = range(1, n_o_p+1)
-    else: 
-        phenotypes_2_analyse = args.mpheno
-
-    l = Manager().Lock()
-
     (
         samples, samples_order, n_o_s, n_o_p, phenotype_scale, headerline, phenotypes
         ) = parse_modeling_input_file(args.inputfile)
@@ -1421,6 +1414,13 @@ def modeling(args):
     if args.max == "0":
         args.max = n_o_s - 2
     
+    if not args.mpheno:
+        phenotypes_2_analyse = range(1, n_o_p+1)
+    else: 
+        phenotypes_2_analyse = args.mpheno
+
+    l = Manager().Lock()
+
     # Splitting samples for multithreading
     mt_split = []
     for i in range(args.num_threads):
@@ -1501,6 +1501,7 @@ def modeling(args):
         pvalues_all.append(list(chain(*pvalues_from_all_threads)))
         sys.stderr.write("\n")
 
+    concatenate_test_files(headerline, k, n_o_p, args.num_threads, phenotype_scale, phenotypes, phenotypes_2_analyse)
 
     kmers_passed_all_phenotypes = kmer_filtering_by_pvalue(
         args.pvalue, n_o_p, phenotype_scale, pvalues_all, phenotypes,
@@ -1508,9 +1509,6 @@ def modeling(args):
         args.Bonferroni, headerline
         )
 
-    concatenate_test_files(headerline, k, n_o_p, args.num_threads, phenotype_scale, phenotypes, phenotypes_2_analyse)
-
-    
     if phenotype_scale == "continuous":
         linear_regression(
             "k-mer_matrix.txt", samples, samples_order, alphas, n_o_p,
