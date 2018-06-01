@@ -175,7 +175,7 @@ def kmer_filtering_by_frequency(dict_of_frequencies, min_freq, max_freq, num_thr
     f1.close()
     return(float(kmers_passed))
 
-def map_samples(samples_info, kmer_length, sample_names):
+def map_samples_modeling(samples_info, kmer_length, sample_names):
     #Takes k-mers, which passed frequency filtering as feature space and maps samples k-mer lists
     #to that feature space. A vector of k-mers frequency information is created for every sample.
     totalFiles = len(samples_info)
