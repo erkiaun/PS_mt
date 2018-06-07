@@ -187,7 +187,7 @@ def map_samples_modeling(samples_info, kmer_length, sample_names):
         output = "\t%d of %d samples mapped." % (currentSampleNum.value, totalFiles)
         Printer(output)
 
-def vectors_to_matrix(samples_order, totalKmers):
+def vectors_to_matrix_modeling(samples_order, totalKmers):
     #Takes all vectors with k-mer frequency information and inserts them into matrix
     #of dimensions "number of samples" x "number of k-mers (features).
 
