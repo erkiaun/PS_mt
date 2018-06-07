@@ -5,7 +5,7 @@ __version__ = "2.0"
 __maintainer__ = "Erki Aun"
 __email__ = "erki.aun@ut.ee"
 
-from itertools import chain, izip, permutations
+from itertools import chain, izip, izip_longest, permutations
 from subprocess import call, Popen, PIPE
 import math
 import sys
@@ -187,31 +187,31 @@ def map_samples_modeling(samples_info, kmer_length, sample_names):
         output = "\t%d of %d samples mapped." % (currentSampleNum.value, totalFiles)
         Printer(output)
 
-def vectors_to_matrix_modeling(samples_order):
-    # Takes all vectors with k-mer frequency information and inserts 
-    # them into matrix of dimensions "number of samples" x "number of 
-    # k-mers (features).
-    sys.stderr.write("\nConverting the set of vectors into data matrix.\n")
-    totalFiles = len(samples_order)
-    currentSampleNum = 1
-    call(["mv", "K-mer_lists/k-mers_filtered_by_freq.txt", "k-mer_matrix.txt"])
+def vectors_to_matrix(samples_order, totalKmers):
+    #Takes all vectors with k-mer frequency information and inserts them into matrix
+    #of dimensions "number of samples" x "number of k-mers (features).
+
+    sys.stderr.write("\nConverting the set of feature vectors into data matrix:\n")    
+    matrix = open("k-mer_matrix.txt", "w")
+    data = []   
+ 
+    counter = 0
+    counter2 = 0
+    checkpoint = int(totalKmers/(100))    
+
     for item in samples_order:
-        with open("K-mer_lists/tmp1.txt", "w+") as f1:
-            with open("K-mer_lists/tmp2.txt", "w+") as f2:
-                call(
-                	["cut", "-f", "2", "K-mer_lists/" + item + "_output2.txt"],
-                	stdout=f2
-                	)
-                call(
-                	["paste", "k-mer_matrix.txt", "K-mer_lists/tmp2.txt"], 
-                	stdout=f1
-                	)
-                call(["mv", "K-mer_lists/tmp1.txt", "k-mer_matrix.txt"])
-        output = "\t%d of %d vectors inserted into matrix." % (
-            currentSampleNum,totalFiles
-            )
-        Printer(output)
-        currentSampleNum += 1
+        data.append(open("K-mer_lists/" + item + "_output2.txt", "r"))
+
+    for new_line in izip_longest(*data, fillvalue=''):
+        matrix.write(new_line[1].split()[0] + '\t' + '\t'.join(j.strip(new_line[1].split()[0]).strip() for j in new_line) + "\n")
+        
+        counter += 1
+        if counter%checkpoint == 0:
+            counter2 += 1
+            Printer("\t%d%% of the vectors converted." % counter2)
+    
+    matrix.close()
+
 
 def mash_caller(samples_info, freq):
     #Estimating phylogenetic distances between samples using mash
@@ -1398,6 +1398,14 @@ def assembling(
 
 def modeling(args):
 
+    # Parsing the info from input file
+    (
+    samples, samples_order, n_o_s, n_o_p, phenotype_scale, headerline,
+    phenotypes
+    ) = parse_modeling_input_file(args.inputfile)
+
+    # Generating the vector of alphas (hyperparameters in regression analysis)
+    # based on the given command line arguments.
     if args.alphas == None:
         alphas = np.logspace(
             math.log10(args.alpha_min),
@@ -1405,10 +1413,7 @@ def modeling(args):
     else: 
         alphas = np.array(args.alphas)
 
-    (
-        samples, samples_order, n_o_s, n_o_p, phenotype_scale, headerline, phenotypes
-        ) = parse_modeling_input_file(args.inputfile)
-
+    # 
     if args.min == "0":
         args.min = 2
     if args.max == "0":
@@ -1438,7 +1443,7 @@ def modeling(args):
     currentSampleNum.value = 0
     p.map(partial(map_samples_modeling, samples, args.length), mt_split)
 
-    vectors_to_matrix_modeling(samples_order)
+    vectors_to_matrix_modeling(samples_order, kmers_to_analyse)
     
     call(["rm -r K-mer_lists/"], shell = True)
     
