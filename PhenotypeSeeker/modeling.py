@@ -1180,11 +1180,12 @@ def stohastic_gradient_descent_classifier(
                         ))))
             f1.write("AUC-ROC: %s\n" % \
                 roc_auc_score(y_train, y_train_pred, average="micro"))
-            f1.write("Average precision: %s\n" % \
-                average_precision_score(
-                    y_train, 
-                    clf.predict_proba(X_train)[:,1])
-                    )
+            if loss == "log":
+                f1.write("Average precision: %s\n" % \
+                    average_precision_score(
+                        y_train, 
+                        clf.predict_proba(X_train)[:,1])
+                        )
             f1.write("MCC: %s\n" % \
                 matthews_corrcoef(y_train, y_train_pred))
             f1.write("Cohen kappa: %s\n" %\
@@ -1200,11 +1201,12 @@ def stohastic_gradient_descent_classifier(
                         ))))
             f1.write("AUC-ROC: %s\n" % \
                 roc_auc_score(y_test, y_test_pred, average="micro"))
-            f1.write("Average precision: %s\n" % \
-                average_precision_score(
-                    y_test, 
-                    clf.predict_proba(X_test)[:,1])
-                    )
+            if loss == "log":
+                f1.write("Average precision: %s\n" % \
+                    average_precision_score(
+                        y_train, 
+                        clf.predict_proba(X_train)[:,1])
+                        )
             f1.write("MCC: %s\n" %\
                 matthews_corrcoef(y_test, y_test_pred))
             f1.write("Cohen kappa: %s\n\n" %\
@@ -1251,11 +1253,12 @@ def stohastic_gradient_descent_classifier(
                         ))))
             f1.write("AUC-ROC: %s\n" % \
                 roc_auc_score(dataset.target, y_pred, average="micro"))
-            f1.write("Average precision: %s\n" % \
-                average_precision_score(
-                    dataset.target, 
-                    clf.predict_proba(dataset.data)[:,1])
-                    )
+            if loss == "log":
+                f1.write("Average precision: %s\n" % \
+                    average_precision_score(
+                        y_train, 
+                        clf.predict_proba(X_train)[:,1])
+                        )
             f1.write("MCC: %s\n" %\
                 matthews_corrcoef(dataset.target, y_pred))
             f1.write("Cohen kappa: %s\n" %\
