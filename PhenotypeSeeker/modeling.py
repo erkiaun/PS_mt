@@ -891,18 +891,13 @@ def linear_regression(
         if penalty == 'L2':
             lin_reg = Ridge()
         if penalty == 'L1+L2':
-            lin_reg = ElasticNet() 
+            lin_reg = ElasticNet(l1_ratio=l1_ratio) 
         
         # Generate grid search classifier where parameters
         # (like regularization strength) are optimized by
         # cross-validated grid-search over a parameter grid.
         parameters = {'alpha': alphas}
-        if penalty == 'L1' or 'L2':
-            clf = GridSearchCV(lin_reg, parameters, cv=n_splits)
-        elif penalty == 'L1+L2':
-            clf = GridSearchCV(
-                lin_reg, parameters, cv=n_splits, l1_ratio=l1_ratio
-                )
+        clf = GridSearchCV(lin_reg, parameters, cv=n_splits)
 
         # Fitting the linear regression model to dataset
         # (with or without considering the weights). Writing results
