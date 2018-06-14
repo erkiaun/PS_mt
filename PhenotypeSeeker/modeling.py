@@ -1106,7 +1106,7 @@ def logistic_regression(
         elif penalty == "L2":
             log_reg = LogisticRegression(penalty='l2', solver='saga')
         elif penalty == "L1+L2":
-            log_reg = SGDClassifier(loss='log', l1_ratio='l1_ratio')
+            log_reg = SGDClassifier(loss='log', l1_ratio=l1_ratio)
         
 
         # Generate grid search classifier where parameters
