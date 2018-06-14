@@ -1535,7 +1535,7 @@ def modeling(args):
             "k-mer_matrix.txt", samples, samples_order, alphas, n_o_p,
             kmers_passed_all_phenotypes, args.regularization, args.n_splits,
             weights, args.testset_size, phenotypes, args.weights,
-            args.binary_classifier, args.l1_ratio, args.mpheno, headerline
+            args.l1_ratio, args.binary_classifier, args.mpheno, headerline
             )
     if args.assembly == "+":
         assembling(
