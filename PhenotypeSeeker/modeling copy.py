@@ -1014,7 +1014,7 @@ def linear_regression(
 def logistic_regression(
 	    kmer_matrix, samples, samples_order, alphas, number_of_phenotypes, 
 	    kmers_passed_all_phenotypes, penalty, n_splits, weights, testset_size,
-	    phenotypes, use_of_weights, l1_ratio, phenotypes_to_analyze=False, 
+	    phenotypes, use_of_weights, phenotypes_to_analyze=False, 
 	    headerline=False
 	    ):
     # Applies logistic regression with Lasso regularization on k-mers
@@ -1107,19 +1107,13 @@ def logistic_regression(
             log_reg = LogisticRegression(penalty='l2', solver='saga')
         elif penalty == "L1+L2":
             log_reg = SGDClassifier(loss='log', l1_ratio='l1_ratio')
-        
-
+       
         # Generate grid search classifier where parameters
         # (like regularization strength) are optimized by
         # cross-validated grid-search over a parameter grid. 
-        if penalty == "L1" or "L2":
-            Cs = list(map(lambda x: 1/x, alphas))
-            parameters = {'C':Cs}
-        if penalty == "L1+L2":
-            parameters = {'alpha': alphas}
+        Cs = list(map(lambda x: 1/x, alphas))
+        parameters = {'C':Cs}
         clf = GridSearchCV(log_reg, parameters, cv=n_splits)
-
-        
 
         # Fitting the logistic regression model to dataset 
         # (with or without considering the weights). Writing logistic
@@ -1537,7 +1531,7 @@ def modeling(args):
             "k-mer_matrix.txt", samples, samples_order, alphas, n_o_p,
             kmers_passed_all_phenotypes, args.regularization, args.n_splits,
             weights, args.testset_size, phenotypes, args.weights,
-            args.l1_ratio, args.mpheno, headerline
+            args.mpheno, headerline
             )
     if args.assembly == "+":
         assembling(
