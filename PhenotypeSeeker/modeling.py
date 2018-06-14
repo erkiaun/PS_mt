@@ -19,7 +19,8 @@ from collections import Counter
 from multiprocessing import Manager, Pool, Value
 from scipy import stats
 from sklearn.externals import joblib
-from sklearn.linear_model import Lasso, LogisticRegression, Ridge
+from sklearn.linear_model import Lasso, LogisticRegression, Ridge, ElasticNet,
+    SGDClassifier
 from sklearn.metrics import (
     classification_report, r2_score, mean_squared_error, recall_score,
     roc_auc_score, average_precision_score, matthews_corrcoef, cohen_kappa_score
@@ -645,10 +646,6 @@ def chi_squared(
                     kmer + "\t%.2f\t%.2E\t" % chisquare_results 
                     + str(len(samples_x))  +"\t| " + " ".join(samples_x) + "\n"
                     )
-                previousPercent, currentKmerNum = write_to_stderr_if(
-                    previousPercent, currentKmerNum, 
-                    kmers_to_analyse, "tests conducted.", phenotype
-                    ) 
                 if counter%checkpoint == 0:
                     l.acquire()
                     currentKmerNum.value += checkpoint
@@ -802,7 +799,7 @@ def kmer_filtering_by_pvalue(
 def linear_regression(
 	    kmer_matrix, samples, samples_order, alphas, number_of_phenotypes,
 	    kmers_passed_all_phenotypes, penalty, n_splits, weights, testset_size,
-	    phenotypes, use_of_weights, phenotypes_to_analyze=False, 
+	    phenotypes, use_of_weights, l1_ratio, phenotypes_to_analyze=False, 
         headerline=False
 	    ):
     # Applies linear regression with Lasso regularization on k-mers
@@ -892,12 +889,16 @@ def linear_regression(
         if penalty == 'L1':
             lin_reg = Lasso()        
         if penalty == 'L2':
-            lin_reg = Ridge() 
+            lin_reg = Ridge()
+        if penalty == 'L1+L2':
+            lin_reg = ElasticNet() 
         
         # Generate grid search classifier where parameters
         # (like regularization strength) are optimized by
         # cross-validated grid-search over a parameter grid.
         parameters = {'alpha': alphas}
+        if penalty == 'L1+L2':
+            parameters['l1_ratio'] = l1_ratio
         clf = GridSearchCV(lin_reg, parameters, cv=n_splits)
 
         # Fitting the linear regression model to dataset
@@ -1519,7 +1520,7 @@ def modeling(args):
             "k-mer_matrix.txt", samples, samples_order, alphas, n_o_p,
             kmers_passed_all_phenotypes, args.regularization, args.n_splits,
             weights, args.testset_size, phenotypes, args.weights,
-            args.mpheno, headerline
+            args.l1_ratio, args.mpheno, headerline
             )
     elif phenotype_scale == "binary":
         logistic_regression(

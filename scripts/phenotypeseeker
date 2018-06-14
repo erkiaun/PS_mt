@@ -143,8 +143,15 @@ def Main():
     	)
     regression_models.add_argument(
     	'-r', '--regularization', metavar='', type=str, default='L1',
-    	help='The norm used in the penalization. Must be L1 (default) or L2.'
+    	help='The norm used in the penalization. Must be L1 (default), L2 \
+        or L1+L2 (elastic net)'
     	)
+    regression_models.add_argument(
+        '--l1_ratio', metavar='', type=str, default='0.5',
+        help='The elastic net mixing parameter with. For l1_ratio = 0, it is \
+        an L2 penalty. For l1_ratio = 1, it is an L1 penalty. \
+        For 0 < l1_ratio < 1, the penalty is a combination of L1 and L2.'
+        )
     regression_models.add_argument(
     	'-s', "--testset_size", metavar="", type=float, default=0.25,
     	help='The size of the test set. Represents the proportion of the \
