@@ -886,11 +886,11 @@ def linear_regression(
         f1.write("Dataset:\n%s\n\n" % dataset)
 
         # Defining linear regression parameters    
-        if penalty == 'L1':
+        if penalty == 'l1':
             lin_reg = Lasso()        
-        if penalty == 'L2':
+        if penalty == 'l2':
             lin_reg = Ridge()
-        if penalty == 'L1+L2':
+        if penalty == 'elasticnet':
             lin_reg = ElasticNet(l1_ratio=l1_ratio) 
         
         # Generate grid search classifier where parameters
@@ -1011,11 +1011,11 @@ def linear_regression(
         f1.close()
         f2.close()
 
-def logistic_regression(
+def stohastic_gradient_descent_classifier(
 	    kmer_matrix, samples, samples_order, alphas, number_of_phenotypes, 
 	    kmers_passed_all_phenotypes, penalty, n_splits, weights, testset_size,
-	    phenotypes, use_of_weights, l1_ratio, phenotypes_to_analyze=False, 
-	    headerline=False
+	    phenotypes, use_of_weights, l1_ratio, loss,
+        phenotypes_to_analyze=False, headerline=False
 	    ):
     # Applies logistic regression with Lasso regularization on k-mers
     # that passed the filtering by p-value of statistical test. K-mers
@@ -1101,27 +1101,21 @@ def logistic_regression(
         f1.write("Dataset:\n%s\n\n" % dataset)
 
         #Defining logistic regression parameters
-        if penalty == "L1":
-            log_reg = LogisticRegression(
-                penalty='l1', solver='saga', max_iter=1000, tol=1e-3)        
-        elif penalty == "L2":
-            log_reg = LogisticRegression(
-                penalty='l2', solver='saga', max_iter=1000, tol=1e-3)
-        elif penalty == "L1+L2":
-            log_reg = SGDClassifier(
-                loss='log', l1_ratio=l1_ratio, max_iter=1000, tol=1e-3
-                )
+        SGDC = SGDClassifier(
+            penalty=penalty, loss=loss, l1_ratio=l1_ratio,
+            max_iter=1000, tol=1e-3
+            )
         
 
         # Generate grid search classifier where parameters
         # (like regularization strength) are optimized by
         # cross-validated grid-search over a parameter grid. 
-        if penalty == "L1" or "L2":
-            Cs = list(map(lambda x: 1/x, alphas))
-            parameters = {'C':Cs}
-        if penalty == "L1+L2":
-            parameters = {'alpha': alphas}
-        clf = GridSearchCV(log_reg, parameters, cv=n_splits)
+        #if penalty == "l1" or "L2":
+        #    Cs = list(map(lambda x: 1/x, alphas))
+        #    parameters = {'C':Cs}
+        #if penalty == "L1+L2":
+        parameters = {'alpha': alphas}
+        clf = GridSearchCV(SGDC, parameters, cv=n_splits)
 
         
 
@@ -1537,11 +1531,11 @@ def modeling(args):
             args.l1_ratio, args.mpheno, headerline
             )
     elif phenotype_scale == "binary":
-        logistic_regression(
+        stohastic_gradient_descent_classifier(
             "k-mer_matrix.txt", samples, samples_order, alphas, n_o_p,
             kmers_passed_all_phenotypes, args.regularization, args.n_splits,
             weights, args.testset_size, phenotypes, args.weights,
-            args.l1_ratio, args.mpheno, headerline
+            args.binary_classifier, args.l1_ratio, args.mpheno, headerline
             )
     if args.assembly == "+":
         assembling(
