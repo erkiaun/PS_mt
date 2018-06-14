@@ -1102,9 +1102,11 @@ def logistic_regression(
 
         #Defining logistic regression parameters
         if penalty == "L1":
-            log_reg = LogisticRegression(penalty='l1', solver='saga')        
+            log_reg = LogisticRegression(
+                penalty='l1', solver='saga', max_iter=1000, tol=1e-3)        
         elif penalty == "L2":
-            log_reg = LogisticRegression(penalty='l2', solver='saga')
+            log_reg = LogisticRegression(
+                penalty='l2', solver='saga', max_iter=1000, tol=1e-3)
         elif penalty == "L1+L2":
             log_reg = SGDClassifier(
                 loss='log', l1_ratio=l1_ratio, max_iter=1000, tol=1e-3
