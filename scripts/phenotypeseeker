@@ -153,7 +153,7 @@ def Main():
         machine)'
         )
     regression_models.add_argument(
-        '--l1_ratio', metavar='', type=float, default='0.5',
+        '--l1_ratio', metavar='', type=float, default=0.5,
         help='The elastic net mixing parameter with. For l1_ratio = 0, it is \
         an L2 penalty. For l1_ratio = 1, it is an L1 penalty. \
         For 0 < l1_ratio < 1, the penalty is a combination of L1 and L2.'
