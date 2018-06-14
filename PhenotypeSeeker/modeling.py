@@ -897,9 +897,12 @@ def linear_regression(
         # (like regularization strength) are optimized by
         # cross-validated grid-search over a parameter grid.
         parameters = {'alpha': alphas}
-        if penalty == 'L1+L2':
-            parameters['l1_ratio'] = l1_ratio
-        clf = GridSearchCV(lin_reg, parameters, cv=n_splits)
+        if penalty == 'L1' or 'L2':
+            clf = GridSearchCV(lin_reg, parameters, cv=n_splits)
+        elif penalty == 'L1+L2':
+            clf = GridSearchCV(
+                lin_reg, parameters, cv=n_splits, l1_ratio=l1_ratio
+                )
 
         # Fitting the linear regression model to dataset
         # (with or without considering the weights). Writing results
@@ -1362,7 +1365,7 @@ def assembling(
         ):
     # Assembles the input k-mers and writes assembled sequences
     # into "assembled_kmers.txt" file in FastA format.
-
+    
     if not phenotypes_to_analyze:
         phenotypes_to_analyze = range(1,number_of_phenotypes+1)
 
@@ -1377,6 +1380,10 @@ def assembling(
         sys.stderr.write("Assembling the k-mers used in regression model...\n")
 
     for j, k in enumerate(phenotypes_to_analyze):
+        if len(kmers_passed_all_phenotypes[j]) == 0:
+            f1.write("No k-mers passed the step of k-mer selection for \
+                assembling.\n")
+            continue
         #Open files to write the results of k-mer assembling
         if headerline:
             f1 = open("assembled_kmers_" + phenotypes[k-1] + ".fasta", "w+")
