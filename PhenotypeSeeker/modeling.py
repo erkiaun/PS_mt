@@ -66,6 +66,20 @@ def write_to_stderr_if(
     currentKmerNum += 1
     return(previousPercent, currentKmerNum)
 
+def VME(list1, list2):
+    VMEs = 0
+    for i in zip(list1,list2):
+        if i[0] == 1 and i[1] == 0:
+            VMEs += 1
+    return str(float(VMEs)/len(list1)*100)+"%"
+
+def ME(list1, list2):
+    MEs = 0
+    for i in zip(list1,list2):
+        if i[0] == 0 and i[1] == 1:
+             MEs += 1
+    return str(float(MEs)/len(list1)*100)+"%"
+
 def parse_modeling_input_file(inputfilename):
     # Parses info from tabulated input file into samples directory.
     # Stores the order of samples in "samples_order" list.
@@ -744,8 +758,7 @@ def kmer_filtering_by_pvalue(
                 list1 = line.split()
                 if float(list1[2]) < (max_pvalue_by_B):
                     f2.write(line)
-                    if (number_of_kmers < kmer_limit 
-                            and float(list1[2]) <= max_pvalue_by_limit):
+                    if float(list1[2]) <= max_pvalue_by_limit:
                         kmers_passed.append(list1[0])
                         number_of_kmers += 1
                 previousPercent, currentKmerNum = write_to_stderr_if(
@@ -766,8 +779,7 @@ def kmer_filtering_by_pvalue(
                 list1 = line.split()
                 if float(list1[2]) <= max_pvalue_by_FDR:
                     f2.write(line)
-                    if (number_of_kmers < kmer_limit 
-                            and float(list1[2]) <= max_pvalue_by_limit):
+                    if float(list1[2]) <= max_pvalue_by_limit:
                         kmers_passed.append(list1[0])
                         number_of_kmers += 1
                 previousPercent, currentKmerNum = write_to_stderr_if(
@@ -779,8 +791,7 @@ def kmer_filtering_by_pvalue(
                 list1 = line.split()
                 if  float(list1[2]) < pvalue:
                     f2.write(line)
-                    if (number_of_kmers < kmer_limit 
-                            and float(list1[2]) <= max_pvalue_by_limit):
+                    if float(list1[2]) <= max_pvalue_by_limit:
                         kmers_passed.append(list1[0])
                         number_of_kmers += 1
                 previousPercent, currentKmerNum = write_to_stderr_if(
@@ -1169,6 +1180,8 @@ def stohastic_gradient_descent_classifier(
                 f1.write('%s %s %s\n' % (
                 	samples_test[u], y_test[u], y_test_pred[u]
                 	))
+
+
             f1.write("\nTraining set: \n")
             f1.write("Mean accuracy: %s\n" % clf.score(X_train, y_train))
             f1.write("Sensitivity: %s\n" % \
@@ -1190,6 +1203,16 @@ def stohastic_gradient_descent_classifier(
                 matthews_corrcoef(y_train, y_train_pred))
             f1.write("Cohen kappa: %s\n" %\
                 cohen_kappa_score(y_train, y_train_pred))
+            f1.write("Very major error rate: %s\n" %\
+                VME(y_train, y_train_pred))
+            f1.write("Major error rate: %s\n" %\
+                ME(y_train, y_train_pred))
+            f1.write('Classification report:\n %s\n\n' % classification_report(
+                y_train, y_train_pred, 
+                target_names=["sensitive", "resistant"]
+                )) 
+
+
             f1.write("\nTest set: \n")
             f1.write('Mean accuracy: %s\n' % clf.score(X_test, y_test))
             f1.write("Sensitivity: %s\n" % \
@@ -1211,6 +1234,10 @@ def stohastic_gradient_descent_classifier(
                 matthews_corrcoef(y_test, y_test_pred))
             f1.write("Cohen kappa: %s\n\n" %\
                 cohen_kappa_score(y_test, y_test_pred))
+            f1.write("Very major error rate: %s\n" %\
+                VME(y_test, y_test_pred))
+            f1.write("Major error rate: %s\n" %\
+                ME(y_test, y_test_pred))
             f1.write('Classification report:\n %s\n\n' % classification_report(
             	y_test, y_test_pred, 
             	target_names=["sensitive", "resistant"]
@@ -1263,6 +1290,10 @@ def stohastic_gradient_descent_classifier(
                 matthews_corrcoef(dataset.target, y_pred))
             f1.write("Cohen kappa: %s\n" %\
                 cohen_kappa_score(dataset.target, y_pred))
+            f1.write("Very major error rate: %s\n" %\
+                VME(dataset.target, y_pred))
+            f1.write("Major error rate: %s\n" %\
+                ME(dataset.target, y_pred))
             f1.write('Classification report:\n %s\n\n' % classification_report(
             	dataset.target, y_pred, 
             	target_names=["sensitive", "resistant"]
