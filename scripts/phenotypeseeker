@@ -142,7 +142,7 @@ def Main():
     	Must be at least 2 (default 10).'
     	)
     regression_models.add_argument(
-    	'-r', '--regularization', metavar='', type=str, default='L1',
+    	'-r', '--regularization', metavar='', type=str, default='elasticnet',
     	help='The norm used in the penalization. Must be l1 (default), l2 \
         or elastic net'
     	)
