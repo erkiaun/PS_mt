@@ -1234,8 +1234,8 @@ def logistic_regression(
                 roc_auc_score(y_test, y_test_pred, average="micro"))
             f1.write("Average precision: %s\n" % \
                 average_precision_score(
-                    y_train, 
-                    clf.predict_proba(X_train)[:,1])
+                    y_test, 
+                    clf.predict_proba(X_test)[:,1])
                     )
             f1.write("MCC: %s\n" %\
                 matthews_corrcoef(y_test, y_test_pred))
