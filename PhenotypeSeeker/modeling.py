@@ -80,6 +80,14 @@ def ME(list1, list2):
              MEs += 1
     return str(float(MEs)/len(list1)*100)+"%"
 
+def plus_minus_1_dilution_factor_accuracy(list1, list2):
+    counter = 0
+    for item in zip(list1, list2):
+        if abs(item[0]-item[1]) <= 1:
+            counter +=1
+    accuracy = float(counter)/len(t6de)
+    return accuracy
+
 def parse_modeling_input_file(inputfilename):
     # Parses info from tabulated input file into samples directory.
     # Stores the order of samples in "samples_order" list.
@@ -964,7 +972,18 @@ def linear_regression(
             f1.write("The coefficient of determination:"
                 + " %s\n" % clf.score(X_train, y_train))
             f1.write("The Spearman correlation coefficient and p-value:" \
-                " %s, %s \n\n" % stats.spearmanr(y_train, train_y_prediction))
+                " %s, %s \n" % stats.spearmanr(y_train, train_y_prediction))
+            slope, intercept, r_value, pval_r, std_err = 
+                stats.linregress(y_train, train_y_prediction)
+            f1.write("The Pearson correlation coefficient and p-value: " \
+                    " %s, %s \n" % (r_value, pval_r))
+            f1.write("The ±1 dilution factor accuracy (for MICs):" \
+                " %s, %s \n\n" % plus_minus_1_dilution_factor_accuracy(
+                    y_train, train_y_prediction
+                    )
+                )
+
+
             test_y_prediction = clf.predict(X_test)
             f1.write('Test set:\n')
             f1.write('Mean squared error: %s\n' 
@@ -973,6 +992,15 @@ def linear_regression(
                 + ' %s\n' % clf.score(X_test, y_test)) 
             f1.write("The Spearman correlation coefficient and p-value:" \
                 + " %s, %s \n" % stats.spearmanr(y_test, test_y_prediction))
+            slope, intercept, r_value, pval_r, std_err = 
+                stats.linregress(y_test, test_y_prediction)
+            f1.write("The Pearson correlation coefficient and p-value: " \
+                    " %s, %s \n" % (r_value, pval_r))
+            f1.write("The ±1 dilution factor accuracy (for MICs):" \
+                " %s, %s \n\n" % plus_minus_1_dilution_factor_accuracy(
+                    y_test, test_y_prediction
+                    )
+                )
         else:
             if penalty == 'L2' and use_of_weights == "+":
                 array_weights = np.array(
@@ -1003,6 +1031,15 @@ def linear_regression(
             	    "%s\n" % clf.score(X_train, y_train))
             f1.write('The Spearman correlation coefficient and p-value of ' \
                 'the dataset: %s, %s \n' % stats.spearmanr(
+                    dataset.target, y_prediction
+                    )
+                )
+            slope, intercept, r_value, pval_r, std_err = 
+                stats.linregress(dataset.target, y_prediction)
+            f1.write("The Pearson correlation coefficient and p-value: " \
+                    " %s, %s \n" % (r_value, pval_r))
+            f1.write("The ±1 dilution factor accuracy (for MICs):" \
+                " %s, %s \n\n" % plus_minus_1_dilution_factor_accuracy(
                     dataset.target, y_prediction
                     )
                 )
@@ -1239,7 +1276,7 @@ def logistic_regression(
                     )
             f1.write("MCC: %s\n" %\
                 matthews_corrcoef(y_test, y_test_pred))
-            f1.write("Cohen kappa: %s\n\n" %\
+            f1.write("Cohen kappa: %s\n" %\
                 cohen_kappa_score(y_test, y_test_pred))
             f1.write("Very major error rate: %s\n" %\
                 VME(y_test, y_test_pred))
