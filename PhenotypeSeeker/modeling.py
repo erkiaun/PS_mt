@@ -980,7 +980,7 @@ def linear_regression(
             f1.write("The Pearson correlation coefficient and p-value: " \
                     " %s, %s \n" % (r_value, pval_r))
             f1.write("The plus/minus 1 dilution factor accuracy (for MICs):" \
-                " %s, %s \n\n" % plus_minus_1_dilution_factor_accuracy(
+                "%s \n\n" % plus_minus_1_dilution_factor_accuracy(
                     y_train, train_y_prediction
                     )
                 )
@@ -1262,8 +1262,8 @@ def logistic_regression(
             f1.write("Confusion matrix:\n")
             f1.write("Predicted\t0\t1:\n")
             f1.write("Actual\n")
-            f1.write("0\t\t\t%s\t%s\n" % tuple(cm[0]))
-            f1.write("1\t\t\t%s\t%s\n\n" % tuple(cm[1])) 
+            f1.write("0\t\t%s\t%s\n" % tuple(cm[0]))
+            f1.write("1\t\t%s\t%s\n\n" % tuple(cm[1])) 
 
 
             f1.write("\nTest set: \n")
@@ -1298,8 +1298,8 @@ def logistic_regression(
             f1.write("Confusion matrix:\n")
             f1.write("Predicted\t0\t1:\n")
             f1.write("Actual\n")
-            f1.write("0\t\t\t%s\t%s\n" % tuple(cm[0]))
-            f1.write("1\t\t\t%s\t%s\n\n" % tuple(cm[1])) 
+            f1.write("0\t\t%s\t%s\n" % tuple(cm[0]))
+            f1.write("1\t\t%s\t%s\n\n" % tuple(cm[1])) 
         else:
             if use_of_weights == "+":
                 array_weights = np.array(
@@ -1359,8 +1359,8 @@ def logistic_regression(
             f1.write("Confusion matrix:\n")
             f1.write("Predicted\t0\t1:\n")
             f1.write("Actual\n")
-            f1.write("0\t\t\t%s\t%s\n" % tuple(cm[0]))
-            f1.write("1\t\t\t%s\t%s\n\n" % tuple(cm[1])) 
+            f1.write("0\t\t%s\t%s\n" % tuple(cm[0]))
+            f1.write("1\t\t%s\t%s\n\n" % tuple(cm[1])) 
         
         joblib.dump(model, model_filename)
         kmers_presence_matrix = np.array(kmers_presence_matrix).transpose()
@@ -1480,7 +1480,7 @@ def support_vector_classifier(
             clf = GridSearchCV(svc, parameters, cv=n_splits)
         if kernel == "rbf":
             parameters = {'C':Cs, 'gamma':Gammas}
-            clf = RandomizedSearchCV(svc, parameters, n_iter=25, cv=n_splits)
+            clf = RandomizedSearchCV(svc, parameters, n_iter=n_iter, cv=n_splits)
 
         
 
@@ -1568,8 +1568,8 @@ def support_vector_classifier(
             f1.write("Confusion matrix:\n")
             f1.write("Predicted\t0\t1:\n")
             f1.write("Actual\n")
-            f1.write("0\t\t\t%s\t%s\n" % tuple(cm[0]))
-            f1.write("1\t\t\t%s\t%s\n\n" % tuple(cm[1])) 
+            f1.write("0\t\t%s\t%s\n" % tuple(cm[0]))
+            f1.write("1\t\t%s\t%s\n\n" % tuple(cm[1])) 
 
 
             f1.write("\nTest set: \n")
@@ -1604,8 +1604,8 @@ def support_vector_classifier(
             f1.write("Confusion matrix:\n")
             f1.write("Predicted\t0\t1:\n")
             f1.write("Actual\n")
-            f1.write("0\t\t\t%s\t%s\n" % tuple(cm[0]))
-            f1.write("1\t\t\t%s\t%s\n\n" % tuple(cm[1])) 
+            f1.write("0\t\t%s\t%s\n" % tuple(cm[0]))
+            f1.write("1\t\t%s\t%s\n\n" % tuple(cm[1])) 
         else:
             if use_of_weights == "+":
                 array_weights = np.array(
@@ -1665,8 +1665,8 @@ def support_vector_classifier(
             f1.write("Confusion matrix:\n")
             f1.write("Predicted\t0\t1:\n")
             f1.write("Actual\n")
-            f1.write("0\t\t\t%s\t%s\n" % tuple(cm[0]))
-            f1.write("1\t\t\t%s\t%s\n\n" % tuple(cm[1])) 
+            f1.write("0\t\t%s\t%s\n" % tuple(cm[0]))
+            f1.write("1\t\t%s\t%s\n\n" % tuple(cm[1])) 
         
         joblib.dump(model, model_filename)
         kmers_presence_matrix = np.array(kmers_presence_matrix).transpose()
@@ -1950,12 +1950,12 @@ def modeling(args):
                 args.l1_ratio, args.mpheno, headerline
                 )
         elif args.binary_classifier == "SVM":
-        support_vector_classifier(
-            "k-mer_matrix.txt", samples, samples_order, alphas, n_o_p,
-            kmers_passed_all_phenotypes, args.regularization, args.n_splits,
-            weights, args.testset_size, phenotypes, args.weights,
-            args.kernel, gammas, args.n_iter, args.mpheno, headerline
-            )
+            support_vector_classifier(
+                "k-mer_matrix.txt", samples, samples_order, alphas, n_o_p,
+                kmers_passed_all_phenotypes, args.regularization, args.n_splits,
+                weights, args.testset_size, phenotypes, args.weights,
+                args.kernel, gammas, args.n_iter, args.mpheno, headerline
+                )
     if args.assembly == "+":
         assembling(
             kmers_passed_all_phenotypes, phenotypes, n_o_p, args.mpheno, 
