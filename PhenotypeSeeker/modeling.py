@@ -20,7 +20,8 @@ from multiprocessing import Manager, Pool, Value
 from scipy import stats
 from sklearn.externals import joblib
 from sklearn.linear_model import (Lasso, LogisticRegression, Ridge, ElasticNet,
-    SGDClassifier, SVC)
+    SGDClassifier)
+from sklearn.svm import SVC
 from sklearn.metrics import (
     classification_report, r2_score, mean_squared_error, recall_score,
     roc_auc_score, average_precision_score, matthews_corrcoef, cohen_kappa_score
