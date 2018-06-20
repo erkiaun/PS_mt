@@ -973,7 +973,7 @@ def linear_regression(
                 + " %s\n" % clf.score(X_train, y_train))
             f1.write("The Spearman correlation coefficient and p-value:" \
                 " %s, %s \n" % stats.spearmanr(y_train, train_y_prediction))
-            slope, intercept, r_value, pval_r, std_err = 
+            slope, intercept, r_value, pval_r, std_err = \
                 stats.linregress(y_train, train_y_prediction)
             f1.write("The Pearson correlation coefficient and p-value: " \
                     " %s, %s \n" % (r_value, pval_r))
@@ -992,7 +992,7 @@ def linear_regression(
                 + ' %s\n' % clf.score(X_test, y_test)) 
             f1.write("The Spearman correlation coefficient and p-value:" \
                 + " %s, %s \n" % stats.spearmanr(y_test, test_y_prediction))
-            slope, intercept, r_value, pval_r, std_err = 
+            slope, intercept, r_value, pval_r, std_err = \
                 stats.linregress(y_test, test_y_prediction)
             f1.write("The Pearson correlation coefficient and p-value: " \
                     " %s, %s \n" % (r_value, pval_r))
@@ -1034,7 +1034,7 @@ def linear_regression(
                     dataset.target, y_prediction
                     )
                 )
-            slope, intercept, r_value, pval_r, std_err = 
+            slope, intercept, r_value, pval_r, std_err = \
                 stats.linregress(dataset.target, y_prediction)
             f1.write("The Pearson correlation coefficient and p-value: " \
                     " %s, %s \n" % (r_value, pval_r))
