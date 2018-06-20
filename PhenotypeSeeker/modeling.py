@@ -20,12 +20,12 @@ from multiprocessing import Manager, Pool, Value
 from scipy import stats
 from sklearn.externals import joblib
 from sklearn.linear_model import (Lasso, LogisticRegression, Ridge, ElasticNet,
-    SGDClassifier)
+    SGDClassifier, SVC)
 from sklearn.metrics import (
     classification_report, r2_score, mean_squared_error, recall_score,
     roc_auc_score, average_precision_score, matthews_corrcoef, cohen_kappa_score
     )
-from sklearn.model_selection import GridSearchCV, train_test_split
+from sklearn.model_selection import RandomizedSearchCV, GridSearchCV, train_test_split
 from functools import partial
 import Bio
 import sklearn.datasets
@@ -977,7 +977,7 @@ def linear_regression(
                 stats.linregress(y_train, train_y_prediction)
             f1.write("The Pearson correlation coefficient and p-value: " \
                     " %s, %s \n" % (r_value, pval_r))
-            f1.write("The ±1 dilution factor accuracy (for MICs):" \
+            f1.write("The plus/minus 1 dilution factor accuracy (for MICs):" \
                 " %s, %s \n\n" % plus_minus_1_dilution_factor_accuracy(
                     y_train, train_y_prediction
                     )
@@ -996,7 +996,7 @@ def linear_regression(
                 stats.linregress(y_test, test_y_prediction)
             f1.write("The Pearson correlation coefficient and p-value: " \
                     " %s, %s \n" % (r_value, pval_r))
-            f1.write("The ±1 dilution factor accuracy (for MICs):" \
+            f1.write("The plus/minus 1 dilution factor accuracy (for MICs):" \
                 " %s, %s \n\n" % plus_minus_1_dilution_factor_accuracy(
                     y_test, test_y_prediction
                     )
@@ -1038,7 +1038,7 @@ def linear_regression(
                 stats.linregress(dataset.target, y_prediction)
             f1.write("The Pearson correlation coefficient and p-value: " \
                     " %s, %s \n" % (r_value, pval_r))
-            f1.write("The ±1 dilution factor accuracy (for MICs):" \
+            f1.write("The plus/minus 1 dilution factor accuracy (for MICs):" \
                 " %s, %s \n\n" % plus_minus_1_dilution_factor_accuracy(
                     dataset.target, y_prediction
                     )
@@ -1456,7 +1456,7 @@ def support_vector_classifier(
         Cs = list(map(lambda x: 1/x, alphas))
         Gammas = list(map(lambda x: 1/x, alphas))
         parameters = {'C':Cs, 'gamma':Gammas}
-        clf = GridSearchCV(svc, parameters, cv=n_splits)
+        clf = RandomizedSearchCV(svc, parameters, n_iter=25, cv=n_splits)
 
         
 
