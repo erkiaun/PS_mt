@@ -24,7 +24,8 @@ from sklearn.linear_model import (Lasso, LogisticRegression, Ridge, ElasticNet,
 from sklearn.svm import SVC
 from sklearn.metrics import (
     classification_report, r2_score, mean_squared_error, recall_score,
-    roc_auc_score, average_precision_score, matthews_corrcoef, cohen_kappa_score
+    roc_auc_score, average_precision_score, matthews_corrcoef, cohen_kappa_score,
+    confusion_matrix
     )
 from sklearn.model_selection import RandomizedSearchCV, GridSearchCV, train_test_split
 from functools import partial
@@ -1253,10 +1254,16 @@ def logistic_regression(
                 VME(y_train, y_train_pred))
             f1.write("Major error rate: %s\n" %\
                 ME(y_train, y_train_pred))
-            f1.write('Classification report:\n %s\n\n' % classification_report(
+            f1.write('Classification report:\n %s\n' % classification_report(
                 y_train, y_train_pred, 
                 target_names=["sensitive", "resistant"]
-                )) 
+                ))
+            cm = confusion_matrix(y_train, y_tain_pred)
+            f1.write("Confusion matrix:\n")
+            f1.write("Predicted\t0\t1:\n")
+            f1.write("Actual\n")
+            f1.write("0\t\t\t%s\t%s\n" % tuple(cm[0]))
+            f1.write("1\t\t\t%s\t%s\n\n" % tuple(cm[1])) 
 
 
             f1.write("\nTest set: \n")
@@ -1283,10 +1290,16 @@ def logistic_regression(
                 VME(y_test, y_test_pred))
             f1.write("Major error rate: %s\n" %\
                 ME(y_test, y_test_pred))
-            f1.write('Classification report:\n %s\n\n' % classification_report(
+            f1.write('Classification report:\n %s\n' % classification_report(
             	y_test, y_test_pred, 
             	target_names=["sensitive", "resistant"]
-            	))  
+            	))
+            cm = confusion_matrix(y_test, y_test_pred)
+            f1.write("Confusion matrix:\n")
+            f1.write("Predicted\t0\t1:\n")
+            f1.write("Actual\n")
+            f1.write("0\t\t\t%s\t%s\n" % tuple(cm[0]))
+            f1.write("1\t\t\t%s\t%s\n\n" % tuple(cm[1])) 
         else:
             if use_of_weights == "+":
                 array_weights = np.array(
@@ -1338,10 +1351,16 @@ def logistic_regression(
                 VME(dataset.target, y_pred))
             f1.write("Major error rate: %s\n" %\
                 ME(dataset.target, y_pred))
-            f1.write('Classification report:\n %s\n\n' % classification_report(
+            f1.write('Classification report:\n %s\n' % classification_report(
             	dataset.target, y_pred, 
             	target_names=["sensitive", "resistant"]
             	))
+            cm = confusion_matrix(dataset.target, y_pred)
+            f1.write("Confusion matrix:\n")
+            f1.write("Predicted\t0\t1:\n")
+            f1.write("Actual\n")
+            f1.write("0\t\t\t%s\t%s\n" % tuple(cm[0]))
+            f1.write("1\t\t\t%s\t%s\n\n" % tuple(cm[1])) 
         
         joblib.dump(model, model_filename)
         kmers_presence_matrix = np.array(kmers_presence_matrix).transpose()
@@ -1361,8 +1380,8 @@ def logistic_regression(
 def support_vector_classifier(
         kmer_matrix, samples, samples_order, alphas, number_of_phenotypes, 
         kmers_passed_all_phenotypes, penalty, n_splits, weights, testset_size,
-        phenotypes, use_of_weights, kernel, phenotypes_to_analyze=False, 
-        headerline=False
+        phenotypes, use_of_weights, kernel, gammas, n_iter,
+        phenotypes_to_analyze=False, headerline=False
         ):
     # Applies logistic regression with Lasso regularization on k-mers
     # that passed the filtering by p-value of statistical test. K-mers
@@ -1373,40 +1392,40 @@ def support_vector_classifier(
         phenotypes_to_analyze = range(1,number_of_phenotypes+1)
     
     if len(phenotypes_to_analyze) > 1:
-        sys.stderr.write("\nConducting the logistic regression analysis:\n")
+        sys.stderr.write("\nConducting the SVM classifier analysis:\n")
     elif headerline:
-        sys.stderr.write("\nConducting the logistic regression analysis of " 
+        sys.stderr.write("\nConducting the SVM classifier analysis of " 
             +  phenotypes[0] + " data...\n")
     else:
-        sys.stderr.write("\nConducting the logistic regression analysis...\n")
+        sys.stderr.write("\nConducting the SVM classifier analysis...\n")
 
     for j, k in enumerate(phenotypes_to_analyze):
         #Open files to write results of logistic regression
         if headerline:
             f1 = open(
-                "summary_of_log_reg_analysis_" + phenotypes[k-1] + ".txt", "w+"
+                "summary_of_SVM_analysis_" + phenotypes[k-1] + ".txt", "w+"
                 )
-            f2 = open("k-mers_and_coefficients_in_log_reg_model_" 
+            f2 = open("k-mers_and_coefficients_in_SVM_model_" 
                      + phenotypes[k-1] + ".txt", "w+")
-            model_filename = "log_reg_model_" + phenotypes[k-1] + ".pkl"
+            model_filename = "SVM_model_" + phenotypes[k-1] + ".pkl"
             if len(phenotypes_to_analyze) > 1:
-                sys.stderr.write("\tregression analysis of " 
+                sys.stderr.write("\tSVM analysis of " 
                     +  phenotypes[k-1] + " data...\n")
         elif number_of_phenotypes > 1:
-            f1 = open("summary_of_log_reg_analysis_" + str(k) + ".txt", "w+")
-            f2 = open("k-mers_and_coefficients_in_log_reg_model_" 
+            f1 = open("summary_of_SVM_analysis_" + str(k) + ".txt", "w+")
+            f2 = open("k-mers_and_coefficients_in_SVM_model_" 
                      + str(k) + ".txt", "w+")
-            model_filename = "log_reg_model_" + str(k) + ".pkl"
-            sys.stderr.write("\tregression analysis of phenotype " 
+            model_filename = "SVM_model_" + str(k) + ".pkl"
+            sys.stderr.write("\tSVM analysis of phenotype " 
                 +  str(k) + " data...\n")
         else:
-            f1 = open("summary_of_log_reg_analysis.txt", "w+")
-            f2 = open("k-mers_and_coefficients_in_log_reg_model.txt", "w+")
-            model_filename = "log_reg_model.pkl"
+            f1 = open("summary_of_SVM_analysis.txt", "w+")
+            f2 = open("k-mers_and_coefficients_in_SVM_model.txt", "w+")
+            model_filename = "SVM_model.pkl"
         
         if len(kmers_passed_all_phenotypes[j]) == 0:
             f1.write("No k-mers passed the step of k-mer selection for \
-                regression analysis.\n")
+                SVM analysis.\n")
             continue
 
         # Generating a binary k-mer presence/absence matrix and a list
@@ -1456,8 +1475,12 @@ def support_vector_classifier(
         # cross-validated grid-search over a parameter grid. 
         Cs = list(map(lambda x: 1/x, alphas))
         Gammas = list(map(lambda x: 1/x, alphas))
-        parameters = {'C':Cs, 'gamma':Gammas}
-        clf = RandomizedSearchCV(svc, parameters, n_iter=25, cv=n_splits)
+        if kernel == "linear":
+            parameters = {'C':Cs}
+            clf = GridSearchCV(svc, parameters, cv=n_splits)
+        if kernel == "rbf":
+            parameters = {'C':Cs, 'gamma':Gammas}
+            clf = RandomizedSearchCV(svc, parameters, n_iter=25, cv=n_splits)
 
         
 
@@ -1537,10 +1560,16 @@ def support_vector_classifier(
                 VME(y_train, y_train_pred))
             f1.write("Major error rate: %s\n" %\
                 ME(y_train, y_train_pred))
-            f1.write('Classification report:\n %s\n\n' % classification_report(
+            f1.write('Classification report:\n %s\n' % classification_report(
                 y_train, y_train_pred, 
                 target_names=["sensitive", "resistant"]
-                )) 
+                ))
+            cm = confusion_matrix(y_train, y_train_pred)
+            f1.write("Confusion matrix:\n")
+            f1.write("Predicted\t0\t1:\n")
+            f1.write("Actual\n")
+            f1.write("0\t\t\t%s\t%s\n" % tuple(cm[0]))
+            f1.write("1\t\t\t%s\t%s\n\n" % tuple(cm[1])) 
 
 
             f1.write("\nTest set: \n")
@@ -1567,10 +1596,16 @@ def support_vector_classifier(
                 VME(y_test, y_test_pred))
             f1.write("Major error rate: %s\n" %\
                 ME(y_test, y_test_pred))
-            f1.write('Classification report:\n %s\n\n' % classification_report(
+            f1.write('Classification report:\n %s\n' % classification_report(
                 y_test, y_test_pred, 
                 target_names=["sensitive", "resistant"]
-                ))  
+                ))
+            cm = confusion_matrix(y_test, y_test_pred)
+            f1.write("Confusion matrix:\n")
+            f1.write("Predicted\t0\t1:\n")
+            f1.write("Actual\n")
+            f1.write("0\t\t\t%s\t%s\n" % tuple(cm[0]))
+            f1.write("1\t\t\t%s\t%s\n\n" % tuple(cm[1])) 
         else:
             if use_of_weights == "+":
                 array_weights = np.array(
@@ -1622,10 +1657,16 @@ def support_vector_classifier(
                 VME(dataset.target, y_pred))
             f1.write("Major error rate: %s\n" %\
                 ME(dataset.target, y_pred))
-            f1.write('Classification report:\n %s\n\n' % classification_report(
+            f1.write('Classification report:\n %s\n' % classification_report(
                 dataset.target, y_pred, 
                 target_names=["sensitive", "resistant"]
                 ))
+            cm = confusion_matrix(dataset.target, y_pred)
+            f1.write("Confusion matrix:\n")
+            f1.write("Predicted\t0\t1:\n")
+            f1.write("Actual\n")
+            f1.write("0\t\t\t%s\t%s\n" % tuple(cm[0]))
+            f1.write("1\t\t\t%s\t%s\n\n" % tuple(cm[1])) 
         
         joblib.dump(model, model_filename)
         kmers_presence_matrix = np.array(kmers_presence_matrix).transpose()
@@ -1784,6 +1825,14 @@ def modeling(args):
     else: 
         alphas = np.array(args.alphas)
 
+    if args.gammas == None:
+        gammas = np.logspace(
+            math.log10(args.gamma_min),
+            math.log10(args.gamma_max), num=args.n_gammas)
+    else: 
+        gammas = np.array(args.gammas)
+
+
     # 
     if args.min == "0":
         args.min = 2
@@ -1893,19 +1942,19 @@ def modeling(args):
             args.l1_ratio, args.mpheno, headerline
             )
     elif phenotype_scale == "binary":
-        '''
-        logistic_regression(
-            "k-mer_matrix.txt", samples, samples_order, alphas, n_o_p,
-            kmers_passed_all_phenotypes, args.regularization, args.n_splits,
-            weights, args.testset_size, phenotypes, args.weights,
-            args.l1_ratio, args.mpheno, headerline
-            )
-            '''
+        if args.binary_classifier == "log":
+            logistic_regression(
+                "k-mer_matrix.txt", samples, samples_order, alphas, n_o_p,
+                kmers_passed_all_phenotypes, args.regularization, args.n_splits,
+                weights, args.testset_size, phenotypes, args.weights,
+                args.l1_ratio, args.mpheno, headerline
+                )
+        elif args.binary_classifier == "SVM":
         support_vector_classifier(
             "k-mer_matrix.txt", samples, samples_order, alphas, n_o_p,
             kmers_passed_all_phenotypes, args.regularization, args.n_splits,
             weights, args.testset_size, phenotypes, args.weights,
-            args.kernel, args.mpheno, headerline
+            args.kernel, gammas, args.n_iter, args.mpheno, headerline
             )
     if args.assembly == "+":
         assembling(
