@@ -1448,7 +1448,7 @@ def support_vector_classifier(
         f1.write("Dataset:\n%s\n\n" % dataset)
 
         #Defining logistic regression parameters
-        svc = SVC(kernel=kernel)        
+        svc = SVC(kernel=kernel, probability=True)        
         
 
         # Generate grid search classifier where parameters
@@ -1457,7 +1457,7 @@ def support_vector_classifier(
         Cs = list(map(lambda x: 1/x, alphas))
         Gammas = list(map(lambda x: 1/x, alphas))
         parameters = {'C':Cs, 'gamma':Gammas}
-        clf = RandomizedSearchCV(svc, parameters, n_iter=25, cv=n_splits, probability=True)
+        clf = RandomizedSearchCV(svc, parameters, n_iter=25, cv=n_splits)
 
         
 
