@@ -86,7 +86,7 @@ def plus_minus_1_dilution_factor_accuracy(list1, list2):
     for item in zip(list1, list2):
         if abs(item[0]-item[1]) <= 1:
             counter +=1
-    accuracy = float(counter)/len(t6de)
+    accuracy = float(counter)/len(list1)
     return accuracy
 
 def parse_modeling_input_file(inputfilename):
