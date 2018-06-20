@@ -1457,7 +1457,7 @@ def support_vector_classifier(
         Cs = list(map(lambda x: 1/x, alphas))
         Gammas = list(map(lambda x: 1/x, alphas))
         parameters = {'C':Cs, 'gamma':Gammas}
-        clf = RandomizedSearchCV(svc, parameters, n_iter=25, cv=n_splits)
+        clf = RandomizedSearchCV(svc, parameters, n_iter=25, cv=n_splits, probability=True)
 
         
 
