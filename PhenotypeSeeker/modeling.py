@@ -1406,22 +1406,25 @@ def support_vector_classifier(
             f1 = open(
                 "summary_of_SVM_analysis_" + phenotypes[k-1] + ".txt", "w+"
                 )
-            f2 = open("k-mers_and_coefficients_in_SVM_model_" 
-                     + phenotypes[k-1] + ".txt", "w+")
+            if kernel = "linear":
+                f2 = open("k-mers_and_coefficients_in_SVM_model_" 
+                         + phenotypes[k-1] + ".txt", "w+")
             model_filename = "SVM_model_" + phenotypes[k-1] + ".pkl"
             if len(phenotypes_to_analyze) > 1:
                 sys.stderr.write("\tSVM analysis of " 
                     +  phenotypes[k-1] + " data...\n")
         elif number_of_phenotypes > 1:
             f1 = open("summary_of_SVM_analysis_" + str(k) + ".txt", "w+")
-            f2 = open("k-mers_and_coefficients_in_SVM_model_" 
-                     + str(k) + ".txt", "w+")
+            if kernel = "linear":
+                f2 = open("k-mers_and_coefficients_in_SVM_model_" 
+                         + str(k) + ".txt", "w+")
             model_filename = "SVM_model_" + str(k) + ".pkl"
             sys.stderr.write("\tSVM analysis of phenotype " 
                 +  str(k) + " data...\n")
         else:
             f1 = open("summary_of_SVM_analysis.txt", "w+")
-            f2 = open("k-mers_and_coefficients_in_SVM_model.txt", "w+")
+            if kernel = "linear":
+                f2 = open("k-mers_and_coefficients_in_SVM_model.txt", "w+")
             model_filename = "SVM_model.pkl"
         
         if len(kmers_passed_all_phenotypes[j]) == 0:
@@ -1671,16 +1674,17 @@ def support_vector_classifier(
         
         joblib.dump(model, model_filename)
         kmers_presence_matrix = np.array(kmers_presence_matrix).transpose()
-        f2.write("K-mer\tcoef._in_log_reg_model\tNo._of_samples_with_k-mer\
-                \tSamples_with_k-mer\n")
-        for x in range(len(clf.best_estimator_.coef_[0])):
-            samples_with_kmer = [i for i,j in zip(
-                samples_in_analyze, kmers_presence_matrix[x]
-                ) if j != 0]
-            f2.write("%s\t%s\t%s\t| %s\n" % (
-                features[x], clf.best_estimator_.coef_[0][x],
-                len(samples_with_kmer), " ".join(samples_with_kmer)
-                ))
+        if kernel = "linear":
+            f2.write("K-mer\tcoef._in_log_reg_model\tNo._of_samples_with_k-mer\
+                    \tSamples_with_k-mer\n")
+            for x in range(len(clf.best_estimator_.coef_[0])):
+                samples_with_kmer = [i for i,j in zip(
+                    samples_in_analyze, kmers_presence_matrix[x]
+                    ) if j != 0]
+                f2.write("%s\t%s\t%s\t| %s\n" % (
+                    features[x], clf.best_estimator_.coef_[0][x],
+                    len(samples_with_kmer), " ".join(samples_with_kmer)
+                    ))
         f1.close()
         f2.close()
 
@@ -1774,7 +1778,7 @@ def random_forest(
         f1.write("Dataset:\n%s\n\n" % dataset)
 
         #Defining logistic regression parameters
-        clf = RandomForestClassifier() 
+        clf = RandomForestClassifier(n_estimators=100) 
 
 
         # Fitting the logistic regression model to dataset 
