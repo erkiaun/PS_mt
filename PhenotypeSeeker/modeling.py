@@ -1949,6 +1949,17 @@ def random_forest(
             f1.write("1\t\t%s\t%s\n\n" % tuple(cm[1])) 
         
         joblib.dump(model, model_filename)
+        kmers_presence_matrix = np.array(kmers_presence_matrix).transpose()
+        f2.write("K-mer\tcoef._in_log_reg_model\tNo._of_samples_with_k-mer\
+                \tSamples_with_k-mer\n")
+        for x in range(len(clf.feature_importances_)):
+            samples_with_kmer = [i for i,j in zip(
+                samples_in_analyze, kmers_presence_matrix[x]
+                ) if j != 0]
+            f2.write("%s\t%s\t%s\t| %s\n" % (
+                features[x], clf.feature_importances_[x],
+                len(samples_with_kmer), " ".join(samples_with_kmer)
+                ))
         f1.close()
         f2.close()
 
