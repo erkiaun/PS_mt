@@ -2253,10 +2253,12 @@ def modeling(args):
         elif args.binary_classifier == "RF":
         	random_forest(
                 "k-mer_matrix.txt", samples, samples_order, n_o_p,
-                kmers_passed_all_phenotypes, args.regularization, args.n_splits,
+                kmers_passed_all_phenotypes, args.n_splits,
                 weights, args.testset_size, phenotypes, args.weights,
                 args.mpheno, headerline
                 )
+
+
     if args.assembly == "+":
         assembling(
             kmers_passed_all_phenotypes, phenotypes, n_o_p, args.mpheno, 
