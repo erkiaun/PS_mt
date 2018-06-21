@@ -26,7 +26,7 @@ from sklearn.svm import SVC
 from sklearn.metrics import (
     classification_report, r2_score, mean_squared_error, recall_score,
     roc_auc_score, average_precision_score, matthews_corrcoef, cohen_kappa_score,
-    confusion_matrix
+    confusion_matrix, accuracy_score
     )
 from sklearn.model_selection import RandomizedSearchCV, GridSearchCV, train_test_split
 from functools import partial
@@ -1806,19 +1806,6 @@ def random_forest(
                     random_state=55
                     )
                 model = clf.fit(X_train, y_train)
-            f1.write('Parameters:\n%s\n\n' % model)
-            f1.write("Grid scores (mean accuracy) on development set:\n")
-            means = clf.cv_results_['mean_test_score']
-            stds = clf.cv_results_['std_test_score']
-            for mean, std, params in zip(
-            	    means, stds, clf.cv_results_['params']
-            	    ):
-                f1.write("%0.3f (+/-%0.03f) for %r \n" % (
-                	mean, std * 2, params
-                	))
-            f1.write("\nBest parameters found on development set: \n")
-            for key, value in clf.best_params_.iteritems():
-                f1.write(key + " : " + str(value) + "\n")
             f1.write("\n\nModel predictions on test set:\nSample_ID \
             	Acutal_phenotype Predicted_phenotype\n")
             y_train_pred = clf.predict(X_train)
