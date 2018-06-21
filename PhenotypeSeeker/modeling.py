@@ -19,6 +19,7 @@ from collections import Counter
 from multiprocessing import Manager, Pool, Value
 from scipy import stats
 from sklearn.externals import joblib
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import (Lasso, LogisticRegression, Ridge, ElasticNet,
     SGDClassifier)
 from sklearn.svm import SVC
@@ -1683,6 +1684,299 @@ def support_vector_classifier(
         f1.close()
         f2.close()
 
+def random_forest(
+	    kmer_matrix, samples, samples_order, number_of_phenotypes, 
+	    kmers_passed_all_phenotypes, n_splits, weights, testset_size,
+	    phenotypes, use_of_weights, phenotypes_to_analyze=False, 
+        headerline=False
+	    ):
+    # Applies logistic regression with Lasso regularization on k-mers
+    # that passed the filtering by p-value of statistical test. K-mers
+    # presence/absence (0/1) in samples are used as independent
+    # parameters, resistance value (0/1) is used as dependent 
+    # parameter.
+    if not phenotypes_to_analyze:
+        phenotypes_to_analyze = range(1,number_of_phenotypes+1)
+    
+    if len(phenotypes_to_analyze) > 1:
+        sys.stderr.write("\nConducting the logistic regression analysis:\n")
+    elif headerline:
+        sys.stderr.write("\nConducting the logistic regression analysis of " 
+            +  phenotypes[0] + " data...\n")
+    else:
+        sys.stderr.write("\nConducting the logistic regression analysis...\n")
+
+    for j, k in enumerate(phenotypes_to_analyze):
+        #Open files to write results of	logistic regression
+        if headerline:
+            f1 = open(
+            	"summary_of_log_reg_analysis_" + phenotypes[k-1] + ".txt", "w+"
+            	)
+            f2 = open("k-mers_and_coefficients_in_log_reg_model_" 
+            	     + phenotypes[k-1] + ".txt", "w+")
+            model_filename = "log_reg_model_" + phenotypes[k-1] + ".pkl"
+            if len(phenotypes_to_analyze) > 1:
+                sys.stderr.write("\tregression analysis of " 
+                    +  phenotypes[k-1] + " data...\n")
+        elif number_of_phenotypes > 1:
+            f1 = open("summary_of_log_reg_analysis_" + str(k) + ".txt", "w+")
+            f2 = open("k-mers_and_coefficients_in_log_reg_model_" 
+            	     + str(k) + ".txt", "w+")
+            model_filename = "log_reg_model_" +	str(k) + ".pkl"
+            sys.stderr.write("\tregression analysis of phenotype " 
+                +  str(k) + " data...\n")
+        else:
+            f1 = open("summary_of_log_reg_analysis.txt", "w+")
+       	    f2 = open("k-mers_and_coefficients_in_log_reg_model.txt", "w+")
+            model_filename = "log_reg_model.pkl"
+        
+        if len(kmers_passed_all_phenotypes[j]) == 0:
+            f1.write("No k-mers passed the step of k-mer selection for \
+            	regression analysis.\n")
+            continue
+
+        # Generating a binary k-mer presence/absence matrix and a list
+        # of k-mer names based on information in k-mer_matrix.txt 
+        kmers_presence_matrix = []
+        features = []
+        Phenotypes = [samples[item][k] for item in samples_order]
+        with open(kmer_matrix) as f3:
+            for line in f3:
+                if line.split()[0] in kmers_passed_all_phenotypes[j]:
+                    features.append(line.split()[0])
+                    kmers_presence_matrix.append(map(
+                    	lambda x: 0 if x == 0 else 1,
+                    	map(int, line.split()[1:])
+                    	))
+        f3.close()
+
+        # Converting data into Python array formats suitable to use in
+        # sklearn modelling. Also, deleting information associated with
+        # stains missing the phenotype data
+        features = np.array(features)
+        Phenotypes = np.array(Phenotypes)
+        kmers_presence_matrix = np.array(kmers_presence_matrix).transpose()
+        samples_in_analyze = np.array(samples_order)
+        to_del = []
+        for i, item in enumerate(Phenotypes):
+            if item == "NA":
+                to_del.append(i)
+        kmers_presence_matrix = np.delete(kmers_presence_matrix, to_del, 0)
+        Phenotypes = map(int, np.delete(Phenotypes, to_del, 0))            
+        samples_in_analyze = np.delete(samples_in_analyze, to_del, 0)
+
+        #Insert data into logistic regression dataset  
+        dataset = sklearn.datasets.base.Bunch(
+        	data=kmers_presence_matrix, target=Phenotypes,
+        	target_names=np.array(["resistant", "sensitive"]),
+        	feature_names=features
+        	) 
+        f1.write("Dataset:\n%s\n\n" % dataset)
+
+        #Defining logistic regression parameters
+        clf = RandomForestClassifier() 
+
+
+        # Fitting the logistic regression model to dataset 
+        # (with or without considering the weights). Writing logistic
+        # regression results into corresponding files.
+        if testset_size != 0.0:
+            if use_of_weights == "+":
+                array_weights = np.array(
+                	[weights[item] for item in samples_in_analyze]
+                	)
+                (
+                    X_train, X_test, sample_weights_train, sample_weights_test,
+                    y_train, y_test, samples_train, samples_test
+                    ) = train_test_split(
+                    dataset.data, array_weights, dataset.target,
+                    samples_in_analyze, test_size=testset_size,
+                    stratify=dataset.target, random_state=55
+                    )
+                model = clf.fit(
+                	X_train, y_train, sample_weight=sample_weights_train
+                	)
+            else:
+                (
+                    X_train, X_test, y_train, y_test, samples_train,
+                    samples_test
+                    ) = train_test_split(
+                    dataset.data, dataset.target, samples_in_analyze,
+                    stratify=dataset.target, test_size=testset_size, 
+                    random_state=55
+                    )
+                model = clf.fit(X_train, y_train)
+            f1.write('Parameters:\n%s\n\n' % model)
+            f1.write("Grid scores (mean accuracy) on development set:\n")
+            means = clf.cv_results_['mean_test_score']
+            stds = clf.cv_results_['std_test_score']
+            for mean, std, params in zip(
+            	    means, stds, clf.cv_results_['params']
+            	    ):
+                f1.write("%0.3f (+/-%0.03f) for %r \n" % (
+                	mean, std * 2, params
+                	))
+            f1.write("\nBest parameters found on development set: \n")
+            for key, value in clf.best_params_.iteritems():
+                f1.write(key + " : " + str(value) + "\n")
+            f1.write("\n\nModel predictions on test set:\nSample_ID \
+            	Acutal_phenotype Predicted_phenotype\n")
+            y_train_pred = clf.predict(X_train)
+            y_test_pred = clf.predict(X_test)
+            for u in range(len(samples_test)):
+                f1.write('%s %s %s\n' % (
+                	samples_test[u], y_test[u], y_test_pred[u]
+                	))
+
+
+            f1.write("\nTraining set: \n")
+            f1.write("Mean accuracy: %s\n" % clf.score(X_train, y_train))
+            f1.write("Sensitivity: %s\n" % \
+                    recall_score(y_train, y_train_pred))
+            f1.write("Specificity: %s\n" % \
+                    recall_score(
+                        list(map(lambda x: 1 if x == 0 else 0, y_train)), 
+                        list(map(lambda x: 1 if x == 0 else 0, y_train_pred
+                        ))))
+            f1.write("AUC-ROC: %s\n" % \
+                roc_auc_score(y_train, y_train_pred, average="micro"))
+            f1.write("Average precision: %s\n" % \
+                average_precision_score(
+                    y_train, 
+                    clf.predict_proba(X_train)[:,1]
+                    )                        )
+            f1.write("MCC: %s\n" % \
+                matthews_corrcoef(y_train, y_train_pred))
+            f1.write("Cohen kappa: %s\n" %\
+                cohen_kappa_score(y_train, y_train_pred))
+            f1.write("Very major error rate: %s\n" %\
+                VME(y_train, y_train_pred))
+            f1.write("Major error rate: %s\n" %\
+                ME(y_train, y_train_pred))
+            f1.write('Classification report:\n %s\n' % classification_report(
+                y_train, y_train_pred, 
+                target_names=["sensitive", "resistant"]
+                ))
+            cm = confusion_matrix(y_train, y_tain_pred)
+            f1.write("Confusion matrix:\n")
+            f1.write("Predicted\t0\t1:\n")
+            f1.write("Actual\n")
+            f1.write("0\t\t%s\t%s\n" % tuple(cm[0]))
+            f1.write("1\t\t%s\t%s\n\n" % tuple(cm[1])) 
+
+
+            f1.write("\nTest set: \n")
+            f1.write('Mean accuracy: %s\n' % clf.score(X_test, y_test))
+            f1.write("Sensitivity: %s\n" % \
+                    recall_score(y_test, y_test_pred))
+            f1.write("Specificity: %s\n" % \
+                    recall_score(
+                        list(map(lambda x: 1 if x == 0 else 0, y_test)), 
+                        list(map(lambda x: 1 if x == 0 else 0, y_test_pred
+                        ))))
+            f1.write("AUC-ROC: %s\n" % \
+                roc_auc_score(y_test, y_test_pred, average="micro"))
+            f1.write("Average precision: %s\n" % \
+                average_precision_score(
+                    y_test, 
+                    clf.predict_proba(X_test)[:,1])
+                    )
+            f1.write("MCC: %s\n" %\
+                matthews_corrcoef(y_test, y_test_pred))
+            f1.write("Cohen kappa: %s\n" %\
+                cohen_kappa_score(y_test, y_test_pred))
+            f1.write("Very major error rate: %s\n" %\
+                VME(y_test, y_test_pred))
+            f1.write("Major error rate: %s\n" %\
+                ME(y_test, y_test_pred))
+            f1.write('Classification report:\n %s\n' % classification_report(
+            	y_test, y_test_pred, 
+            	target_names=["sensitive", "resistant"]
+            	))
+            cm = confusion_matrix(y_test, y_test_pred)
+            f1.write("Confusion matrix:\n")
+            f1.write("Predicted\t0\t1:\n")
+            f1.write("Actual\n")
+            f1.write("0\t\t%s\t%s\n" % tuple(cm[0]))
+            f1.write("1\t\t%s\t%s\n\n" % tuple(cm[1])) 
+        else:
+            if use_of_weights == "+":
+                array_weights = np.array(
+                	[weights[item] for item in samples_in_analyze])
+                model = clf.fit(
+                	dataset.data, dataset.target, 
+                	fit_params={'sample_weight': array_weights}
+                	)
+            else:
+                model = clf.fit(dataset.data, dataset.target)
+            f1.write('Parameters:\n%s\n\n' % model)
+            f1.write("Grid scores on development set:\n")
+            means = clf.cv_results_['mean_test_score']
+            stds = clf.cv_results_['std_test_score']
+            for mean, std, params in zip(
+            	    means, stds, clf.cv_results_['params']
+            	    ):
+                f1.write("%0.3f (+/-%0.03f) for %r \n" % (
+                	mean, std * 2, params
+                	))
+            f1.write("\nBest parameters found on development set: \n")
+            for key, value in clf.best_params_.iteritems():
+                f1.write(key + " : " + str(value) + "\n")
+            y_pred = clf.predict(dataset.data)
+            f1.write("\nMean accuracy on the dataset: %s\n" % clf.score(
+            	dataset.data, dataset.target
+            	))
+            f1.write("Sensitivity: %s\n" % \
+                    recall_score(dataset.target, y_pred))
+            f1.write("Specificity: %s\n" % \
+                    recall_score(
+                        list(map(
+                            lambda x: 1 if x == 0 else 0, dataset.target
+                            )),
+                        list(map(lambda x: 1 if x == 0 else 0, y_pred
+                        ))))
+            f1.write("AUC-ROC: %s\n" % \
+                roc_auc_score(dataset.target, y_pred, average="micro"))
+            f1.write("Average precision: %s\n" % \
+                average_precision_score(
+                    y_train, 
+                    clf.predict_proba(X_train)[:,1])
+                    )
+            f1.write("MCC: %s\n" %\
+                matthews_corrcoef(dataset.target, y_pred))
+            f1.write("Cohen kappa: %s\n" %\
+                cohen_kappa_score(dataset.target, y_pred))
+            f1.write("Very major error rate: %s\n" %\
+                VME(dataset.target, y_pred))
+            f1.write("Major error rate: %s\n" %\
+                ME(dataset.target, y_pred))
+            f1.write('Classification report:\n %s\n' % classification_report(
+            	dataset.target, y_pred, 
+            	target_names=["sensitive", "resistant"]
+            	))
+            cm = confusion_matrix(dataset.target, y_pred)
+            f1.write("Confusion matrix:\n")
+            f1.write("Predicted\t0\t1:\n")
+            f1.write("Actual\n")
+            f1.write("0\t\t%s\t%s\n" % tuple(cm[0]))
+            f1.write("1\t\t%s\t%s\n\n" % tuple(cm[1])) 
+        
+        joblib.dump(model, model_filename)
+        kmers_presence_matrix = np.array(kmers_presence_matrix).transpose()
+        f2.write("K-mer\tcoef._in_log_reg_model\tNo._of_samples_with_k-mer\
+        	    \tSamples_with_k-mer\n")
+        for x in range(len(clf.best_estimator_.coef_[0])):
+            samples_with_kmer = [i for i,j in zip(
+            	samples_in_analyze, kmers_presence_matrix[x]
+            	) if j != 0]
+            f2.write("%s\t%s\t%s\t| %s\n" % (
+            	features[x], clf.best_estimator_.coef_[0][x],
+            	len(samples_with_kmer), " ".join(samples_with_kmer)
+            	))
+        f1.close()
+        f2.close()
+
+
 def ReverseComplement(kmer):
     # Returns the reverse complement of kmer
     seq_dict = {'A':'T','T':'A','G':'C','C':'G'}
@@ -1955,6 +2249,13 @@ def modeling(args):
                 kmers_passed_all_phenotypes, args.regularization, args.n_splits,
                 weights, args.testset_size, phenotypes, args.weights,
                 args.kernel, gammas, args.n_iter, args.mpheno, headerline
+                )
+        elif args.binary_classifier == "RF":
+        	random_forest(
+                "k-mer_matrix.txt", samples, samples_order, n_o_p,
+                kmers_passed_all_phenotypes, args.regularization, args.n_splits,
+                weights, args.testset_size, phenotypes, args.weights,
+                args.mpheno, headerline
                 )
     if args.assembly == "+":
         assembling(

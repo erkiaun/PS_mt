@@ -176,8 +176,8 @@ def Main():
     regression_models.add_argument(
         '-bc', '--binary_classifier', metavar='', type=str, default='log',
         help='The binary classifier to be used. Possible variants are \
-        "log" (logistic regression; default) and "SVM" (support vector \
-        machine)'
+        "log" (logistic regression; default), "SVM" (support vector \
+        machine) and "RF" (random forest)'
         )
     regression_models.add_argument(
         '--kernel', metavar='', type=str, default='linear',
