@@ -1844,7 +1844,7 @@ def random_forest(
                 y_train, y_train_pred, 
                 target_names=["sensitive", "resistant"]
                 ))
-            cm = confusion_matrix(y_train, y_tain_pred)
+            cm = confusion_matrix(y_train, y_train_pred)
             f1.write("Confusion matrix:\n")
             f1.write("Predicted\t0\t1:\n")
             f1.write("Actual\n")
@@ -1949,17 +1949,6 @@ def random_forest(
             f1.write("1\t\t%s\t%s\n\n" % tuple(cm[1])) 
         
         joblib.dump(model, model_filename)
-        kmers_presence_matrix = np.array(kmers_presence_matrix).transpose()
-        f2.write("K-mer\tcoef._in_log_reg_model\tNo._of_samples_with_k-mer\
-        	    \tSamples_with_k-mer\n")
-        for x in range(len(clf.best_estimator_.coef_[0])):
-            samples_with_kmer = [i for i,j in zip(
-            	samples_in_analyze, kmers_presence_matrix[x]
-            	) if j != 0]
-            f2.write("%s\t%s\t%s\t| %s\n" % (
-            	features[x], clf.best_estimator_.coef_[0][x],
-            	len(samples_with_kmer), " ".join(samples_with_kmer)
-            	))
         f1.close()
         f2.close()
 
