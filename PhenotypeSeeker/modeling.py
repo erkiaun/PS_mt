@@ -1406,7 +1406,7 @@ def support_vector_classifier(
             f1 = open(
                 "summary_of_SVM_analysis_" + phenotypes[k-1] + ".txt", "w+"
                 )
-            if kernel = "linear":
+            if kernel == "linear":
                 f2 = open("k-mers_and_coefficients_in_SVM_model_" 
                          + phenotypes[k-1] + ".txt", "w+")
             model_filename = "SVM_model_" + phenotypes[k-1] + ".pkl"
@@ -1415,7 +1415,7 @@ def support_vector_classifier(
                     +  phenotypes[k-1] + " data...\n")
         elif number_of_phenotypes > 1:
             f1 = open("summary_of_SVM_analysis_" + str(k) + ".txt", "w+")
-            if kernel = "linear":
+            if kernel == "linear":
                 f2 = open("k-mers_and_coefficients_in_SVM_model_" 
                          + str(k) + ".txt", "w+")
             model_filename = "SVM_model_" + str(k) + ".pkl"
@@ -1423,7 +1423,7 @@ def support_vector_classifier(
                 +  str(k) + " data...\n")
         else:
             f1 = open("summary_of_SVM_analysis.txt", "w+")
-            if kernel = "linear":
+            if kernel == "linear":
                 f2 = open("k-mers_and_coefficients_in_SVM_model.txt", "w+")
             model_filename = "SVM_model.pkl"
         
@@ -1674,7 +1674,7 @@ def support_vector_classifier(
         
         joblib.dump(model, model_filename)
         kmers_presence_matrix = np.array(kmers_presence_matrix).transpose()
-        if kernel = "linear":
+        if kernel == "linear":
             f2.write("K-mer\tcoef._in_log_reg_model\tNo._of_samples_with_k-mer\
                     \tSamples_with_k-mer\n")
             for x in range(len(clf.best_estimator_.coef_[0])):
