@@ -1155,15 +1155,15 @@ def logistic_regression(
         if penalty == "L1" or "l1":
             log_reg = LogisticRegression(
                 penalty='l1', solver='saga',
-                max_iter=1000, tol=1e-3)        
+                max_iter=1000, tol=1e-4)        
         elif penalty == "L2" or "l2":
             log_reg = LogisticRegression(
                 penalty='l2', solver='saga',
-                max_iter=1000, tol=1e-3)
+                max_iter=1000, tol=1e-4)
         elif penalty == "elasticnet" or "L1+L2":
             log_reg = SGDClassifier(
                 penalty='elasticnet', l1_ratio=l1_ratio,
-                max_iter=1000, tol=1e-3, loss='log'
+                max_iter=1000, tol=1e-4, loss='log'
                 )
         
 
@@ -1471,7 +1471,7 @@ def support_vector_classifier(
         f1.write("Dataset:\n%s\n\n" % dataset)
 
         #Defining logistic regression parameters
-        svc = SVC(kernel=kernel, probability=True)        
+        svc = SVC(kernel=kernel, probability=True, max_iter=1000, tol=1e-4)        
         
 
         # Generate grid search classifier where parameters
