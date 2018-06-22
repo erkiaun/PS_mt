@@ -2136,7 +2136,7 @@ def modeling(args):
     for i in range(args.num_threads):
         mt_split.append([samples_order[j] for j in xrange(i, len(samples_order), args.num_threads)])
     p = Pool(args.num_threads)
-
+    '''
     sys.stderr.write("Generating the k-mer lists:\n")
     p.map(partial(kmer_list_generator, samples, args.length, args.cutoff), mt_split)
     dict_of_frequencies = kmer_frequencies(samples_order)
@@ -2149,21 +2149,21 @@ def modeling(args):
     p.map(partial(map_samples_modeling, samples, args.length), mt_split)
 
     vectors_to_matrix_modeling(samples_order, kmers_to_analyse)
-    
-    call(["rm -r K-mer_lists/"], shell = True)
+    '''
+    #call(["rm -r K-mer_lists/"], shell = True)
     
     weights = []
-    if args.weights == "+":   
-        mash_caller(samples, args.cutoff)
-        mash_output_to_distance_matrix(samples_order, "mash_distances.mat")
-        dist_mat = distance_matrix_modifier("distances.mat")
-        distance_matrix_to_phyloxml(samples_order, dist_mat)   
-        phyloxml_to_newick("tree_xml.txt")
+    #if args.weights == "+":   
+    #    mash_caller(samples, args.cutoff)
+    #    mash_output_to_distance_matrix(samples_order, "mash_distances.mat")
+    #    dist_mat = distance_matrix_modifier("distances.mat")
+    #    distance_matrix_to_phyloxml(samples_order, dist_mat)   
+    #    phyloxml_to_newick("tree_xml.txt")
         weights = newick_to_GSC_weights("tree_newick.txt")
-
-    call(["split -a 5 -d -n l/" + str(args.num_threads) + " k-mer_matrix.txt k-mer_matrix_segment_"], shell=True)
+    
+    #call(["split -a 5 -d -n l/" + str(args.num_threads) + " k-mer_matrix.txt k-mer_matrix_segment_"], shell=True)
     kmer_matrix_segments = ["k-mer_matrix_segment_%05d" %i for i in range(args.num_threads)]
-
+   
     pvalues_all = []
     checkpoint = int(kmers_to_analyse/(100*args.num_threads))
     for j, k in enumerate(phenotypes_2_analyse):
