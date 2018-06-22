@@ -1259,7 +1259,7 @@ def logistic_regression(
                 y_train, y_train_pred, 
                 target_names=["sensitive", "resistant"]
                 ))
-            cm = confusion_matrix(y_train, y_tain_pred)
+            cm = confusion_matrix(y_train, y_train_pred)
             f1.write("Confusion matrix:\n")
             f1.write("Predicted\t0\t1:\n")
             f1.write("Actual\n")
