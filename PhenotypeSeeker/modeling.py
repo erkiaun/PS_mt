@@ -2153,15 +2153,15 @@ def modeling(args):
     call(["rm -r K-mer_lists/"], shell = True)
     
     weights = []
-    #if args.weights == "+":   
-    #    mash_caller(samples, args.cutoff)
-    #    mash_output_to_distance_matrix(samples_order, "mash_distances.mat")
-    #    dist_mat = distance_matrix_modifier("distances.mat")
-    #    distance_matrix_to_phyloxml(samples_order, dist_mat)   
-    #    phyloxml_to_newick("tree_xml.txt")
+    if args.weights == "+":   
+        mash_caller(samples, args.cutoff)
+        mash_output_to_distance_matrix(samples_order, "mash_distances.mat")
+        dist_mat = distance_matrix_modifier("distances.mat")
+        distance_matrix_to_phyloxml(samples_order, dist_mat)   
+        phyloxml_to_newick("tree_xml.txt")
         weights = newick_to_GSC_weights("tree_newick.txt")
     
-    #call(["split -a 5 -d -n l/" + str(args.num_threads) + " k-mer_matrix.txt k-mer_matrix_segment_"], shell=True)
+    call(["split -a 5 -d -n l/" + str(args.num_threads) + " k-mer_matrix.txt k-mer_matrix_segment_"], shell=True)
     kmer_matrix_segments = ["k-mer_matrix_segment_%05d" %i for i in range(args.num_threads)]
    
     pvalues_all = []
