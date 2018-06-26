@@ -2136,7 +2136,7 @@ def modeling(args):
     for i in range(args.num_threads):
         mt_split.append([samples_order[j] for j in xrange(i, len(samples_order), args.num_threads)])
     p = Pool(args.num_threads)
-    '''
+    
     sys.stderr.write("Generating the k-mer lists:\n")
     p.map(partial(kmer_list_generator, samples, args.length, args.cutoff), mt_split)
     dict_of_frequencies = kmer_frequencies(samples_order)
@@ -2149,8 +2149,8 @@ def modeling(args):
     p.map(partial(map_samples_modeling, samples, args.length), mt_split)
 
     vectors_to_matrix_modeling(samples_order, kmers_to_analyse)
-    '''
-    #call(["rm -r K-mer_lists/"], shell = True)
+    
+    call(["rm -r K-mer_lists/"], shell = True)
     
     weights = []
     #if args.weights == "+":   
