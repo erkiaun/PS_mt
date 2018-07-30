@@ -2138,9 +2138,9 @@ def modeling(args):
         weights = newick_to_GSC_weights("tree_newick.txt")
     
     for item in samples_order:
-        call(["split -a 5 -d -n l/" + str(args.num_threads) + " " + item  + "_output2.txt " + item + "_output2_"], shell=True)
+        call(["split -a 5 -d -n l/" + str(args.num_threads) + " K-mer_lists/" + item  + "_output2.txt " + "K-mer_lists/" + item + "_output2_"], shell=True)
     kmer_lists_splitted = []
-    for i in range(num_threads):
+    for i in range(args.num_threads):
         kmer_lists_splitted.append([item + "_output_%05d" %i for item in samples_order])
    
     pvalues_all = []
