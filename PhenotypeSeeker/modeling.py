@@ -305,68 +305,68 @@ def weighted_t_test(
 
     for pre_line in izip_longest(*data2, fillvalue = ''):
         line = (pre_line[1].split()[0] + '\t' + '\t'.join(j.strip(pre_line[1].split()[0]).strip() for j in pre_line) + "\n")
-            counter += 1
-            samp_w_pheno_specified = 0
-            samples_x = []
-            x = []
-            y = []
-            x_weights = []
-            y_weights = []
-            line=line.strip()
-            kmer=line.split()[0]
-            list1=line.split()[1:]
-            for j in range(len(list1)):
-                if samples[samples_order[j]][k] != "NA":
-                    samp_w_pheno_specified += 1
-                    if list1[j] == "0":
-                        y.append(float(samples[samples_order[j]][k]))
-                        y_weights.append(weights[samples_order[j]])
-                    else:
-                        x.append(float(samples[samples_order[j]][k]))
-                        x_weights.append(weights[samples_order[j]])
-                        samples_x.append(samples_order[j])
+        counter += 1
+        samp_w_pheno_specified = 0
+        samples_x = []
+        x = []
+        y = []
+        x_weights = []
+        y_weights = []
+        line=line.strip()
+        kmer=line.split()[0]
+        list1=line.split()[1:]
+        for j in range(len(list1)):
+            if samples[samples_order[j]][k] != "NA":
+                samp_w_pheno_specified += 1
+                if list1[j] == "0":
+                    y.append(float(samples[samples_order[j]][k]))
+                    y_weights.append(weights[samples_order[j]])
                 else:
-                    NA = True
-            if NA == True:
-                if len(x) < 2 or len(y) < 2:
-                    continue
-                elif len(x) >= samp_w_pheno_specified - 1 or len(y) >= samp_w_pheno_specified -1:
-                    continue
+                    x.append(float(samples[samples_order[j]][k]))
+                    x_weights.append(weights[samples_order[j]])
+                    samples_x.append(samples_order[j])
+            else:
+                NA = True
+        if NA == True:
+            if len(x) < 2 or len(y) < 2:
+                continue
+            elif len(x) >= samp_w_pheno_specified - 1 or len(y) >= samp_w_pheno_specified -1:
+                continue
                 
-            #Parametes for group containig the k-mer
-            wtd_mean_y = np.average(y, weights=y_weights)
-            sumofweightsy = sum(y_weights)
-            sumofweightsy2 = sum(i**2 for i in y_weights)
-            vary = (sumofweightsy / (sumofweightsy**2 - sumofweightsy2)) * sum(y_weights * (y - wtd_mean_y)**2)
+        #Parametes for group containig the k-mer
+        wtd_mean_y = np.average(y, weights=y_weights)
+        sumofweightsy = sum(y_weights)
+        sumofweightsy2 = sum(i**2 for i in y_weights)
+        vary = (sumofweightsy / (sumofweightsy**2 - sumofweightsy2)) * sum(y_weights * (y - wtd_mean_y)**2)
     
-            #Parameters for group not containig the k-mer
-            wtd_mean_x = np.average(x, weights=x_weights)
-            sumofweightsx = sum(x_weights)
-            sumofweightsx2 = sum(i**2 for i in x_weights)
-            varx = (sumofweightsx / (sumofweightsx**2 - sumofweightsx2)) * sum(x_weights * (x - wtd_mean_x)**2)
+        #Parameters for group not containig the k-mer
+        wtd_mean_x = np.average(x, weights=x_weights)
+        sumofweightsx = sum(x_weights)
+        sumofweightsx2 = sum(i**2 for i in x_weights)
+        varx = (sumofweightsx / (sumofweightsx**2 - sumofweightsx2)) * sum(x_weights * (x - wtd_mean_x)**2)
 
-            #Calculating the weighted Welch's t-test results
-            dif = wtd_mean_x-wtd_mean_y
-            sxy = math.sqrt((varx/sumofweightsx)+(vary/sumofweightsy))
-            df = (((varx/sumofweightsx)+(vary/sumofweightsy))**2)/((((varx/sumofweightsx)**2)/(sumofweightsx-1))+((vary/sumofweightsy)**2/(sumofweightsy-1)))
-            t = dif/sxy
-            pvalue = stats.t.sf(abs(t), df)*2
+        #Calculating the weighted Welch's t-test results
+        dif = wtd_mean_x-wtd_mean_y
+        sxy = math.sqrt((varx/sumofweightsx)+(vary/sumofweightsy))
+        df = (((varx/sumofweightsx)+(vary/sumofweightsy))**2)/((((varx/sumofweightsx)**2)/(sumofweightsx-1))+((vary/sumofweightsy)**2/(sumofweightsy-1)))
+        t = dif/sxy
+        pvalue = stats.t.sf(abs(t), df)*2
                 
-            pvalues.append(pvalue)
-            f2.write(kmer + "\t" + str(round(t, 2)) + "\t" + "%.2E" % pvalue + "\t" + str(round(wtd_mean_x, 2)) + "\t" + str(round(wtd_mean_y,2)) + "\t" + str(len(samples_x)) + "\t| " + " ".join(samples_x) + "\n")
-            if counter%checkpoint == 0:
-                l.acquire()
-                currentKmerNum.value += checkpoint
-                l.release()
-                write_to_stderr_parallel(
-                    previousPercent.value, currentKmerNum.value, k_t_a, "tests conducted.", phenotype
-                )
-        l.acquire()
-        currentKmerNum.value += counter%checkpoint
-        l.release()
-        write_to_stderr_parallel(
-            previousPercent.value, currentKmerNum.value, k_t_a, "tests conducted.", phenotype
-        )
+        pvalues.append(pvalue)
+        f2.write(kmer + "\t" + str(round(t, 2)) + "\t" + "%.2E" % pvalue + "\t" + str(round(wtd_mean_x, 2)) + "\t" + str(round(wtd_mean_y,2)) + "\t" + str(len(samples_x)) + "\t| " + " ".join(samples_x) + "\n")
+        if counter%checkpoint == 0:
+            l.acquire()
+            currentKmerNum.value += checkpoint
+            l.release()
+            write_to_stderr_parallel(
+                previousPercent.value, currentKmerNum.value, k_t_a, "tests conducted.", phenotype
+            )
+    l.acquire()
+    currentKmerNum.value += counter%checkpoint
+    l.release()
+    write_to_stderr_parallel(
+        previousPercent.value, currentKmerNum.value, k_t_a, "tests conducted.", phenotype
+    )
     f1.close()
     f2.close()
     return(pvalues)
@@ -2189,7 +2189,7 @@ def modeling(args):
                     )
         pvalues_all.append(list(chain(*pvalues_from_all_threads)))
         sys.stderr.write("\n")
-
+    '''
     concatenate_test_files(headerline, k, n_o_p, args.num_threads, phenotype_scale, phenotypes, phenotypes_2_analyse)
 
     kmers_passed_all_phenotypes = kmer_filtering_by_pvalue(
@@ -2234,3 +2234,4 @@ def modeling(args):
             kmers_passed_all_phenotypes, phenotypes, n_o_p, args.mpheno, 
             headerline
             )
+    '''
