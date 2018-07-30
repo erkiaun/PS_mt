@@ -213,32 +213,6 @@ def map_samples_modeling(samples_info, kmer_length, sample_names):
         output = "\t%d of %d samples mapped." % (currentSampleNum.value, totalFiles)
         Printer(output)
 
-def vectors_to_matrix_modeling(samples_order, totalKmers):
-    #Takes all vectors with k-mer frequency information and inserts them into matrix
-    #of dimensions "number of samples" x "number of k-mers (features).
-
-    sys.stderr.write("\nConverting the set of feature vectors into data matrix:\n")    
-    matrix = open("k-mer_matrix.txt", "w")
-    data = []   
- 
-    counter = 0
-    counter2 = 0
-    checkpoint = int(totalKmers/(100))    
-
-    for item in samples_order:
-        data.append(open("K-mer_lists/" + item + "_output2.txt", "r"))
-
-    for new_line in izip_longest(*data, fillvalue=''):
-        matrix.write(new_line[1].split()[0] + '\t' + '\t'.join(j.strip(new_line[1].split()[0]).strip() for j in new_line) + "\n")
-        
-        counter += 1
-        if counter%checkpoint == 0:
-            counter2 += 1
-            Printer("\t%d%% of the vectors converted." % counter2)
-    
-    matrix.close()
-
-
 def mash_caller(samples_info, freq):
     #Estimating phylogenetic distances between samples using mash
     sys.stderr.write("\nEstimating the Mash distances between samples...\n")
@@ -309,12 +283,15 @@ def newick_to_GSC_weights(newick_tree):
 
 def weighted_t_test(
         checkpoint, k, l, samples, samples_order, weights, number_of_phenotypes,
-        phenotypes, k_t_a, FDR, headerline, kmer_matrix
+        phenotypes, k_t_a, FDR, headerline, split_of_kmer_lists
         ):
     # Calculates weighted Welch t-tests results for every k-mer
     pvalues = []
     counter = 0
     NA = False
+    
+    f2 = open("t-test_results" + split_of_kmer_lists[0][-5:], "w")
+
     if headerline:
         outputfile = "t-test_results_" + phenotypes[k-1] + "_" + kmer_matrix[-5:] + ".txt"
         phenotype = phenotypes[k-1] + ": "
@@ -324,9 +301,10 @@ def weighted_t_test(
     else:
         outputfile = "t-test_results_" + kmer_matrix[-5:] + ".txt"
         phenotype = ""
-    f2 = open(outputfile, "w+")
-    with open(kmer_matrix) as f1:
-        for line in f1:
+    #f2 = open(outputfile, "w+")
+
+    for pre_line in izip_longest(*data2, fillvalue = ''):
+        line = (pre_line[1].split()[0] + '\t' + '\t'.join(j.strip(pre_line[1].split()[0]).strip() for j in pre_line) + "\n")
             counter += 1
             samp_w_pheno_specified = 0
             samples_x = []
@@ -1000,7 +978,7 @@ def linear_regression(
             f1.write("The Pearson correlation coefficient and p-value: " \
                     " %s, %s \n" % (r_value, pval_r))
             f1.write("The plus/minus 1 dilution factor accuracy (for MICs):" \
-                " %s, %s \n\n" % plus_minus_1_dilution_factor_accuracy(
+                " %s \n\n" % plus_minus_1_dilution_factor_accuracy(
                     y_test, test_y_prediction
                     )
                 )
@@ -1042,7 +1020,7 @@ def linear_regression(
             f1.write("The Pearson correlation coefficient and p-value: " \
                     " %s, %s \n" % (r_value, pval_r))
             f1.write("The plus/minus 1 dilution factor accuracy (for MICs):" \
-                " %s, %s \n\n" % plus_minus_1_dilution_factor_accuracy(
+                " %s \n\n" % plus_minus_1_dilution_factor_accuracy(
                     dataset.target, y_prediction
                     )
                 )
@@ -2147,10 +2125,8 @@ def modeling(args):
     sys.stderr.write("Mapping samples to the feature vector space:\n")
     currentSampleNum.value = 0
     p.map(partial(map_samples_modeling, samples, args.length), mt_split)
-
-    vectors_to_matrix_modeling(samples_order, kmers_to_analyse)
     
-    call(["rm -r K-mer_lists/"], shell = True)
+    #call(["rm -r K-mer_lists/"], shell = True)
     
     weights = []
     if args.weights == "+":   
@@ -2161,8 +2137,11 @@ def modeling(args):
         phyloxml_to_newick("tree_xml.txt")
         weights = newick_to_GSC_weights("tree_newick.txt")
     
-    call(["split -a 5 -d -n l/" + str(args.num_threads) + " k-mer_matrix.txt k-mer_matrix_segment_"], shell=True)
-    kmer_matrix_segments = ["k-mer_matrix_segment_%05d" %i for i in range(args.num_threads)]
+    for item in samples_order:
+        call(["split -a 5 -d -n l/" + str(args.num_threads) + " " + item  + "_output2.txt " + item + "_output2_"], shell=True)
+    kmer_lists_splitted = []
+    for i in range(num_threads):
+        kmer_lists_splitted.append([item + "_output_%05d" %i for item in samples_order])
    
     pvalues_all = []
     checkpoint = int(kmers_to_analyse/(100*args.num_threads))
@@ -2181,7 +2160,7 @@ def modeling(args):
                         weighted_t_test, checkpoint, k, l, samples, samples_order, weights,
                         n_o_p, phenotypes, kmers_to_analyse, args.FDR, headerline
                         ), 
-                    kmer_matrix_segments
+                    kmer_lists_splitted
                     )            
             else:
                 if j == 0:
