@@ -2140,7 +2140,7 @@ def modeling(args):
     kmer_lists_splitted = []
     for i in range(args.num_threads):
         kmer_lists_splitted.append([item + "_output_%05d" %i for item in samples_order])
-   
+    print(kmer_lists_splitted)
     pvalues_all = []
     checkpoint = int(kmers_to_analyse/(100*args.num_threads))
     for j, k in enumerate(phenotypes_2_analyse):
