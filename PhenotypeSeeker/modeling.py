@@ -293,13 +293,13 @@ def weighted_t_test(
     f2 = open("t-test_results" + split_of_kmer_lists[0][-5:], "w")
 
     if headerline:
-        outputfile = "t-test_results_" + phenotypes[k-1] + "_" + kmer_matrix[-5:] + ".txt"
+        #outputfile = "t-test_results_" + phenotypes[k-1] + "_" + kmer_matrix[-5:] + ".txt"
         phenotype = phenotypes[k-1] + ": "
     elif number_of_phenotypes > 1:
-        outputfile = "t-test_results_" +  str(k) + "_" + kmer_matrix[-5:] + ".txt"
+        #outputfile = "t-test_results_" +  str(k) + "_" + kmer_matrix[-5:] + ".txt"
         phenotype = "phenotype " + str(k) + ": "
     else:
-        outputfile = "t-test_results_" + kmer_matrix[-5:] + ".txt"
+        #outputfile = "t-test_results_" + kmer_matrix[-5:] + ".txt"
         phenotype = ""
     #f2 = open(outputfile, "w+")
 
