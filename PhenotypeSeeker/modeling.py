@@ -2139,7 +2139,7 @@ def modeling(args):
         call(["split -a 5 -d -n l/" + str(args.num_threads) + " K-mer_lists/" + item  + "_output2.txt " + "K-mer_lists/" + item + "_output2_"], shell=True)
     kmer_lists_splitted = []
     for i in range(args.num_threads):
-        kmer_lists_splitted.append([item + "_output2_%05d" %i for item in samples_order])
+        kmer_lists_splitted.append(["K-mer_lists/" + item + "_output2_%05d" %i for item in samples_order])
 
     pvalues_all = []
     checkpoint = int(kmers_to_analyse/(100*args.num_threads))
