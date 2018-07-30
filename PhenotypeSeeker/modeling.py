@@ -299,8 +299,9 @@ def weighted_t_test(
     else:
         outputfile = "t-test_results_" + split_of_kmer_lists[0][-5:] + ".txt"
         phenotype = ""
-
+    f2 = open(outputfile, "w+")
     for pre_line in izip_longest(*split_of_kmer_lists, fillvalue = ''):
+        f2.write(pre_line)
         line = (pre_line[1].split()[0] + '\t' + '\t'.join(j.strip(pre_line[1].split()[0]).strip() for j in pre_line) + "\n")
         counter += 1
         samp_w_pheno_specified = 0
