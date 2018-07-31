@@ -2148,8 +2148,7 @@ def modeling(args):
                     sys.stderr.write(
                         "\nConducting the k-mer specific weighted Welch t-tests:\n"
                         )
-                pvalues_from_all_threads = 
-                p.map(
+                pvalues_from_all_threads = p.map(
                     partial(
                         min_freq, max_freq, weighted_t_test, checkpoint, k, l, samples, 
                         samples_order, weights, n_o_p, phenotypes, kmers_to_analyse, 
