@@ -2150,7 +2150,7 @@ def modeling(args):
                         )
                 pvalues_from_all_threads = p.map(
                     partial(
-                        args.min, args.max, weighted_t_test, checkpoint, k, l, samples, 
+                        weighted_t_test, args.min, args.max, checkpoint, k, l, samples, 
                         samples_order, weights, n_o_p, phenotypes, kmers_to_analyse, 
                         args.FDR, headerline
                         ), 
