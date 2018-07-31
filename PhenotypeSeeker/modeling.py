@@ -2235,4 +2235,3 @@ def modeling(args):
             kmers_passed_all_phenotypes, phenotypes, n_o_p, args.mpheno, 
             headerline
             )
-    '''
