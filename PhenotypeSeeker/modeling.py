@@ -2192,6 +2192,7 @@ def modeling(args):
                         ),
                     kmer_matrix_segments
                     )
+        sys.stderr.write("Tehtud\n")
         pvalues_all.append(list(chain(*pvalues_from_all_threads)))
         sys.stderr.write("\n")
     '''
