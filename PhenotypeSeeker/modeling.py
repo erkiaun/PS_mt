@@ -302,9 +302,9 @@ def weighted_t_test(
     f2 = open(outputfile, "w+")
     opened_kmer_lists = [open(item) for item in split_of_kmer_lists]
     for pre_line in izip_longest(*opened_kmer_lists, fillvalue = ''):
-        counter += 1
-        #try:
-        f2.write(pre_line[0].split()[0] + '\t' + '\t'.join(j.split()[1].strip() for j in pre_line) + "\n")
+        kmer = pre_line[0].split()[0]
+        if kmer != "\n":
+            f2.write(kmer + '\t' + '\t'.join(j.split()[1].strip() for j in pre_line) + "\n")
         #except:
         #    print("Error in file: " + str(split_of_kmer_lists[0][-5:]) + " line: " + str(counter))
         '''
