@@ -303,9 +303,6 @@ def weighted_t_test(
     opened_kmer_lists = [open(item) for item in split_of_kmer_lists]
     for pre_line in izip_longest(*opened_kmer_lists, fillvalue = ''):
         f2.write(pre_line[0].split()[0] + '\t' + '\t'.join(j.split()[1].strip() for j in pre_line) + "\n")
-        counter += 1
-        if counter == 182363:
-            break
         #kmer_counts_in_samples = (j.split()[1].strip() for j in pre_line)
         #except:
         #    print("Error in file: " + str(split_of_kmer_lists[0][-5:]) + " line: " + str(counter))
@@ -2144,7 +2141,7 @@ def modeling(args):
         weights = newick_to_GSC_weights("tree_newick.txt")
     
     for item in samples_order:
-        call(["split -a 5 -d -n l/" + str(args.num_threads) + " K-mer_lists/" + item  + "_output2.txt " + "K-mer_lists/" + item + "_output2_"], shell=True)
+        call(["split -a 5 -d -n r/" + str(args.num_threads) + " K-mer_lists/" + item  + "_output2.txt " + "K-mer_lists/" + item + "_output2_"], shell=True)
     kmer_lists_splitted = []
     for i in range(args.num_threads):
         kmer_lists_splitted.append(["K-mer_lists/" + item + "_output2_%05d" %i for item in samples_order])
