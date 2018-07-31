@@ -282,7 +282,7 @@ def newick_to_GSC_weights(newick_tree):
     return(weights)
 
 def weighted_t_test(
-        checkpoint, k, l, samples, samples_order, weights, number_of_phenotypes,
+        min_freq, max_freq, checkpoint, k, l, samples, samples_order, weights, number_of_phenotypes,
         phenotypes, k_t_a, FDR, headerline, split_of_kmer_lists
         ):
     # Calculates weighted Welch t-tests results for every k-mer
@@ -300,8 +300,7 @@ def weighted_t_test(
         outputfile = "t-test_results_" + split_of_kmer_lists[0][-5:] + ".txt"
         phenotype = ""
     f2 = open(outputfile, "w+")
-    for pre_line in izip_longest(*[open(item) for item in split_of_kmer_lists], fillvalue = ''):
-        line = (pre_line[0].split()[0] + '\t' + '\t'.join(j.split()[1].strip() for j in pre_line) + "\n")
+    for line in izip_longest(*[open(item) for item in split_of_kmer_lists], fillvalue = ''):
         kmer_counts_in_samples = (j.split()[1].strip() for j in pre_line)
         
         counter += 1
@@ -311,9 +310,9 @@ def weighted_t_test(
         y = []
         x_weights = []
         y_weights = []
-        line=line.strip()
-        kmer=line.split()[0]
-        list1=line.split()[1:]
+
+        kmer = line[0].split()[0]
+        list1 = (j.split()[1].strip() for j in line)
         for j in range(len(list1)):
             if samples[samples_order[j]][k] != "NA":
                 samp_w_pheno_specified += 1
@@ -324,8 +323,8 @@ def weighted_t_test(
                     x.append(float(samples[samples_order[j]][k]))
                     x_weights.append(weights[samples_order[j]])
                     samples_x.append(samples_order[j])
-            if len(x) < min or len(x) > max:
-                continue
+        if len(x) < min_freq or len(x) > max_freq:
+            continue
                 
         #Parametes for group containig the k-mer
         wtd_mean_y = np.average(y, weights=y_weights)
@@ -2149,11 +2148,12 @@ def modeling(args):
                     sys.stderr.write(
                         "\nConducting the k-mer specific weighted Welch t-tests:\n"
                         )
-                #pvalues_from_all_threads = 
+                pvalues_from_all_threads = 
                 p.map(
                     partial(
-                        weighted_t_test, checkpoint, k, l, samples, samples_order, weights,
-                        n_o_p, phenotypes, kmers_to_analyse, args.FDR, headerline
+                        min_freq, max_freq, weighted_t_test, checkpoint, k, l, samples, 
+                        samples_order, weights, n_o_p, phenotypes, kmers_to_analyse, 
+                        args.FDR, headerline
                         ), 
                     kmer_lists_splitted
                     )            
