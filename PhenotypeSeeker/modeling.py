@@ -307,6 +307,7 @@ def weighted_t_test(
             f2.write(pre_line[1].split()[0] + '\t' + '\t'.join(j.strip(pre_line[1].split()[0]).strip() for j in pre_line) + "\n")
         except:
             print("Error in file: " + str(split_of_kmer_lists[0][-5:]) + " line: " + str(counter))
+        '''
         counter += 1
         samp_w_pheno_specified = 0
         samples_x = []
