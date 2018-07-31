@@ -2161,7 +2161,8 @@ def modeling(args):
                     sys.stderr.write(
                         "\nConducting the k-mer specific weighted Welch t-tests:\n"
                         )
-                pvalues_from_all_threads = p.map(
+                #pvalues_from_all_threads = 
+                p.map(
                     partial(
                         weighted_t_test, checkpoint, k, l, samples, samples_order, weights,
                         n_o_p, phenotypes, kmers_to_analyse, args.FDR, headerline
@@ -2193,8 +2194,8 @@ def modeling(args):
                         ),
                     kmer_matrix_segments
                     )
-        pvalues_all.append(list(chain(*pvalues_from_all_threads)))
-        sys.stderr.write("\n")
+        #pvalues_all.append(list(chain(*pvalues_from_all_threads)))
+        #sys.stderr.write("\n")
     '''
     concatenate_test_files(headerline, k, n_o_p, args.num_threads, phenotype_scale, phenotypes, phenotypes_2_analyse)
 
