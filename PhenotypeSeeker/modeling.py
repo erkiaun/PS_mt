@@ -300,13 +300,10 @@ def weighted_t_test(
         outputfile = "t-test_results_" + split_of_kmer_lists[0][-5:] + ".txt"
         phenotype = ""
     f2 = open(outputfile, "w+")
-    opened_kmer_lists = [open(item) for item in split_of_kmer_lists]
-    for pre_line in izip_longest(*opened_kmer_lists, fillvalue = ''):
-        f2.write(pre_line[0].split()[0] + '\t' + '\t'.join(j.split()[1].strip() for j in pre_line) + "\n")
-        #kmer_counts_in_samples = (j.split()[1].strip() for j in pre_line)
-        #except:
-        #    print("Error in file: " + str(split_of_kmer_lists[0][-5:]) + " line: " + str(counter))
-        '''
+    for pre_line in izip_longest(*[open(item) for item in split_of_kmer_lists], fillvalue = ''):
+        line = (pre_line[0].split()[0] + '\t' + '\t'.join(j.split()[1].strip() for j in pre_line) + "\n")
+        kmer_counts_in_samples = (j.split()[1].strip() for j in pre_line)
+        
         counter += 1
         samp_w_pheno_specified = 0
         samples_x = []
@@ -372,7 +369,7 @@ def weighted_t_test(
     f1.close()
     f2.close()
     return(pvalues)
-    '''
+    
 
 def t_test(
         checkpoint, k, l, samples, samples_order, number_of_phenotypes,
@@ -2191,9 +2188,9 @@ def modeling(args):
                         ),
                     kmer_matrix_segments
                     )
-        #pvalues_all.append(list(chain(*pvalues_from_all_threads)))
-        #sys.stderr.write("\n")
-    '''
+        pvalues_all.append(list(chain(*pvalues_from_all_threads)))
+        sys.stderr.write("\n")
+    
     concatenate_test_files(headerline, k, n_o_p, args.num_threads, phenotype_scale, phenotypes, phenotypes_2_analyse)
 
     kmers_passed_all_phenotypes = kmer_filtering_by_pvalue(
