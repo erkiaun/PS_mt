@@ -324,12 +324,7 @@ def weighted_t_test(
                     x.append(float(samples[samples_order[j]][k]))
                     x_weights.append(weights[samples_order[j]])
                     samples_x.append(samples_order[j])
-            else:
-                NA = True
-        if NA == True:
-            if len(x) < 2 or len(y) < 2:
-                continue
-            elif len(x) >= samp_w_pheno_specified - 1 or len(y) >= samp_w_pheno_specified -1:
+            if len(x) < min or len(x) > max:
                 continue
                 
         #Parametes for group containig the k-mer
@@ -366,7 +361,6 @@ def weighted_t_test(
     write_to_stderr_parallel(
         previousPercent.value, currentKmerNum.value, k_t_a, "tests conducted.", phenotype
     )
-    f1.close()
     f2.close()
     return(pvalues)
     
