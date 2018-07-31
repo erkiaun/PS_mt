@@ -303,7 +303,7 @@ def weighted_t_test(
     opened_kmer_lists = [open(item) for item in split_of_kmer_lists]
     for pre_line in izip_longest(*opened_kmer_lists, fillvalue = ''):
         counter += 1
-        f2.write(pre_line[0].split()[0])
+        f2.write(pre_line[0].split()[0] + "\n")
         if counter == 182363:
             break
         #kmer_counts_in_samples = (j.split()[1].strip() for j in pre_line)
