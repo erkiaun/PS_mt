@@ -301,8 +301,6 @@ def weighted_t_test(
         phenotype = ""
     f2 = open(outputfile, "w+")
     for line in izip_longest(*[open(item) for item in split_of_kmer_lists], fillvalue = ''):
-        kmer_counts_in_samples = (j.split()[1].strip() for j in pre_line)
-        
         counter += 1
         samp_w_pheno_specified = 0
         samples_x = []
