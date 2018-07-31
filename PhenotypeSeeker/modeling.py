@@ -310,7 +310,7 @@ def weighted_t_test(
         y_weights = []
 
         kmer = line[0].split()[0]
-        list1 = (j.split()[1].strip() for j in line)
+        list1 = [j.split()[1].strip() for j in line]
         for j in range(len(list1)):
             if samples[samples_order[j]][k] != "NA":
                 samp_w_pheno_specified += 1
