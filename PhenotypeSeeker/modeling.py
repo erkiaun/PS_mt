@@ -302,9 +302,7 @@ def weighted_t_test(
     f2 = open(outputfile, "w+")
     opened_kmer_lists = [open(item) for item in split_of_kmer_lists]
     for pre_line in izip_longest(*opened_kmer_lists, fillvalue = ''):
-        #counter += 1
-        f2.write(pre_line[1].split()[0] + "\n")
-        '''
+        counter += 1
         try:
             f2.write(pre_line[1].split()[0] + '\t' + '\t'.join(j.strip(pre_line[1].split()[0]).strip() for j in pre_line) + "\n")
         except:
@@ -2192,7 +2190,6 @@ def modeling(args):
                         ),
                     kmer_matrix_segments
                     )
-        sys.stderr.write("Tehtud\n")
         pvalues_all.append(list(chain(*pvalues_from_all_threads)))
         sys.stderr.write("\n")
     '''
