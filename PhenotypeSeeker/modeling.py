@@ -125,6 +125,7 @@ def parse_modeling_input_file(inputfilename):
     	)
 
 def get_feature_vector(length, min_freq, samples):
+    call(["mkdir", "-p", "K-mer_lists"])
     glistmaker_args = ["glistmaker"]
     for item in samples:
         glistmaker_args.append(samples[item][0])
