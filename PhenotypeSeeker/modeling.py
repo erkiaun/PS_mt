@@ -305,6 +305,13 @@ def weighted_t_test(
     f2 = open(outputfile, "w+")
     for line in izip_longest(*[open(item) for item in split_of_kmer_lists], fillvalue = ''):
         counter += 1
+        if counter%checkpoint == 0:
+            l.acquire()
+            currentKmerNum.value += checkpoint
+            l.release()
+            write_to_stderr_parallel(
+                previousPercent.value, currentKmerNum.value, k_t_a, "tests conducted.", phenotype
+            )
         samp_w_pheno_specified = 0
         samples_x = []
         x = []
@@ -348,13 +355,6 @@ def weighted_t_test(
                 
         pvalues.append(pvalue)
         f2.write(kmer + "\t" + str(round(t, 2)) + "\t" + "%.2E" % pvalue + "\t" + str(round(wtd_mean_x, 2)) + "\t" + str(round(wtd_mean_y,2)) + "\t" + str(len(samples_x)) + "\t| " + " ".join(samples_x) + "\n")
-        if counter%checkpoint == 0:
-            l.acquire()
-            currentKmerNum.value += checkpoint
-            l.release()
-            write_to_stderr_parallel(
-                previousPercent.value, currentKmerNum.value, k_t_a, "tests conducted.", phenotype
-            )
     l.acquire()
     currentKmerNum.value += counter%checkpoint
     l.release()
@@ -687,8 +687,7 @@ def concatenate_test_files(headerline, k, n_o_p, num_threads, phenotype_scale, p
         else:
             call(["cat chi-squared_test_results_* > chi-squared_test_results.txt && rm chi-squared_test_results_*"], shell=True)
 
-def kmer_filtering_by_pvalue(
-        pvalue, number_of_phenotypes, phenotype_scale, pvalues_all_phenotypes,
+def kmer_filtering_by_pvalue(pvalue, number_of_phenotypes, phenotype_scale, pvalues_all_phenotypes,
         phenotypes, kmer_limit, kmers_to_analyse, p_t_a, FDR=False, 
         B=False, headerline=False
         ):
@@ -2075,7 +2074,7 @@ def assembling(
 
 def modeling(args):
 
-    # Parsing the info from input file
+    # Read in the info from input file
     (
     samples, samples_order, n_o_s, n_o_p, phenotype_scale, headerline,
     phenotypes
@@ -2089,7 +2088,8 @@ def modeling(args):
             math.log10(args.alpha_max), num=args.n_alphas)
     else: 
         alphas = np.array(args.alphas)
-
+    # Generating the vector of alphas (hyperparameters in regression analysis)
+    # based on the given command line arguments.
     if args.gammas == None:
         gammas = np.logspace(
             math.log10(args.gamma_min),
@@ -2098,12 +2098,13 @@ def modeling(args):
         gammas = np.array(args.gammas)
 
 
-    # 
+    # Set the min and max arguments to default values
     if args.min == "0":
         args.min = 2
     if args.max == "0":
         args.max = n_o_s - 2
     
+
     if not args.mpheno:
         phenotypes_2_analyse = range(1, n_o_p+1)
     else: 
@@ -2117,11 +2118,12 @@ def modeling(args):
         mt_split.append([samples_order[j] for j in xrange(i, len(samples_order), args.num_threads)])
     p = Pool(args.num_threads)
     
-    sys.stderr.write("Generating the k-mer lists:\n")
+
+    sys.stderr.write("Generating the k-mer feature vector:\n")
     get_feature_vector(args.length, args.min, samples)
-    p.map(partial(kmer_list_generator, samples, args.length, args.cutoff), mt_split)
-    
-    sys.stderr.write("Mapping samples to the feature vector space:\n")
+    sys.stderr.write("Generating the k-mer lists for input samples:\n")
+    p.map(partial(kmer_list_generator, samples, args.length, args.cutoff), mt_split)   
+    sys.stderr.write("\nMapping samples to the feature vector space:\n")
     currentSampleNum.value = 0
     p.map(partial(map_samples_modeling, samples, args.length), mt_split)
     
