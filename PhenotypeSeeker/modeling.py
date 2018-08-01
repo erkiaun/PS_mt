@@ -211,7 +211,7 @@ def map_samples_modeling(samples_info, kmer_length, sample_names):
     for item in sample_names:
         out_name = "K-mer_lists/"+ item + "_mapped.txt"
         with open(out_name, "w+") as f1:
-            call(["glistquery", "K-mer_lists/" + item + "_" + kmer_length  + ".list", "-f", "K-mer_lists/k-mers_filtered_by_freq.txt"], stdout=f1)
+            call(["glistquery", "K-mer_lists/" + item + "_" + kmer_length  + ".list", "-l", "K-mer_lists/feature_vector_" + kmer_length  + ".list"], stdout=f1)
         currentSampleNum.value += 1
         output = "\t%d of %d samples mapped." % (currentSampleNum.value, totalFiles)
         Printer(output)
