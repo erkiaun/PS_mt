@@ -6,7 +6,7 @@ __maintainer__ = "Erki Aun"
 __email__ = "erki.aun@ut.ee"
 
 from itertools import chain, izip, izip_longest, permutations
-from subprocess import call, Popen, PIPE
+from subprocess import call, Popen, PIPE, check_output
 import math
 import sys
 import warnings
@@ -2143,6 +2143,7 @@ def modeling(args):
         kmer_lists_splitted.append(["K-mer_lists/" + item + "_mapped_%05d" %i for item in samples_order])
 
     pvalues_all = []
+    kmers_to_analyse = check_output(['wc', '-l', "K-mer_lists/" + samples_order[0] + "_mapped.txt"]).split()[0]
     checkpoint = int(kmers_to_analyse/(100*args.num_threads))
     for j, k in enumerate(phenotypes_2_analyse):
         currentKmerNum.value = 0
