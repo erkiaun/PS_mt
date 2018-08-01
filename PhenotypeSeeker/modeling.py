@@ -308,6 +308,7 @@ def weighted_t_test(
         if counter%checkpoint == 0:
             l.acquire()
             currentKmerNum.value += checkpoint
+            print(currentKmerNum.value)
             l.release()
             write_to_stderr_parallel(
                 previousPercent.value, currentKmerNum.value, k_t_a, "tests conducted.", phenotype
