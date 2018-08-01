@@ -48,7 +48,9 @@ class Printer():
 def write_to_stderr_parallel(
         prevPer, curKmerNum, totalKmers, text, phenotype=""
         ):
-    currentPercent = curKmerNum/totalKmers*100
+    currentPercent = (curKmerNum/totalKmers)*100
+    print("Current Kmer Num:" + str(curKmerNum))
+    print("Total Kmers:" + str(totalKmers))
     print("Current percent:" + str(currentPercent))
     print("Previous percent:" + str(prevPer))
 
@@ -2122,7 +2124,7 @@ def modeling(args):
     p = Pool(args.num_threads)
     
 
-    sys.stderr.write("Generating the k-mer feature vector:\n")
+    sys.stderr.write("Generating the k-mer feature vector.\n")
     get_feature_vector(args.length, args.min, samples)
     sys.stderr.write("Generating the k-mer lists for input samples:\n")
     p.map(partial(kmer_list_generator, samples, args.length, args.cutoff), mt_split)   
