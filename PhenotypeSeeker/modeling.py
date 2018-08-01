@@ -784,7 +784,7 @@ def kmer_filtering_by_pvalue(
             f2.write("\nNo k-mers passed the filtration by p-value.\n")
         f1.close()
         f2.close()
-        kmers_passed_all_phenotypes.append(set(kmers_passed))
+        kmers_passed_all_phenotypes.append(kmers_passed)
     return(kmers_passed_all_phenotypes)
 
 def get_kmer_presence_matrix(kmers_passed, split_of_kmer_lists):
@@ -854,7 +854,7 @@ def linear_regression(
         # Generating a binary k-mer presence/absence matrix and a list
         # of k-mer names based on information in k-mer_matrix.txt 
         mat_and_feat_tuples = p.map(partial(get_kmer_presence_matrix,
-            kmers_passed_all_phenotypes[j]), kmer_lists_splitted)
+            set(kmers_passed_all_phenotypes[j])), kmer_lists_splitted)
         mat_and_feat_lists = map(list, zip(*mat_and_feat_tuples))
         kmers_presence_matrix = [item for sublist in mat_and_feat_lists[0] for item in sublist]
         features = [item for sublist in mat_and_feat_lists[1] for item in sublist]
