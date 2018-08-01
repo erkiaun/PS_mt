@@ -2120,16 +2120,11 @@ def modeling(args):
     sys.stderr.write("Generating the k-mer lists:\n")
     get_feature_vector(args.length, args.min, samples)
     p.map(partial(kmer_list_generator, samples, args.length, args.cutoff), mt_split)
-    '''
-    dict_of_frequencies = kmer_frequencies(samples_order)
-    kmers_to_analyse = kmer_filtering_by_frequency(
-        dict_of_frequencies , args.min, args.max, args.num_threads
-        )
-
+    
     sys.stderr.write("Mapping samples to the feature vector space:\n")
     currentSampleNum.value = 0
     p.map(partial(map_samples_modeling, samples, args.length), mt_split)
-    
+    '''
     #call(["rm -r K-mer_lists/"], shell = True)
     
     weights = []
