@@ -801,7 +801,7 @@ def get_kmer_presence_matrix(kmers_passed, split_of_kmer_lists):
     return(kmers_presence_matrix, features)
 
 def linear_regression(
-	    kmer_matrix, samples, samples_order, alphas, number_of_phenotypes,
+	    p, kmer_lists_splitted, samples, samples_order, alphas, number_of_phenotypes,
 	    kmers_passed_all_phenotypes, penalty, n_splits, weights, testset_size,
 	    phenotypes, use_of_weights, l1_ratio, phenotypes_to_analyze=False, 
         headerline=False
@@ -2200,7 +2200,7 @@ def modeling(args):
 
     if phenotype_scale == "continuous":
         linear_regression(
-            "k-mer_matrix.txt", samples, samples_order, alphas, n_o_p,
+            p, kmer_lists_splitted, samples, samples_order, alphas, n_o_p,
             kmers_passed_all_phenotypes, args.regularization, args.n_splits,
             weights, args.testset_size, phenotypes, args.weights,
             args.l1_ratio, args.mpheno, headerline
