@@ -129,8 +129,9 @@ def get_feature_vector(length, min_freq, samples):
     glistmaker_args = ["glistmaker"]
     for item in samples:
         glistmaker_args.append(samples[item][0])
-    glistmaker_args += ['-c', min_freq, '-w', length, '-o', 'K-mer_lists/feature_vector']
-    print(glistmaker_args)
+    glistmaker_args += [
+        '-c', str(min_freq), '-w', length, '-o', 'K-mer_lists/feature_vector'
+        ]
     call(glistmaker_args)
 
 def kmer_list_generator(samples_info, kmer_length, freq, input_samples):
