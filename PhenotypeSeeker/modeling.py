@@ -321,7 +321,7 @@ def weighted_t_test(
                     x.append(float(samples[samples_order[j]][k]))
                     x_weights.append(weights[samples_order[j]])
                     samples_x.append(samples_order[j])
-        if len(x) < min_freq or len(x) > max_freq:
+        if len(x) < min_freq or len(y) < 2 or len(x) > max_freq:
             continue
                 
         #Parametes for group containig the k-mer
@@ -784,8 +784,21 @@ def kmer_filtering_by_pvalue(
             f2.write("\nNo k-mers passed the filtration by p-value.\n")
         f1.close()
         f2.close()
-        kmers_passed_all_phenotypes.append(kmers_passed)
+        kmers_passed_all_phenotypes.append(set(kmers_passed))
     return(kmers_passed_all_phenotypes)
+
+def get_kmer_presence_matrix(kmers_passed, split_of_kmer_lists):
+    kmers_presence_matrix = []
+    features = []
+    
+    for line in izip_longest(*[open(item) for item in split_of_kmer_lists], fillvalue = ''):
+        if line[0].split()[0] in kmers_passed:
+            features.append(line[0].split()[0])
+            kmers_presence_matrix.append(map(
+                lambda x: 0 if x == 0 else 1,
+                map(int, [j.split()[1].strip() for j in line])
+                ))
+    return(kmers_presence_matrix, features)
 
 def linear_regression(
 	    kmer_matrix, samples, samples_order, alphas, number_of_phenotypes,
@@ -840,18 +853,13 @@ def linear_regression(
 
         # Generating a binary k-mer presence/absence matrix and a list
         # of k-mer names based on information in k-mer_matrix.txt 
-        kmers_presence_matrix = []
-        features = []
+        mat_and_feat_tuples = p.map(partial(get_kmer_presence_matrix,
+            kmers_passed_all_phenotypes[j]), kmer_lists_splitted)
+        mat_and_feat_lists = map(list, zip(*mat_and_feat_tuples))
+        kmers_presence_matrix = [item for sublist in mat_and_feat_lists[0] for item in sublist]
+        features = [item for sublist in mat_and_feat_lists[1] for item in sublist]
         Phenotypes = [samples[item][k] for item in samples_order]
-        with open(kmer_matrix) as f3:
-            for line in f3:
-                if line.split()[0] in kmers_passed_all_phenotypes[j]:
-                    features.append(line.split()[0])
-                    kmers_presence_matrix.append(map(
-                        lambda x: 0 if x == 0 else 1,
-                        map(int, line.split()[1:])
-                        ))
-        f3.close()
+
 
         # Converting data into Python array formats suitable to use in
         # sklearn modelling. Also, deleting information associated with
