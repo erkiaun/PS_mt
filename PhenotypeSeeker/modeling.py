@@ -49,10 +49,6 @@ def write_to_stderr_parallel(
         prevPer, curKmerNum, totalKmers, text, phenotype=""
         ):
     currentPercent = (curKmerNum/totalKmers)*100
-    print("Current Kmer Num:" + str(curKmerNum))
-    print("Total Kmers:" + str(totalKmers))
-    print("Current percent:" + str(currentPercent))
-    print("Previous percent:" + str(prevPer))
 
     if int(currentPercent) > prevPer:
         output = "\t" + phenotype + "%d%% of %d " % (
