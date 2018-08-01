@@ -2124,7 +2124,7 @@ def modeling(args):
     sys.stderr.write("Mapping samples to the feature vector space:\n")
     currentSampleNum.value = 0
     p.map(partial(map_samples_modeling, samples, args.length), mt_split)
-    '''
+    
     #call(["rm -r K-mer_lists/"], shell = True)
     
     weights = []
@@ -2137,10 +2137,10 @@ def modeling(args):
         weights = newick_to_GSC_weights("tree_newick.txt")
     
     for item in samples_order:
-        call(["split -a 5 -d -n r/" + str(args.num_threads) + " K-mer_lists/" + item  + "_output2.txt " + "K-mer_lists/" + item + "_output2_"], shell=True)
+        call(["split -a 5 -d -n r/" + str(args.num_threads) + " K-mer_lists/" + item  + "_mapped.txt " + "K-mer_lists/" + item + "_mapped_"], shell=True)
     kmer_lists_splitted = []
     for i in range(args.num_threads):
-        kmer_lists_splitted.append(["K-mer_lists/" + item + "_output2_%05d" %i for item in samples_order])
+        kmer_lists_splitted.append(["K-mer_lists/" + item + "_mapped_%05d" %i for item in samples_order])
 
     pvalues_all = []
     checkpoint = int(kmers_to_analyse/(100*args.num_threads))
