@@ -141,18 +141,11 @@ def kmer_list_generator(samples_info, kmer_length, freq, input_samples):
     totalFiles = len(samples_info)
     call(["mkdir", "-p", "K-mer_lists"])
     for item in input_samples:
-        out_name = "K-mer_lists/" + item + "_output.txt"
         call(
         	["glistmaker " + str(samples_info[item][0]) + " -o K-mer_lists/" 
         	+ item + " -w " + kmer_length + " -c " + freq], 
         	shell=True
         	)
-        with open(out_name, "w+") as f2:
-            call(
-            	["glistquery", "K-mer_lists/" + item + "_" 
-            	+ kmer_length + ".list"], 
-            	stdout=f2
-            	)
         currentSampleNum.value += 1
         output = "\t%d of %d lists generated." % (currentSampleNum.value,totalFiles)
         Printer(output)
@@ -216,7 +209,7 @@ def map_samples_modeling(samples_info, kmer_length, sample_names):
     #to that feature space. A vector of k-mers frequency information is created for every sample.
     totalFiles = len(samples_info)
     for item in sample_names:
-        out_name = "K-mer_lists/"+ item + "_output2.txt"
+        out_name = "K-mer_lists/"+ item + "_mapped.txt"
         with open(out_name, "w+") as f1:
             call(["glistquery", "K-mer_lists/" + item + "_" + kmer_length  + ".list", "-f", "K-mer_lists/k-mers_filtered_by_freq.txt"], stdout=f1)
         currentSampleNum.value += 1
@@ -2126,8 +2119,8 @@ def modeling(args):
     
     sys.stderr.write("Generating the k-mer lists:\n")
     get_feature_vector(args.length, args.min, samples)
-    '''
     p.map(partial(kmer_list_generator, samples, args.length, args.cutoff), mt_split)
+    '''
     dict_of_frequencies = kmer_frequencies(samples_order)
     kmers_to_analyse = kmer_filtering_by_frequency(
         dict_of_frequencies , args.min, args.max, args.num_threads
