@@ -2150,7 +2150,7 @@ def modeling(args):
         kmer_lists_splitted.append(["K-mer_lists/" + item + "_mapped_%05d" %i for item in samples_order])
 
     pvalues_all = []
-    kmers_to_analyse = int(check_output(['wc', '-l', "K-mer_lists/" + samples_order[0] + "_mapped.txt"]).split()[0])
+    kmers_to_analyse = float(check_output(['wc', '-l', "K-mer_lists/" + samples_order[0] + "_mapped.txt"]).split()[0])
     checkpoint = int(kmers_to_analyse/(100*args.num_threads))
     for j, k in enumerate(phenotypes_2_analyse):
         currentKmerNum.value = 0
