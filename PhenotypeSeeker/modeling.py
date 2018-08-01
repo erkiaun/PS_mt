@@ -49,6 +49,9 @@ def write_to_stderr_parallel(
         prevPer, curKmerNum, totalKmers, text, phenotype=""
         ):
     currentPercent = curKmerNum/totalKmers*100
+    print("Current percent:" + currentPercent)
+    print("Previous percent:" + prevPercent)
+
     if int(currentPercent) > prevPer:
         output = "\t" + phenotype + "%d%% of %d " % (
             currentPercent,totalKmers
@@ -308,7 +311,6 @@ def weighted_t_test(
         if counter%checkpoint == 0:
             l.acquire()
             currentKmerNum.value += checkpoint
-            print(currentKmerNum.value)
             l.release()
             write_to_stderr_parallel(
                 previousPercent.value, currentKmerNum.value, k_t_a, "tests conducted.", phenotype
