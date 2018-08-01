@@ -124,6 +124,12 @@ def parse_modeling_input_file(inputfilename):
     	phenotype_scale, headerline, phenotypes
     	)
 
+def get_feature_vector(length, min_freq, samples):
+    glistmaker_args = ["glistmaker"]
+    for item in samples:
+        glistmaker_args.append(samples[item][0])
+    glistmaker_args += ['-c', min_freq, '-w', length, '-o', feature_vector]
+
 def kmer_list_generator(samples_info, kmer_length, freq, input_samples):
     # Makes "K-mer_lists" directory where all lists are stored.
     # Generates k-mer lists for every sample in sample_names variable 
@@ -2115,6 +2121,8 @@ def modeling(args):
     p = Pool(args.num_threads)
     
     sys.stderr.write("Generating the k-mer lists:\n")
+    get_feature_vector(args.length, args.min, samples)
+    '''
     p.map(partial(kmer_list_generator, samples, args.length, args.cutoff), mt_split)
     dict_of_frequencies = kmer_frequencies(samples_order)
     kmers_to_analyse = kmer_filtering_by_frequency(
@@ -2234,3 +2242,4 @@ def modeling(args):
             kmers_passed_all_phenotypes, phenotypes, n_o_p, args.mpheno, 
             headerline
             )
+    ''' 
