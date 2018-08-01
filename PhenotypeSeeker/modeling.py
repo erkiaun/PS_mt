@@ -51,8 +51,8 @@ def write_to_stderr_parallel(
     currentPercent = (curKmerNum/totalKmers)*100
 
     if int(currentPercent) > prevPer:
-        output = "\t" + phenotype + "%d%% of %d " % (
-            currentPercent,totalKmers
+        output = "\t" + phenotype + "%d%% of " % (
+            currentPercent
             ) + text
         Printer(output)
         previousPercent.value = int(currentPercent)
@@ -689,7 +689,7 @@ def concatenate_test_files(headerline, k, n_o_p, num_threads, phenotype_scale, p
             call(["cat chi-squared_test_results_* > chi-squared_test_results.txt && rm chi-squared_test_results_*"], shell=True)
 
 def kmer_filtering_by_pvalue(pvalue, number_of_phenotypes, phenotype_scale, pvalues_all_phenotypes,
-        phenotypes, kmer_limit, kmers_to_analyse, p_t_a, FDR=False, 
+        phenotypes, kmer_limit, p_t_a, FDR=False, 
         B=False, headerline=False
         ):
     # Filters the k-mers by their p-value achieved in statistical 
@@ -746,7 +746,7 @@ def kmer_filtering_by_pvalue(pvalue, number_of_phenotypes, phenotype_scale, pval
                         number_of_kmers += 1
                 previousPercent, currentKmerNum = write_to_stderr_if(
                     previousPercent, currentKmerNum, 
-                    kmers_to_analyse, "k-mers filtered.", phenotype
+                    nr_of_kmers_tested, "k-mers filtered.", phenotype
                     )
         elif FDR:
             max_pvalue_by_FDR = 0
@@ -767,7 +767,7 @@ def kmer_filtering_by_pvalue(pvalue, number_of_phenotypes, phenotype_scale, pval
                         number_of_kmers += 1
                 previousPercent, currentKmerNum = write_to_stderr_if(
                     previousPercent, currentKmerNum, 
-                    kmers_to_analyse, "k-mers filtered.", phenotype
+                    nr_of_kmers_tested, "k-mers filtered.", phenotype
                     )
         else:
             for line in f1:
@@ -779,7 +779,7 @@ def kmer_filtering_by_pvalue(pvalue, number_of_phenotypes, phenotype_scale, pval
                         number_of_kmers += 1
                 previousPercent, currentKmerNum = write_to_stderr_if(
                     previousPercent, currentKmerNum, 
-                    kmers_to_analyse, "k-mers filtered.", phenotype
+                    nr_of_kmers_tested, "k-mers filtered.", phenotype
                     )
         if len(p_t_a) > 1 and k != p_t_a[-1]:
             sys.stderr.write("\n")
@@ -2198,7 +2198,7 @@ def modeling(args):
 
     kmers_passed_all_phenotypes = kmer_filtering_by_pvalue(
         args.pvalue, n_o_p, phenotype_scale, pvalues_all, phenotypes,
-        args.n_kmers, kmers_to_analyse, phenotypes_2_analyse, args.FDR,
+        args.n_kmers, phenotypes_2_analyse, args.FDR,
         args.Bonferroni, headerline
         )
 
