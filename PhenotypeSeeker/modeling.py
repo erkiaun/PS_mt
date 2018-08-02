@@ -323,7 +323,6 @@ def weighted_t_test(
         list1 = [j.split()[1].strip() for j in line]
         for j in range(len(list1)):
             if samples[samples_order[j]][k] != "NA":
-                samp_w_pheno_specified += 1
                 if list1[j] == "0":
                     y.append(float(samples[samples_order[j]][k]))
                     y_weights.append(weights[samples_order[j]])
@@ -401,7 +400,6 @@ def t_test(
 
         for j in range(len(list1)):
             if samples[samples_order[j]][k] != "NA":
-                samp_w_pheno_specified += 1
                 if list1[j] == "0":
                     y.append(float(samples[samples_order[j]][k]))
                 else:
