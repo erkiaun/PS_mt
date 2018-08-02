@@ -374,13 +374,13 @@ def t_test(
     counter = 0
     NA = False
     if headerline:
-        outputfile = "t-test_results_" + phenotypes[k-1] + "_" + kmer_matrix[-5:] + ".txt"
+        outputfile = "t-test_results_" + phenotypes[k-1] + "_" + split_of_kmer_lists[0][-5:] + ".txt"
         phenotype = phenotypes[k-1] + ": "
     elif number_of_phenotypes > 1:
-        outputfile = "t-test_results_" +  str(k) + "_" + kmer_matrix[-5:] + ".txt"
+        outputfile = "t-test_results_" +  str(k) + "_" + split_of_kmer_lists[0][-5:] + ".txt"
         phenotype = "phenotype " + str(k) + ": "
     else:
-        outputfile = "t-test_results_" + kmer_matrix[-5:] + ".txt"
+        outputfile = "t-test_results_" + split_of_kmer_lists[0][-5:] + ".txt"
         phenotype = ""
     f2 = open(outputfile, "w+")
     for line in izip_longest(*[open(item) for item in split_of_kmer_lists], fillvalue = ''):
@@ -440,13 +440,13 @@ def weighted_chi_squared(
     counter = 0
     NA = False
     if headerline:
-        outputfile = "chi-squared_test_results_" + phenotypes[k-1] + "_" + kmer_matrix[-5:] + ".txt"
+        outputfile = "chi-squared_test_results_" + phenotypes[k-1] + "_" + split_of_kmer_lists[0][-5:] + ".txt"
         phenotype = phenotypes[k-1] + ": "
     elif number_of_phenotypes > 1:
-        outputfile = "chi-squared_test_results_" +  str(k) + "_" + kmer_matrix[-5:] + ".txt"
+        outputfile = "chi-squared_test_results_" +  str(k) + "_" + split_of_kmer_lists[0][-5:] + ".txt"
         phenotype = "phenotype " + str(k) + ": "
     else:
-        outputfile = "chi-squared_test_results_" + kmer_matrix[-5:] + ".txt"
+        outputfile = "chi-squared_test_results_" + split_of_kmer_lists[0][-5:] + ".txt"
         phenotype = ""    
     f2 = open(outputfile, "w+")
     for line in izip_longest(*[open(item) for item in split_of_kmer_lists], fillvalue = ''):
@@ -567,13 +567,13 @@ def chi_squared(
     counter = 0
 
     if headerline:
-        outputfile = "chi-squared_test_results_" + phenotypes[k-1] + "_" + kmer_matrix[-5:] + ".txt"
+        outputfile = "chi-squared_test_results_" + phenotypes[k-1] + "_" + split_of_kmer_lists[0][-5:] + ".txt"
         phenotype = phenotypes[k-1] + ": "
     elif number_of_phenotypes > 1:
-        outputfile = "chi-squared_test_results_" +  str(k) + "_" + kmer_matrix[-5:] + ".txt"
+        outputfile = "chi-squared_test_results_" +  str(k) + "_" + split_of_kmer_lists[0][-5:] + ".txt"
         phenotype = "phenotype " + str(k) + ": "
     else:
-        outputfile = "chi-squared_test_results_" + kmer_matrix[-5:] + ".txt"
+        outputfile = "chi-squared_test_results_" + split_of_kmer_lists[0][-5:] + ".txt"
         phenotype = ""    
     f2 = open(outputfile, "w+")
 
