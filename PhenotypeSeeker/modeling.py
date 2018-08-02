@@ -559,7 +559,7 @@ def weighted_chi_squared(
     return(pvalues)
 
 def chi_squared(
-        min_freq, max_freq, checkpoint, k, l samples, samples_order, number_of_phenotypes, phenotypes,
+        min_freq, max_freq, checkpoint, k, l, samples, samples_order, number_of_phenotypes, phenotypes,
         k_t_a, FDR, headerline, split_of_kmer_lists
         ):
     # Calculates Chi-squared tests for every k-mer
