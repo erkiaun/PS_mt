@@ -427,7 +427,6 @@ def t_test(
     write_to_stderr_parallel(
         previousPercent.value, currentKmerNum.value, k_t_a, "tests conducted.", phenotype
     )
-    f1.close()
     f2.close()
     return(pvalues)
 
@@ -553,8 +552,7 @@ def weighted_chi_squared(
     l.release()
     write_to_stderr_parallel(
         previousPercent.value, currentKmerNum.value, k_t_a, "tests conducted.", phenotype
-        )                
-    f1.close()
+        )
     f2.close()
     return(pvalues)
 

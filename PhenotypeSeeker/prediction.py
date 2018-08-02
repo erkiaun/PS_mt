@@ -13,7 +13,7 @@ warnings.filterwarnings("ignore", category=UserWarning)
 import numpy as np
 from sklearn.externals import joblib
 
-def allocate_kmers(phenotypes_to_predict):
+def get_kmers(phenotypes_to_predict):
     call(["mkdir", "-p", "K-mer_lists"])
     for phenotype in phenotypes_to_predict:
         k_mer_list_2_allocate_from = phenotypes_to_predict[phenotype][1]
@@ -137,7 +137,7 @@ def prediction(args):
         )
     phenotypes_to_predict = parse_prediction_input_file2(args.inputfile2)
     
-    allocate_kmers(phenotypes_to_predict)
+    get_kmers(phenotypes_to_predict)
     format_kmer_db(phenotypes_to_predict)
     map_samples_prediction(samples, args.l, phenotypes_to_predict)
     kmer_filtering_by_freq_cutoff_in_sample(
