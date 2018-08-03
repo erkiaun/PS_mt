@@ -154,8 +154,8 @@ def vectors_to_matrix_prediction(samples_order, phenotypes_to_predict):
     # Takes all vectors with k-mer frequency information and inserts 
     # them into matrix of dimensions "number of samples" x "number of 
     # k-mers (features).
-    kmer_matrix = open("K-mer_lists/k-mer_matrix_" + phenotype  + ".txt", "w")
     for phenotype in phenotypes_to_predict:
+        kmer_matrix = open("K-mer_lists/k-mer_matrix_" + phenotype  + ".txt", "w")
         kmer_list_files = [
             "K-mer_lists/" + item + "_k-mer_counts_filtered_" + phenotype
             + ".txt" for item in samples_order
