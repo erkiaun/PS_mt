@@ -10,6 +10,7 @@ import math
 import warnings
 warnings.filterwarnings("ignore", category=UserWarning)
 warnings.filterwarnings("ignore", category=RuntimeWarning)
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 import numpy as np
 from sklearn.externals import joblib
@@ -52,6 +53,8 @@ def kmer_filtering_by_freq_cutoff_in_sample(
                         + phenotype + ".txt", "w+"
                         ) as f2:
                     for line in f1:
+                        if "#TextDatabase" in line:
+                            continue
                         list1 = line.strip().split()
                         if len(list1) == 2 or list1[2] >= min_freq:
                             f2.write(line)
@@ -109,7 +112,7 @@ def predict(samples_order, phenotypes_to_predict):
         with open("K-mer_lists/k-mer_matrix_" + phenotype  + ".txt") as f1:
             for line in f1:
                 kmers_presence_matrix.append(map(
-                    lambda x: 0 if x == 0 else 1, map(int, line.split()[1:])
+                    lambda x: 0 if x == 0 else 1, map(int, line.split())
                     ))
         kmers_presence_matrix = np.array(kmers_presence_matrix).transpose()
         
@@ -151,28 +154,11 @@ def vectors_to_matrix_prediction(samples_order, phenotypes_to_predict):
     # Takes all vectors with k-mer frequency information and inserts 
     # them into matrix of dimensions "number of samples" x "number of 
     # k-mers (features).
+    kmer_matrix = open("K-mer_lists/k-mer_matrix_" + phenotype  + ".txt", "w")
     for phenotype in phenotypes_to_predict:
-        call(
-            ["mv", "K-mer_lists/k-mers_" + phenotype 
-            + ".txt", "K-mer_lists/k-mer_matrix_" + phenotype  + ".txt"]
-            )
-        for ID in samples_order:
-            with open("K-mer_lists/tmp1.txt", "w+") as f1:
-                with open("K-mer_lists/tmp2.txt", "w+") as f2:
-                    call(
-                        ["cut -f 3 K-mer_lists/" + ID 
-                        + "_k-mer_counts_filtered_" + phenotype 
-                        +  ".txt | tail -n +2"],
-                         shell=True, stdout=f2
-                         )
-                    call(
-                        ["paste", "K-mer_lists/k-mer_matrix_" + phenotype  
-                        + ".txt", "K-mer_lists/tmp2.txt"],
-                        stdout=f1
-                        )
-                    call(
-                        [
-                        "mv", "K-mer_lists/tmp1.txt", 
-                        "K-mer_lists/k-mer_matrix_" + phenotype  + ".txt"
-                        ]
-                        )
+        kmer_list_files = [
+            "K-mer_lists/" + item + "_k-mer_counts_filtered_" + phenotype
+            + ".txt" for item in samples_order
+            ]
+        for line in izip_longest(*[open(item) for item in kmer_list_files], fillvalue = ''):
+            kmer_matrix.write('/t'.join([j.split()[2].strip() for j in line]) + "\n")
