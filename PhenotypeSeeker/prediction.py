@@ -8,7 +8,8 @@ __email__ = "erki.aun@ut.ee"
 from subprocess import call
 import math
 import warnings
-warnings.filterwarnings("ignore", category=UserWarning, RuntimeWarning)
+warnings.filterwarnings("ignore", category=UserWarning)
+warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 import numpy as np
 from sklearn.externals import joblib
