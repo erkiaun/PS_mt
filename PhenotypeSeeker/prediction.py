@@ -5,6 +5,7 @@ __version__ = "1.0"
 __maintainer__ = "Erki Aun"
 __email__ = "erki.aun@ut.ee"
 
+from itertools import izip_longest
 from subprocess import call
 import math
 import warnings
