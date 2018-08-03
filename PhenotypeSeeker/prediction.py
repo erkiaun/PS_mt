@@ -162,4 +162,4 @@ def vectors_to_matrix_prediction(samples_order, phenotypes_to_predict):
             + ".txt" for item in samples_order
             ]
         for line in izip_longest(*[open(item) for item in kmer_list_files], fillvalue = ''):
-            kmer_matrix.write('/t'.join([j.split()[2].strip() for j in line]) + "\n")
+            kmer_matrix.write('\t'.join([j.split()[2].strip() for j in line]) + "\n")
