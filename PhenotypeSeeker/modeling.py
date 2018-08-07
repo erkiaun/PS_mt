@@ -690,6 +690,7 @@ def kmer_filtering_by_pvalue(pvalue, number_of_phenotypes, phenotype_scale, pval
         currentKmerNum.value = 0
         previousPercent.value = 0
         checkpoint = int(math.ceil(nr_of_kmers_tested/100))
+        counter = 0
         kmers_passed = []
         if phenotype_scale == "continuous":
             test = "t-test"
