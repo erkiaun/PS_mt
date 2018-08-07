@@ -80,12 +80,9 @@ def ME(list1, list2):
              MEs += 1
     return str(float(MEs)/len(list1)*100)+"%"
 
-def within_1_tier_accuracy(targets, predictions, logarithmed):
+def within_1_tier_accuracy(targets, predictions):
     # Calculate the plus/minus one dilution factor accuracy
     # for predicted antibiotic resistance values.
-    if logarithmed == "-":
-        targets = map(lambda x: log(x, 2), tagets)
-        predictions = map(lambda x: log(x, 2), predictions)
     within_1_tier = 0
     for item in zip(targets, predictions):
         if abs(item[0]-item[1]) <= 1:
@@ -815,7 +812,7 @@ def get_kmer_presence_matrix(kmers_passed, split_of_kmer_lists):
     return(kmers_presence_matrix, features)
 
 def linear_regression(
-	    logarithmed, p, kmer_lists_splitted, samples, samples_order, alphas, number_of_phenotypes,
+	    p, kmer_lists_splitted, samples, samples_order, alphas, number_of_phenotypes,
 	    kmers_passed_all_phenotypes, penalty, n_splits, weights, testset_size,
 	    phenotypes, use_of_weights, l1_ratio, phenotypes_to_analyze=False, 
         headerline=False
@@ -972,8 +969,8 @@ def linear_regression(
             f1.write("The Pearson correlation coefficient and p-value: " \
                     " %s, %s \n" % (r_value, pval_r))
             f1.write("The plus/minus 1 dilution factor accuracy (for MICs):" \
-                "%s \n\n" % within_one_tier_accuracy(
-                    y_train, train_y_prediction, logarithmed
+                "%s \n\n" % within_1_tier_accuracy(
+                    y_train, train_y_prediction
                     )
                 )
 
@@ -991,8 +988,8 @@ def linear_regression(
             f1.write("The Pearson correlation coefficient and p-value: " \
                     " %s, %s \n" % (r_value, pval_r))
             f1.write("The plus/minus 1 dilution factor accuracy (for MICs):" \
-                " %s \n\n" % within_one_tier_accuracy(
-                    y_test, test_y_prediction, logarithmed
+                " %s \n\n" % within_1_tier_accuracy(
+                    y_test, test_y_prediction
                     )
                 )
         else:
@@ -1033,8 +1030,8 @@ def linear_regression(
             f1.write("The Pearson correlation coefficient and p-value: " \
                     " %s, %s \n" % (r_value, pval_r))
             f1.write("The plus/minus 1 dilution factor accuracy (for MICs):" \
-                " %s \n\n" % within_one_tier_accuracy(
-                    dataset.target, y_prediction, logarithmed
+                " %s \n\n" % within_1_tier_accuracy(
+                    dataset.target, y_prediction
                     )
                 )
 
@@ -2222,7 +2219,7 @@ def modeling(args):
 
     if phenotype_scale == "continuous":
         linear_regression(
-            args.logarithmed, p, kmer_lists_splitted, samples, samples_order, alphas, n_o_p,
+            p, kmer_lists_splitted, samples, samples_order, alphas, n_o_p,
             kmers_passed_all_phenotypes, args.regularization, args.n_splits,
             weights, args.testset_size, phenotypes, args.weights,
             args.l1_ratio, args.mpheno, headerline
