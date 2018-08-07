@@ -10,7 +10,7 @@ from subprocess import call, Popen, PIPE, check_output
 import math
 import sys
 import warnings
-warnings.showwarnings = lambda *args, **kwargs: None
+warnings.showwarning = lambda *args, **kwargs: None
 
 from Bio.Phylo.TreeConstruction import DistanceTreeConstructor, _DistanceMatrix
 from cogent import LoadTree
