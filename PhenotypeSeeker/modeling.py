@@ -747,7 +747,7 @@ def kmer_filtering_by_pvalue(pvalue, number_of_phenotypes, phenotype_scale, pval
                 if  (item  < (
                         (i+1) 
                         / nr_of_kmers_tested) * pvalue
-                        )):
+                        ):
                     highest_sign_pvalue = item
                 elif item > pvalue:
                     break
