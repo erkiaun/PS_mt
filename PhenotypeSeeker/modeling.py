@@ -48,7 +48,7 @@ class Printer():
 def write_to_stderr_parallel(
         prevPer, curKmerNum, totalKmers, text, phenotype=""
         ):
-    currentPercent = (curKmerNum/totalKmers)*100
+    currentPercent = (curKmerNum/float(totalKmers))*100
 
     if int(currentPercent) > prevPer:
         output = "\t" + phenotype + "%d%% of " % (
@@ -686,10 +686,10 @@ def kmer_filtering_by_pvalue(pvalue, number_of_phenotypes, phenotype_scale, pval
     sys.stderr.write("Filtering the k-mers by p-value:\n")
     kmers_passed_all_phenotypes = []
     for j, k in enumerate(p_t_a):
-        nr_of_kmers_tested = len(pvalues_all_phenotypes[j])
+        nr_of_kmers_tested = float(len(pvalues_all_phenotypes[j]))
         currentKmerNum.value = 0.0
         previousPercent.value = 0.0
-        checkpoint = math.ceil(nr_of_kmers_tested/100)
+        checkpoint = int(math.ceil(nr_of_kmers_tested/100))
         kmers_passed = []
         if phenotype_scale == "continuous":
             test = "t-test"
@@ -745,7 +745,7 @@ def kmer_filtering_by_pvalue(pvalue, number_of_phenotypes, phenotype_scale, pval
             max_pvalue_by_FDR = 0
             for i, item in enumerate(pvalues_ascending):
                 if  (item  < (
-                        (float(i+1) 
+                        (i+1) 
                         / nr_of_kmers_tested) * pvalue
                         )):
                     highest_sign_pvalue = item
@@ -2149,7 +2149,7 @@ def modeling(args):
 
     pvalues_all = []
     kmers_to_analyse = float(check_output(['wc', '-l', "K-mer_lists/" + samples_order[0] + "_mapped.txt"]).split()[0])
-    checkpoint = math.ceil(kmers_to_analyse/(100*args.num_threads))
+    checkpoint = int(math.ceil(kmers_to_analyse/(100*args.num_threads)))
     for j, k in enumerate(phenotypes_2_analyse):
         currentKmerNum.value = 0
         previousPercent.value = 0
