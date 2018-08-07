@@ -1,7 +1,7 @@
 #!/usr/bin/python2.7
 
 __author__ = "Erki Aun"
-__version__ = "2.0"
+__version__ = "0.3.0"
 __maintainer__ = "Erki Aun"
 __email__ = "erki.aun@ut.ee"
 
@@ -135,7 +135,7 @@ def get_feature_vector(length, min_freq, samples):
         ]
     call(glistmaker_args)
 
-def kmer_list_generator(samples_info, kmer_length, freq, input_samples):
+def kmer_list_generator(lock, samples_info, kmer_length, freq, input_samples):
     # Makes "K-mer_lists" directory where all lists are stored.
     # Generates k-mer lists for every sample in sample_names variable 
     # (list or dict).
@@ -147,8 +147,12 @@ def kmer_list_generator(samples_info, kmer_length, freq, input_samples):
         	+ item + " -w " + kmer_length + " -c " + freq], 
         	shell=True
         	)
+        lock.acquire()
         currentSampleNum.value += 1
-        output = "\t%d of %d lists generated." % (currentSampleNum.value,totalFiles)
+        lock.release()
+        output = "\t%d of %d lists generated." % (
+            currentSampleNum.value, totalFiles
+            )
         Printer(output)
 
 def kmer_frequencies(samples):
@@ -205,7 +209,7 @@ def kmer_filtering_by_frequency(dict_of_frequencies, min_freq, max_freq, num_thr
     f1.close()
     return(float(kmers_passed))
 
-def map_samples_modeling(samples_info, kmer_length, sample_names):
+def map_samples_modeling(lock, samples_info, kmer_length, sample_names):
     #Takes k-mers, which passed frequency filtering as feature space and maps samples k-mer lists
     #to that feature space. A vector of k-mers frequency information is created for every sample.
     totalFiles = len(samples_info)
@@ -213,7 +217,9 @@ def map_samples_modeling(samples_info, kmer_length, sample_names):
         out_name = "K-mer_lists/"+ item + "_mapped.txt"
         with open(out_name, "w+") as f1:
             call(["glistquery", "K-mer_lists/" + item + "_" + kmer_length  + ".list", "-l", "K-mer_lists/feature_vector_" + kmer_length  + ".list"], stdout=f1)
+        lock.aquire()
         currentSampleNum.value += 1
+        lock.release()
         output = "\t%d of %d samples mapped." % (currentSampleNum.value, totalFiles)
         Printer(output)
 
@@ -461,8 +467,6 @@ def weighted_chi_squared(
         kmer = line[0].split()[0]
         list1 = [j.split()[1].strip() for j in line]
 
-
-
         weights_of_res_w_kmer = 0
         weights_of_res_wo_kmer = 0
         weights_of_sens_w_kmer = 0
@@ -538,13 +542,6 @@ def weighted_chi_squared(
             kmer + "\t%.2f\t%.2E\t" % chisquare_results 
             + str(len(samples_x)) +"\t| " + " ".join(samples_x) + "\n"
             )
-        if counter%checkpoint == 0:
-            l.acquire()
-            currentKmerNum.value += checkpoint
-            l.release()
-            write_to_stderr_parallel(
-                previousPercent.value, currentKmerNum.value, k_t_a, "tests conducted.", phenotype
-                )
     l.acquire()
     currentKmerNum.value += counter%checkpoint
     l.release()
@@ -1035,7 +1032,7 @@ def linear_regression(
         f2.close()
 
 def logistic_regression(
-	    kmer_matrix, samples, samples_order, alphas, number_of_phenotypes, 
+	    p, kmer_lists_splitted, samples, samples_order, alphas, number_of_phenotypes, 
 	    kmers_passed_all_phenotypes, penalty, n_splits, weights, testset_size,
 	    phenotypes, use_of_weights, l1_ratio, phenotypes_to_analyze=False, 
         headerline=False
@@ -1091,7 +1088,8 @@ def logistic_regression(
             set(kmers_passed_all_phenotypes[j])), kmer_lists_splitted)
         mat_and_feat_lists = map(list, zip(*mat_and_feat_tuples))
         kmers_presence_matrix = [item for sublist in mat_and_feat_lists[0] for item in sublist]
-        features = []
+        features = [item for sublist in mat_and_feat_lists[1] for item in sublist]
+        Phenotypes = [samples[item][k] for item in samples_order]
 
         # Converting data into Python array formats suitable to use in
         # sklearn modelling. Also, deleting information associated with
@@ -2108,10 +2106,10 @@ def modeling(args):
     sys.stderr.write("Generating the k-mer feature vector.\n")
     get_feature_vector(args.length, args.min, samples)
     sys.stderr.write("Generating the k-mer lists for input samples:\n")
-    p.map(partial(kmer_list_generator, samples, args.length, args.cutoff), mt_split)   
+    p.map(partial(kmer_list_generator, l, samples, args.length, args.cutoff), mt_split)   
     sys.stderr.write("\nMapping samples to the feature vector space:\n")
     currentSampleNum.value = 0
-    p.map(partial(map_samples_modeling, samples, args.length), mt_split)
+    p.map(partial(map_samples_modeling, l, samples, args.length), mt_split)
     
     #call(["rm -r K-mer_lists/"], shell = True)
     
@@ -2209,7 +2207,7 @@ def modeling(args):
     elif phenotype_scale == "binary":
         if args.binary_classifier == "log":
             logistic_regression(
-                "k-mer_matrix.txt", samples, samples_order, alphas, n_o_p,
+                p, kmer_lists_splitted, samples, samples_order, alphas, n_o_p,
                 kmers_passed_all_phenotypes, args.regularization, args.n_splits,
                 weights, args.testset_size, phenotypes, args.weights,
                 args.l1_ratio, args.mpheno, headerline
