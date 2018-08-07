@@ -687,8 +687,8 @@ def kmer_filtering_by_pvalue(pvalue, number_of_phenotypes, phenotype_scale, pval
     kmers_passed_all_phenotypes = []
     for j, k in enumerate(p_t_a):
         nr_of_kmers_tested = float(len(pvalues_all_phenotypes[j]))
-        currentKmerNum.value = 0.0
-        previousPercent.value = 0.0
+        currentKmerNum.value = 0
+        previousPercent.value = 0
         checkpoint = int(math.ceil(nr_of_kmers_tested/100))
         kmers_passed = []
         if phenotype_scale == "continuous":
