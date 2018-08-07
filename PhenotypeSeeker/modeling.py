@@ -217,7 +217,7 @@ def map_samples_modeling(lock, samples_info, kmer_length, sample_names):
         out_name = "K-mer_lists/"+ item + "_mapped.txt"
         with open(out_name, "w+") as f1:
             call(["glistquery", "K-mer_lists/" + item + "_" + kmer_length  + ".list", "-l", "K-mer_lists/feature_vector_" + kmer_length  + ".list"], stdout=f1)
-        lock.aquire()
+        lock.acquire()
         currentSampleNum.value += 1
         lock.release()
         output = "\t%d of %d samples mapped." % (currentSampleNum.value, totalFiles)
