@@ -217,6 +217,12 @@ def Main():
         "--num_threads", type=int, metavar='INT', default=8,
         help='Specify the number of threads the program is run on (default 8).'
         )
+    other.add_argument(
+        "--logarithmed", type=str, metavar='"+ or -"', default="+",
+        help='In the case of continuos antibiotic resistance phenotype values \
+        specify if the phenotype values are logarithmed ("+") or the original \
+        unlogarithmed ("-") values (default logaritheds).'
+        )
     other.add_argument("-h", "--help", action="help",
     	help="Show this help message and exit."
     	)

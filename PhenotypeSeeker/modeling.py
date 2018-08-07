@@ -34,43 +34,38 @@ import Bio
 import sklearn.datasets
 import numpy as np
 
-# Global variables
+# --------------------------------------------------------
+# Functions and variables necessarry to show the progress 
+# information in standard error.
+
 currentSampleNum = Value("i", 0)
 currentKmerNum = Value("i", 0)
 previousPercent = Value("i", 0)
 
-class Printer():
+class stderr_print():
     # Print things to stdout on one line dynamically.
     def __init__(self,data):
         sys.stderr.write("\r\x1b[K"+data.__str__())
         sys.stderr.flush()
 
-def write_to_stderr_parallel(
+def check_progress(
         prevPer, curKmerNum, totalKmers, text, phenotype=""
         ):
     currentPercent = (curKmerNum/float(totalKmers))*100
-
     if int(currentPercent) > prevPer:
         output = "\t" + phenotype + "%d%% of " % (
             currentPercent
             ) + text
-        Printer(output)
+        stderr_print(output)
         previousPercent.value = int(currentPercent)
 
-def write_to_stderr_if(
-        previousPercent, currentKmerNum, totalKmers, text, phenotype=""
-        ):
-    currentPercent = currentKmerNum/totalKmers*100    
-    if int(currentPercent) > previousPercent:
-        output = "\t" + phenotype + "%d%% of %d " % (
-            currentPercent,totalKmers
-            ) + text
-        Printer(output)
-        previousPercent = currentPercent
-    currentKmerNum += 1
-    return(previousPercent, currentKmerNum)
+
+
+# ---------------------------------------------------------
+# Self-implemented performance measure functions
 
 def VME(list1, list2):
+    # Function to calculate the very major error (VME) rate
     VMEs = 0
     for i in zip(list1,list2):
         if i[0] == 1 and i[1] == 0:
@@ -78,21 +73,29 @@ def VME(list1, list2):
     return str(float(VMEs)/len(list1)*100)+"%"
 
 def ME(list1, list2):
+    # Function to calculate the major error (ME) rate
     MEs = 0
     for i in zip(list1,list2):
         if i[0] == 0 and i[1] == 1:
              MEs += 1
     return str(float(MEs)/len(list1)*100)+"%"
 
-def plus_minus_1_dilution_factor_accuracy(list1, list2):
-    counter = 0
-    for item in zip(list1, list2):
+def within_1_tier_accuracy(targets, predictions, logarithmed):
+    # Calculate the plus/minus one dilution factor accuracy
+    # for predicted antibiotic resistance values.
+    if logarithmed == "-":
+        targets = map(lambda x: log(x, 2), tagets)
+        predictions = map(lambda x: log(x, 2), predictions)
+    within_1_tier = 0
+    for item in zip(targets, predictions):
         if abs(item[0]-item[1]) <= 1:
-            counter +=1
-    accuracy = float(counter)/len(list1)
+            within_1_tier +=1
+    accuracy = float(within_1_tier)/len(targets)
     return accuracy
 
-def parse_modeling_input_file(inputfilename):
+
+
+def get_input(inputfilename):
     # Parses info from tabulated input file into samples directory.
     # Stores the order of samples in "samples_order" list.
     # Counts the number of samples and phenotypes and stores those
@@ -153,7 +156,7 @@ def kmer_list_generator(lock, samples_info, kmer_length, freq, input_samples):
         output = "\t%d of %d lists generated." % (
             currentSampleNum.value, totalFiles
             )
-        Printer(output)
+        stderr_print(output)
 
 def kmer_frequencies(samples):
     # Counts the k-mers presence frequencies in samples
@@ -175,7 +178,7 @@ def kmer_frequencies(samples):
         output = "\t%d of %d samples counted for k-mers presence." % (
             currentSampleNum, totalFiles
             )
-        Printer(output)
+        stderr_print(output)
         currentSampleNum += 1
     return(dict_of_frequencies)
 
@@ -198,11 +201,11 @@ def kmer_filtering_by_frequency(dict_of_frequencies, min_freq, max_freq, num_thr
         counter +=1
         if counter%checkpoint == 0:
             currentKmerNum.value += checkpoint
-            write_to_stderr_parallel(
+            check_progress(
                 previousPercent.value, currentKmerNum.value, totalKmers, "k-mers filtered."
                 )
     currentKmerNum.value += counter%checkpoint
-    write_to_stderr_parallel(
+    check_progress(
        previousPercent.value, currentKmerNum.value, totalKmers, "k-mers filtered." 
        )
     sys.stderr.write("\nBuilding the feature vector from filtered k-mers.\n")
@@ -221,7 +224,7 @@ def map_samples_modeling(lock, samples_info, kmer_length, sample_names):
         currentSampleNum.value += 1
         lock.release()
         output = "\t%d of %d samples mapped." % (currentSampleNum.value, totalFiles)
-        Printer(output)
+        stderr_print(output)
 
 def mash_caller(samples_info, freq):
     #Estimating phylogenetic distances between samples using mash
@@ -231,8 +234,8 @@ def mash_caller(samples_info, freq):
         mash_args.append(samples_info[item][0])
     process = Popen(mash_args, stderr=PIPE)
     for line in iter(process.stderr.readline, ''):
-        Printer(line.strip())
-    Printer("")
+        stderr_print(line.strip())
+    stderr_print("")
     with open("mash_distances.mat", "w+") as f1:
         call(["mash", "dist", "reference.msh", "reference.msh"], stdout=f1)
 
@@ -316,7 +319,7 @@ def weighted_t_test(
             l.acquire()
             currentKmerNum.value += checkpoint
             l.release()
-            write_to_stderr_parallel(
+            check_progress(
                 previousPercent.value, currentKmerNum.value, k_t_a, "tests conducted.", phenotype
             )
         samples_x = []
@@ -363,7 +366,7 @@ def weighted_t_test(
     l.acquire()
     currentKmerNum.value += counter%checkpoint
     l.release()
-    write_to_stderr_parallel(
+    check_progress(
         previousPercent.value, currentKmerNum.value, k_t_a, "tests conducted.", phenotype
     )
     f2.close()
@@ -394,7 +397,7 @@ def t_test(
             l.acquire()
             currentKmerNum.value += checkpoint
             l.release()
-            write_to_stderr_parallel(
+            check_progress(
                 previousPercent.value, currentKmerNum.value, k_t_a, "tests conducted.", phenotype
             )
         samples_x = []
@@ -428,7 +431,7 @@ def t_test(
     l.acquire()
     currentKmerNum.value += counter%checkpoint
     l.release()
-    write_to_stderr_parallel(
+    check_progress(
         previousPercent.value, currentKmerNum.value, k_t_a, "tests conducted.", phenotype
     )
     f2.close()
@@ -458,7 +461,7 @@ def weighted_chi_squared(
             l.acquire()
             currentKmerNum.value += checkpoint
             l.release()
-            write_to_stderr_parallel(
+            check_progress(
                 previousPercent.value, currentKmerNum.value, k_t_a, "tests conducted.", phenotype
             )
         samples_x = []
@@ -545,7 +548,7 @@ def weighted_chi_squared(
     l.acquire()
     currentKmerNum.value += counter%checkpoint
     l.release()
-    write_to_stderr_parallel(
+    check_progress(
         previousPercent.value, currentKmerNum.value, k_t_a, "tests conducted.", phenotype
         )
     f2.close()
@@ -576,7 +579,7 @@ def chi_squared(
             l.acquire()
             currentKmerNum.value += checkpoint
             l.release()
-            write_to_stderr_parallel(
+            check_progress(
                 previousPercent.value, currentKmerNum.value, k_t_a, "tests conducted.", phenotype
             )
         samples_x = []
@@ -643,7 +646,7 @@ def chi_squared(
     l.acquire()
     currentKmerNum.value += counter%checkpoint
     l.release()
-    write_to_stderr_parallel(
+    check_progress(
         previousPercent.value, currentKmerNum.value, k_t_a, "tests conducted.", phenotype
         )                
     f2.close()
@@ -739,7 +742,7 @@ def kmer_filtering_by_pvalue(l, pvalue, number_of_phenotypes, phenotype_scale, p
                     l.acquire()
                     currentKmerNum.value += checkpoint
                     l.release()
-                    write_to_stderr_parallel(
+                    check_progress(
                         previousPercent.value, currentKmerNum.value, nr_of_kmers_tested, "k-mers filtered.", phenotype
                     )
         elif FDR:
@@ -764,7 +767,7 @@ def kmer_filtering_by_pvalue(l, pvalue, number_of_phenotypes, phenotype_scale, p
                     l.acquire()
                     currentKmerNum.value += checkpoint
                     l.release()
-                    write_to_stderr_parallel(
+                    check_progress(
                         previousPercent.value, currentKmerNum.value, nr_of_kmers_tested, "k-mers filtered.", phenotype
                     )
         else:
@@ -780,7 +783,7 @@ def kmer_filtering_by_pvalue(l, pvalue, number_of_phenotypes, phenotype_scale, p
                     l.acquire()
                     currentKmerNum.value += checkpoint
                     l.release()
-                    write_to_stderr_parallel(
+                    check_progress(
                         previousPercent.value, currentKmerNum.value, nr_of_kmers_tested, "k-mers filtered.", phenotype
                     )
         if len(p_t_a) > 1 and k != p_t_a[-1]:
@@ -793,7 +796,7 @@ def kmer_filtering_by_pvalue(l, pvalue, number_of_phenotypes, phenotype_scale, p
     l.acquire()
     currentKmerNum.value += counter%checkpoint
     l.release()
-    write_to_stderr_parallel(
+    check_progress(
         previousPercent.value, currentKmerNum.value, nr_of_kmers_tested, "k-mers filtered.", phenotype
         )                
     return(kmers_passed_all_phenotypes)
@@ -812,7 +815,7 @@ def get_kmer_presence_matrix(kmers_passed, split_of_kmer_lists):
     return(kmers_presence_matrix, features)
 
 def linear_regression(
-	    p, kmer_lists_splitted, samples, samples_order, alphas, number_of_phenotypes,
+	    logarithmed, p, kmer_lists_splitted, samples, samples_order, alphas, number_of_phenotypes,
 	    kmers_passed_all_phenotypes, penalty, n_splits, weights, testset_size,
 	    phenotypes, use_of_weights, l1_ratio, phenotypes_to_analyze=False, 
         headerline=False
@@ -969,8 +972,8 @@ def linear_regression(
             f1.write("The Pearson correlation coefficient and p-value: " \
                     " %s, %s \n" % (r_value, pval_r))
             f1.write("The plus/minus 1 dilution factor accuracy (for MICs):" \
-                "%s \n\n" % plus_minus_1_dilution_factor_accuracy(
-                    y_train, train_y_prediction
+                "%s \n\n" % within_one_tier_accuracy(
+                    y_train, train_y_prediction, logarithmed
                     )
                 )
 
@@ -988,8 +991,8 @@ def linear_regression(
             f1.write("The Pearson correlation coefficient and p-value: " \
                     " %s, %s \n" % (r_value, pval_r))
             f1.write("The plus/minus 1 dilution factor accuracy (for MICs):" \
-                " %s \n\n" % plus_minus_1_dilution_factor_accuracy(
-                    y_test, test_y_prediction
+                " %s \n\n" % within_one_tier_accuracy(
+                    y_test, test_y_prediction, logarithmed
                     )
                 )
         else:
@@ -1030,8 +1033,8 @@ def linear_regression(
             f1.write("The Pearson correlation coefficient and p-value: " \
                     " %s, %s \n" % (r_value, pval_r))
             f1.write("The plus/minus 1 dilution factor accuracy (for MICs):" \
-                " %s \n\n" % plus_minus_1_dilution_factor_accuracy(
-                    dataset.target, y_prediction
+                " %s \n\n" % within_one_tier_accuracy(
+                    dataset.target, y_prediction, logarithmed
                     )
                 )
 
@@ -2081,7 +2084,7 @@ def modeling(args):
     (
     samples, samples_order, n_o_s, n_o_p, phenotype_scale, headerline,
     phenotypes
-    ) = parse_modeling_input_file(args.inputfile)
+    ) = get_input(args.inputfile)
 
     # Generating the vector of alphas (hyperparameters in regression analysis)
     # based on the given command line arguments.
@@ -2219,7 +2222,7 @@ def modeling(args):
 
     if phenotype_scale == "continuous":
         linear_regression(
-            p, kmer_lists_splitted, samples, samples_order, alphas, n_o_p,
+            args.logarithmed, p, kmer_lists_splitted, samples, samples_order, alphas, n_o_p,
             kmers_passed_all_phenotypes, args.regularization, args.n_splits,
             weights, args.testset_size, phenotypes, args.weights,
             args.l1_ratio, args.mpheno, headerline
