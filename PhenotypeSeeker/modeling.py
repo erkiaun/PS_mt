@@ -740,7 +740,7 @@ def kmer_filtering_by_pvalue(l, pvalue, number_of_phenotypes, phenotype_scale, p
                     currentKmerNum.value += checkpoint
                     l.release()
                     write_to_stderr_parallel(
-                        previousPercent.value, currentKmerNum.value, k_t_a, "k-mers filtered.", phenotype
+                        previousPercent.value, currentKmerNum.value, nr_of_kmers_tested, "k-mers filtered.", phenotype
                     )
         elif FDR:
             max_pvalue_by_FDR = 0
@@ -765,7 +765,7 @@ def kmer_filtering_by_pvalue(l, pvalue, number_of_phenotypes, phenotype_scale, p
                     currentKmerNum.value += checkpoint
                     l.release()
                     write_to_stderr_parallel(
-                        previousPercent.value, currentKmerNum.value, k_t_a, "k-mers filtered.", phenotype
+                        previousPercent.value, currentKmerNum.value, nr_of_kmers_tested, "k-mers filtered.", phenotype
                     )
         else:
             for line in f1:
@@ -781,7 +781,7 @@ def kmer_filtering_by_pvalue(l, pvalue, number_of_phenotypes, phenotype_scale, p
                     currentKmerNum.value += checkpoint
                     l.release()
                     write_to_stderr_parallel(
-                        previousPercent.value, currentKmerNum.value, k_t_a, "k-mers filtered.", phenotype
+                        previousPercent.value, currentKmerNum.value, nr_of_kmers_tested, "k-mers filtered.", phenotype
                     )
         if len(p_t_a) > 1 and k != p_t_a[-1]:
             sys.stderr.write("\n")
@@ -794,7 +794,7 @@ def kmer_filtering_by_pvalue(l, pvalue, number_of_phenotypes, phenotype_scale, p
     currentKmerNum.value += counter%checkpoint
     l.release()
     write_to_stderr_parallel(
-        previousPercent.value, currentKmerNum.value, k_t_a, "k-mers filtered.", phenotype
+        previousPercent.value, currentKmerNum.value, nr_of_kmers_tested, "k-mers filtered.", phenotype
         )                
     return(kmers_passed_all_phenotypes)
 
