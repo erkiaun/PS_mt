@@ -677,7 +677,7 @@ def concatenate_test_files(headerline, k, n_o_p, num_threads, phenotype_scale, p
         else:
             call(["cat chi-squared_test_results_* > chi-squared_test_results.txt && rm chi-squared_test_results_*"], shell=True)
 
-def kmer_filtering_by_pvalue(num_threads, pvalue, number_of_phenotypes, phenotype_scale, pvalues_all_phenotypes,
+def kmer_filtering_by_pvalue(pvalue, number_of_phenotypes, phenotype_scale, pvalues_all_phenotypes,
         phenotypes, kmer_limit, p_t_a, FDR=False, 
         B=False, headerline=False
         ):
@@ -689,7 +689,7 @@ def kmer_filtering_by_pvalue(num_threads, pvalue, number_of_phenotypes, phenotyp
         nr_of_kmers_tested = len(pvalues_all_phenotypes[j])
         currentKmerNum.value = 0.0
         previousPercent.value = 0.0
-        checkpoint = int(nr_of_kmers_tested/100)
+        checkpoint = math.ceil(nr_of_kmers_tested/100)
         kmers_passed = []
         if phenotype_scale == "continuous":
             test = "t-test"
@@ -734,9 +734,12 @@ def kmer_filtering_by_pvalue(num_threads, pvalue, number_of_phenotypes, phenotyp
                     if float(list1[2]) <= max_pvalue_by_limit:
                         kmers_passed.append(list1[0])
                         number_of_kmers += 1
-                previousPercent, currentKmerNum = write_to_stderr_if(
-                    previousPercent, currentKmerNum, 
-                    nr_of_kmers_tested, "k-mers filtered.", phenotype
+                if counter%checkpoint == 0:
+                    l.acquire()
+                    currentKmerNum.value += checkpoint
+                    l.release()
+                    write_to_stderr_parallel(
+                        previousPercent.value, currentKmerNum.value, k_t_a, "k-mers filtered.", phenotype
                     )
         elif FDR:
             max_pvalue_by_FDR = 0
@@ -749,15 +752,19 @@ def kmer_filtering_by_pvalue(num_threads, pvalue, number_of_phenotypes, phenotyp
                 elif item > pvalue:
                     break
             for line in f1:
+                counter +=1
                 list1 = line.split()
                 if float(list1[2]) <= max_pvalue_by_FDR:
                     f2.write(line)
                     if float(list1[2]) <= max_pvalue_by_limit:
                         kmers_passed.append(list1[0])
                         number_of_kmers += 1
-                previousPercent, currentKmerNum = write_to_stderr_if(
-                    previousPercent, currentKmerNum, 
-                    nr_of_kmers_tested, "k-mers filtered.", phenotype
+                if counter%checkpoint == 0:
+                    l.acquire()
+                    currentKmerNum.value += checkpoint
+                    l.release()
+                    write_to_stderr_parallel(
+                        previousPercent.value, currentKmerNum.value, k_t_a, "k-mers filtered.", phenotype
                     )
         else:
             for line in f1:
@@ -2142,7 +2149,7 @@ def modeling(args):
 
     pvalues_all = []
     kmers_to_analyse = float(check_output(['wc', '-l', "K-mer_lists/" + samples_order[0] + "_mapped.txt"]).split()[0])
-    checkpoint = int(kmers_to_analyse/(100*args.num_threads))
+    checkpoint = math.ceil(kmers_to_analyse/(100*args.num_threads))
     for j, k in enumerate(phenotypes_2_analyse):
         currentKmerNum.value = 0
         previousPercent.value = 0
