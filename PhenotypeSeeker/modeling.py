@@ -677,7 +677,7 @@ def concatenate_test_files(headerline, k, n_o_p, num_threads, phenotype_scale, p
         else:
             call(["cat chi-squared_test_results_* > chi-squared_test_results.txt && rm chi-squared_test_results_*"], shell=True)
 
-def kmer_filtering_by_pvalue(pvalue, number_of_phenotypes, phenotype_scale, pvalues_all_phenotypes,
+def kmer_filtering_by_pvalue(l, pvalue, number_of_phenotypes, phenotype_scale, pvalues_all_phenotypes,
         phenotypes, kmer_limit, p_t_a, FDR=False, 
         B=False, headerline=False
         ):
@@ -2212,7 +2212,7 @@ def modeling(args):
 
     
     kmers_passed_all_phenotypes = kmer_filtering_by_pvalue(
-        args.pvalue, n_o_p, phenotype_scale, pvalues_all, phenotypes,
+        l, args.pvalue, n_o_p, phenotype_scale, pvalues_all, phenotypes,
         args.n_kmers, phenotypes_2_analyse, args.FDR,
         args.Bonferroni, headerline
         )
