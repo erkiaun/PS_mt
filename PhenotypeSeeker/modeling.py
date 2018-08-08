@@ -1896,7 +1896,7 @@ def assembling(
 
 def modeling(args):
     # The main function of "phenotypeseeker modeling"
-    samples, phenotypes = get_input_data(args.inputfilename)
+    samples, phenotypes = get_input_data(args.inputfile)
     no_samples, no_phenotypes, phenotype_scale = process_input_data(
         samples, phenotypes
         )
