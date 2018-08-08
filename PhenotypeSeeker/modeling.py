@@ -5,7 +5,6 @@ __version__ = "0.3.0"
 __maintainer__ = "Erki Aun"
 __email__ = "erki.aun@ut.ee"
 
-import time
 from itertools import chain, izip, izip_longest, permutations
 from subprocess import call, Popen, PIPE, check_output
 import math
@@ -100,7 +99,7 @@ def parse_inputfile(inputfilename):
     # Stores the order of samples in "samples_order" list.
     # Counts the number of samples and phenotypes and stores those
     # values in n_o_s and n_o_p variables, respectively.
-    samples = OrderedDict()
+    samples = {}
     samples_order = []
     n_o_s = 0
     headerline = False
@@ -508,9 +507,6 @@ def chi_squared(
     pvalues = []
     counter = 0
 
-    samples_order = samples.keys()
-    samples_phenotypes = [value[k] for value in samples.values()]
-
     if headerline:
         outputfile = "chi-squared_test_results_" + phenotypes[k-1] + "_" + split_of_kmer_lists[0][-5:] + ".txt"
         phenotype = phenotypes[k-1] + ": "
@@ -541,20 +537,22 @@ def chi_squared(
         sens_w_kmer = 0
         sens_wo_kmer = 0
 
-        for i, item in enumerate(samples_phenotypes):
-            if item != "NA":
-                if item == "1":
-                    if (list1[i] != "0"):    
-                        res_w_kmer += 1
-                        samples_x.append(samples_order[i])
-                    else: 
-                        res_wo_kmer += 1
-                else:
-                    if (list1[i] != "0"):
-                        sens_w_kmer += 1
-                        samples_x.append(samples_order[i])
-                    else:
-                        sens_wo_kmer += 1
+        for j in range(len(list1)):
+            if samples[samples_order[j]][k] != "NA":
+                if (list1[j] != "0" 
+                        and samples[samples_order[j]][k] == "1"):
+                    res_w_kmer += 1
+                    samples_x.append(samples_order[j])
+                if (list1[j] == "0" 
+                        and samples[samples_order[j]][k] == "1"):
+                    res_wo_kmer += 1
+                if (list1[j] != "0" 
+                        and samples[samples_order[j]][k] == "0"):
+                    sens_w_kmer += 1
+                    samples_x.append(samples_order[j])
+                if (list1[j] == "0" 
+                        and samples[samples_order[j]][k] == "0"):
+                    sens_wo_kmer += 1
 
         res_samples = (res_w_kmer + res_wo_kmer)
         sens_samples = (sens_w_kmer + sens_wo_kmer)
@@ -2150,7 +2148,6 @@ def modeling(args):
                     sys.stderr.write(
                         "\nConducting the k-mer specific chi-square tests:\n"
                     )
-                start = time.time()
                 pvalues_from_all_threads = p.map(
                     partial(
                         chi_squared, args.min, args.max, checkpoint, k, l, samples, samples_order,
@@ -2158,8 +2155,6 @@ def modeling(args):
                         ),
                     kmer_lists_splitted
                     )
-                end = time.time()
-                print(end - start)
         pvalues_all.append(list(chain(*pvalues_from_all_threads)))
         sys.stderr.write("\n")
     

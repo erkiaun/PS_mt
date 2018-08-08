@@ -488,8 +488,8 @@ def chi_squared(
         k_t_a, FDR, split_of_kmer_lists
         ):
     # Calculates Chi-squared tests for every k-mer
-    samples_order = samples.keys()
-    samples_phenotypes = [value[k] for value in samples.values()]
+    sample_names = samples.keys()
+    sample_phenotypes = [sample_data[k] for sample_data in samples.values()]
 
     pvalues = []
     counter = 0
@@ -519,18 +519,18 @@ def chi_squared(
         sens_w_kmer = 0
         sens_wo_kmer = 0
 
-        for i, item in enumerate(samples_phenotypes):
+        for i, item in enumerate(sample_phenotypes):
             if item != "NA":
                 if item == "1":
                     if (list1[i] != "0"):    
                         res_w_kmer += 1
-                        samples_x.append(samples_order[i])
+                        samples_x.append(samples_names[i])
                     else: 
                         res_wo_kmer += 1
                 else:
                     if (list1[i] != "0"):
                         sens_w_kmer += 1
-                        samples_x.append(samples_order[i])
+                        samples_x.append(samples_names[i])
                     else:
                         sens_wo_kmer += 1
                     
@@ -1896,7 +1896,6 @@ def assembling(
 
 def modeling(args):
     # The main function of "phenotypeseeker modeling"
-
     samples, phenotypes = get_input_data(args.inputfilename)
     no_samples, no_phenotypes, phenotype_scale = process_input_data(
         samples, phenotypes
