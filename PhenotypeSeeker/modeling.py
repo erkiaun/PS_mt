@@ -117,7 +117,7 @@ def process_input_data(samples, phenotypes):
     
     phenotype_scale = "binary"
     for sample, sample_data in samples.iteritems():
-        if not all(x == "0" or x == "1" or x == "NA" for x in sample_data[1:])
+        if not all(x == "0" or x == "1" or x == "NA" for x in sample_data[1:]):
             phenotype_scale = "continuous"
 
     return no_samples, no_phenotypes, phenotype_scale
