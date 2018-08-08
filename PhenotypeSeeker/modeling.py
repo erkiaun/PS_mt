@@ -99,7 +99,7 @@ def parse_inputfile(inputfilename):
     # Stores the order of samples in "samples_order" list.
     # Counts the number of samples and phenotypes and stores those
     # values in n_o_s and n_o_p variables, respectively.
-    samples = {}
+    samples = OrderedDict()
     samples_order = []
     n_o_s = 0
     headerline = False
@@ -504,6 +504,8 @@ def chi_squared(
         k_t_a, FDR, headerline, split_of_kmer_lists
         ):
     # Calculates Chi-squared tests for every k-mer
+    sample_names = samples.keys()
+    sample_phenotypes = [sample_data[k] for sample_data in samples.values()]
     pvalues = []
     counter = 0
 
@@ -537,22 +539,20 @@ def chi_squared(
         sens_w_kmer = 0
         sens_wo_kmer = 0
 
-        for j in range(len(list1)):
-            if samples[samples_order[j]][k] != "NA":
-                if (list1[j] != "0" 
-                        and samples[samples_order[j]][k] == "1"):
-                    res_w_kmer += 1
-                    samples_x.append(samples_order[j])
-                if (list1[j] == "0" 
-                        and samples[samples_order[j]][k] == "1"):
-                    res_wo_kmer += 1
-                if (list1[j] != "0" 
-                        and samples[samples_order[j]][k] == "0"):
-                    sens_w_kmer += 1
-                    samples_x.append(samples_order[j])
-                if (list1[j] == "0" 
-                        and samples[samples_order[j]][k] == "0"):
-                    sens_wo_kmer += 1
+        for i, item in enumerate(sample_phenotypes):
+            if item != "NA":
+                if item == "1":
+                    if (list1[i] != "0"):    
+                        res_w_kmer += 1
+                        samples_x.append(samples_names[i])
+                    else: 
+                        res_wo_kmer += 1
+                else:
+                    if (list1[i] != "0"):
+                        sens_w_kmer += 1
+                        samples_x.append(samples_names[i])
+                    else:
+                        sens_wo_kmer += 1
 
         res_samples = (res_w_kmer + res_wo_kmer)
         sens_samples = (sens_w_kmer + sens_wo_kmer)
