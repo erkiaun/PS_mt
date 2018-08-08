@@ -214,6 +214,11 @@ def Main():
         help='Assemble the k-mers used in regression model (default "+").'
         )
     other.add_argument(
+        "--take_logs", action='store_true',
+        help='Take logarithms of the lognormally distributed phenotypes \
+        (eg. original antibiotic resistance measurements).'
+        )
+    other.add_argument(
         "--num_threads", type=int, metavar='INT', default=8,
         help='Specify the number of threads the program is run on (default 8).'
         )

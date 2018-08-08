@@ -93,46 +93,6 @@ def within_1_tier_accuracy(targets, predictions):
     return accuracy
 
 
-
-def parse_inputfile(inputfilename):
-    # Parses info from tabulated input file into samples directory.
-    # Stores the order of samples in "samples_order" list.
-    # Counts the number of samples and phenotypes and stores those
-    # values in n_o_s and n_o_p variables, respectively.
-    samples = OrderedDict()
-    phenotypes = []
-    with open(inputfilename) as inputfile:
-        inputfile.readline().strip()
-
-
-
-    samples_order = []
-    n_o_s = 0
-    headerline = False
-    phenotype_scale = "binary"
-    phenotypes = []
-    with open(inputfilename) as f1:
-        for line in f1:
-            if line == "\n":
-                break
-            line = line.strip()
-            list1 = line.split()
-            if list1[0] == "ID":
-                phenotypes = list1[2:]
-                headerline = True
-            else:
-                for item in list1[2:]:
-                    if item != "1" and item != "0" and item != "NA":
-                        phenotype_scale = "continuous"
-                samples[list1[0]] = list1[1:]
-                samples_order.append(list1[0])
-                n_o_s += 1
-    n_o_p = len(list1[2:])
-    return(
-    	samples, samples_order, n_o_s, n_o_p, 
-    	phenotype_scale, headerline, phenotypes
-    	)
-
 def parse_input_file(inputfilename):
     # Parses info from tabulated input file into samples ordered
     # dictionary. Stores the order of samples in "samples_order" list.
