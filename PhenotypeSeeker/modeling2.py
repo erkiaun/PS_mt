@@ -92,41 +92,30 @@ def within_1_tier_accuracy(targets, predictions):
     accuracy = float(within_1_tier)/len(targets)
     return accuracy
 
-
-def parse_input_file(inputfilename):
+def get_input_data(inputfilename):
     # Parses info from tabulated input file into samples ordered
     # dictionary. Stores the order of samples in "samples_order" list.
     # Counts the number of samples and phenotypes and stores those
     # values in n_o_s and n_o_p variables, respectively.
-    samples = {}
-    samples_order = []
-    n_o_s = 0
-    headerline = False
-    phenotype_scale = "binary"
-    phenotypes = []
-    with open(inputfilename) as f1:
-        for line in f1:
-            if line == "\n":
-                break
-            line = line.strip()
-            list1 = line.split()
-            if list1[0] == "ID":
-                phenotypes = list1[2:]
-                headerline = True
-            else:
-                for item in list1[2:]:
-                    if item != "1" and item != "0" and item != "NA":
-                        phenotype_scale = "continuous"
-                samples[list1[0]] = list1[1:]
-                samples_order.append(list1[0])
-                n_o_s += 1
-    n_o_p = len(list1[2:])
-    return(
-        samples, samples_order, n_o_s, n_o_p, 
-        phenotype_scale, headerline, phenotypes
-        )
+    samples = OrderedDict()
+    no_samples = 0
+    with open(inputfilename) as inputfile:
+        phenotypes = inputfile.readline().strip().split()[2:]
+    for line in inputfile:
+        samples[line.split()[0]] = line.strip().split()[1:]
+    return samples, phenotypes
 
-def process_input():
+def process_input_data(samples, phenotypes):
+    no_samples = len(samples)
+    no_phenotypes = len(phenotypes)
+    
+    phenotype_scale = "binary"
+    for sample, sample_data in samples.iteritems():
+        if not all(x == "0" or x == "1" or x == "NA" for x in sample_data[1:])
+            phenotype_scale = "continuous"
+
+    return no_samples, no_phenotypes, phenotype_scale
+
 
 def get_feature_vector(length, min_freq, samples):
     call(["mkdir", "-p", "K-mer_lists"])
@@ -216,9 +205,9 @@ def distance_matrix_modifier(distance_matrix):
             distancematrix[i][j] = float(distancematrix[i][j])
     return(distancematrix)
 
-def distance_matrix_to_phyloxml(names_order_in_dist_mat, distance_matrix):
+def distance_matrix_to_phyloxml(samples_order, distance_matrix):
     #Converting distance matrix to phyloxml
-    dm = _DistanceMatrix(names_order_in_dist_mat, distance_matrix)
+    dm = _DistanceMatrix(samples_order, distance_matrix)
     tree_xml = DistanceTreeConstructor().nj(dm)
     with open("tree_xml.txt", "w+") as f1:
         Bio.Phylo.write(tree_xml, f1, "phyloxml")
@@ -241,10 +230,12 @@ def newick_to_GSC_weights(newick_tree):
     return(weights)
 
 def weighted_t_test(
-        min_freq, max_freq, checkpoint, k, l, samples, samples_order, weights, number_of_phenotypes,
+        min_freq, max_freq, checkpoint, k, l, samples, weights, number_of_phenotypes,
         phenotypes, k_t_a, FDR, headerline, split_of_kmer_lists
         ):
     # Calculates weighted Welch t-tests results for every k-mer
+    samples_order = samples.keys()
+
     pvalues = []
     counter = 0
     NA = False
@@ -277,14 +268,14 @@ def weighted_t_test(
         kmer = line[0].split()[0]
         list1 = [j.split()[1].strip() for j in line]
         for j in range(len(list1)):
-            if samples[samples_order[j]][k] != "NA":
+            if samples.values()[j][k] != "NA":
                 if list1[j] == "0":
-                    y.append(float(samples[samples_order[j]][k]))
-                    y_weights.append(weights[samples_order[j]])
+                    y.append(float(samples.values()[j][k]))
+                    y_weights.append(weights[samples.keys[j]])
                 else:
-                    x.append(float(samples[samples_order[j]][k]))
-                    x_weights.append(weights[samples_order[j]])
-                    samples_x.append(samples_order[j])
+                    x.append(float(samples.values()[j][k]))
+                    x_weights.append(weights[samples.keys[j]])
+                    samples_x.append(samples.keys[j])
         if len(x) < min_freq or len(y) < 2 or len(x) > max_freq:
             continue
                 
@@ -320,10 +311,11 @@ def weighted_t_test(
     
 
 def t_test(
-        min_freq, max_freq, checkpoint, k, l, samples, samples_order, number_of_phenotypes,
+        min_freq, max_freq, checkpoint, k, l, samples, number_of_phenotypes,
         phenotypes, k_t_a, FDR, headerline, split_of_kmer_lists
         ):
     # Calculates Welch t-test results for every k-mer
+    samples_order = samples.keys()
     pvalues = []
     counter = 0
     NA = False
@@ -384,10 +376,11 @@ def t_test(
     return(pvalues)
 
 def weighted_chi_squared(
-    min_freq, max_freq, checkpoint, k, l, samples, samples_order, weights, number_of_phenotypes,
+    min_freq, max_freq, checkpoint, k, l, samples, weights, number_of_phenotypes,
     phenotypes, k_t_a, FDR, headerline, split_of_kmer_lists
         ):
     # Calculates weighted Chi-squared tests for every k-mer
+    samples_order = samples.keys()
     pvalues = []
     counter = 0
     NA = False
@@ -501,10 +494,12 @@ def weighted_chi_squared(
     return(pvalues)
 
 def chi_squared(
-        min_freq, max_freq, checkpoint, k, l, samples, samples_order, number_of_phenotypes, phenotypes,
+        min_freq, max_freq, checkpoint, k, l, samples, number_of_phenotypes, phenotypes,
         k_t_a, FDR, headerline, split_of_kmer_lists
         ):
     # Calculates Chi-squared tests for every k-mer
+    samples_order = samples.keys()
+
     pvalues = []
     counter = 0
 
@@ -561,7 +556,7 @@ def chi_squared(
         samples_wo_kmer = (res_wo_kmer + sens_wo_kmer)
         samples_total = res_samples + sens_samples
 
-        if samples_w_kmer < min_freq or sampels_wo_kmer < 2 or samples_w_kmer > max_freq:
+        if samples_w_kmer < min_freq or samples_wo_kmer < 2 or samples_w_kmer > max_freq:
             continue
 
 
@@ -918,7 +913,7 @@ def linear_regression(
             f1.write("The Pearson correlation coefficient and p-value: " \
                     " %s, %s \n" % (r_value, pval_r))
             f1.write("The plus/minus 1 dilution factor accuracy (for MICs):" \
-                "%s \n\n" % within_1_tier_accuracy(
+                " %s \n\n" % within_1_tier_accuracy(
                     y_train, train_y_prediction
                     )
                 )
@@ -2026,11 +2021,14 @@ def assembling(
 
 def modeling(args):
     # The main function of "phenotypeseeker modeling"
-    (
-    samples, samples_order, n_o_s, n_o_p, 
-    phenotype_scale, headerline, phenotypes
-    ) = parse_inputfile(args.inputfile)
-    process_input()
+
+    samples, phenotypes = get_input_data(args.inputfilename)
+    no_samples, no_phenotypes, phenotype_scale = process_input_data(
+        samples, phenotypes
+        )
+    
+    headerline = False
+    
     # Generating the vector of alphas (hyperparameters in regression analysis)
     # based on the given command line arguments.
     if args.alphas == None:
@@ -2057,11 +2055,11 @@ def modeling(args):
     if args.min == "0":
         args.min = 2
     if args.max == "0":
-        args.max = n_o_s - 2
+        args.max = no_samples - 2
     
 
     if not args.mpheno:
-        phenotypes_2_analyse = range(1, n_o_p+1)
+        phenotypes_2_analyse = range(1, no_phenotypes+1)
     else: 
         phenotypes_2_analyse = args.mpheno
 
@@ -2070,7 +2068,7 @@ def modeling(args):
     # Splitting samples for multithreading
     mt_split = []
     for i in range(args.num_threads):
-        mt_split.append([samples_order[j] for j in xrange(i, len(samples_order), args.num_threads)])
+        mt_split.append([samples.keys[j] for j in xrange(i, no_samples, args.num_threads)])
     p = Pool(args.num_threads)
     
 
@@ -2087,21 +2085,21 @@ def modeling(args):
     weights = []
     if args.weights == "+":   
         mash_caller(samples, args.cutoff)
-        mash_output_to_distance_matrix(samples_order, "mash_distances.mat")
+        mash_output_to_distance_matrix(samples.keys(), "mash_distances.mat")
         dist_mat = distance_matrix_modifier("distances.mat")
-        distance_matrix_to_phyloxml(samples_order, dist_mat)   
+        distance_matrix_to_phyloxml(samples.keys(), dist_mat)   
         phyloxml_to_newick("tree_xml.txt")
         weights = newick_to_GSC_weights("tree_newick.txt")
     
-    for item in samples_order:
-        call(["split -a 5 -d -n r/" + str(args.num_threads) + " K-mer_lists/" + item  + "_mapped.txt " + "K-mer_lists/" + item + "_mapped_"], shell=True)
+    for sample in samples:
+        call(["split -a 5 -d -n r/" + str(args.num_threads) + " K-mer_lists/" + sample  + "_mapped.txt " + "K-mer_lists/" + sample + "_mapped_"], shell=True)
     
     kmer_lists_splitted = []
     for i in range(args.num_threads):
-        kmer_lists_splitted.append(["K-mer_lists/" + item + "_mapped_%05d" %i for item in samples_order])
+        kmer_lists_splitted.append(["K-mer_lists/" + sample + "_mapped_%05d" %i for sample in samples])
 
     pvalues_all = []
-    kmers_to_analyse = float(check_output(['wc', '-l', "K-mer_lists/" + samples_order[0] + "_mapped.txt"]).split()[0])
+    kmers_to_analyse = float(check_output(['wc', '-l', "K-mer_lists/" + samples.keys[0] + "_mapped.txt"]).split()[0])
     checkpoint = int(math.ceil(kmers_to_analyse/(100*args.num_threads)))
     for j, k in enumerate(phenotypes_2_analyse):
         currentKmerNum.value = 0
@@ -2115,7 +2113,7 @@ def modeling(args):
                 pvalues_from_all_threads = p.map(
                     partial(
                         weighted_t_test, args.min, args.max, checkpoint, k, l, samples, 
-                        samples_order, weights, n_o_p, phenotypes, kmers_to_analyse, 
+                        weights, no_phenotypes, phenotypes, kmers_to_analyse, 
                         args.FDR, headerline
                         ), 
                     kmer_lists_splitted
@@ -2127,7 +2125,7 @@ def modeling(args):
                         )
                 pvalues_from_all_threads = p.map(
                     partial(
-                        t_test, args.min, args.max, checkpoint, k, l, samples, samples_order, n_o_p,
+                        t_test, args.min, args.max, checkpoint, k, l, samples, no_phenotypes,
                         phenotypes, kmers_to_analyse, args.FDR, headerline
                         ), 
                     kmer_lists_splitted
@@ -2140,8 +2138,8 @@ def modeling(args):
                     )
                 pvalues_from_all_threads = p.map(
                     partial(
-                        weighted_chi_squared, args.min, args.max, checkpoint, k, l, samples, samples_order, weights,
-                        n_o_p, phenotypes, kmers_to_analyse, args.FDR, headerline
+                        weighted_chi_squared, args.min, args.max, checkpoint, k, l, samples, weights,
+                        no_phenotypes, phenotypes, kmers_to_analyse, args.FDR, headerline
                         ),
                     kmer_lists_splitted
                     )
@@ -2152,26 +2150,26 @@ def modeling(args):
                     )
                 pvalues_from_all_threads = p.map(
                     partial(
-                        chi_squared, args.min, args.max, checkpoint, k, l, samples, samples_order,
-                        n_o_p, phenotypes, kmers_to_analyse, args.FDR, headerline
+                        chi_squared, args.min, args.max, checkpoint, k, l, samples,
+                        no_phenotypes, phenotypes, kmers_to_analyse, args.FDR, headerline
                         ),
                     kmer_lists_splitted
                     )
         pvalues_all.append(list(chain(*pvalues_from_all_threads)))
         sys.stderr.write("\n")
     
-    concatenate_test_files(headerline, k, n_o_p, args.num_threads, phenotype_scale, phenotypes, phenotypes_2_analyse)
+    concatenate_test_files(headerline, k, no_phenotypes, args.num_threads, phenotype_scale, phenotypes, phenotypes_2_analyse)
 
     
     kmers_passed_all_phenotypes = kmer_filtering_by_pvalue(
-        l, args.pvalue, n_o_p, phenotype_scale, pvalues_all, phenotypes,
+        l, args.pvalue, no_phenotypes, phenotype_scale, pvalues_all, phenotypes,
         args.n_kmers, phenotypes_2_analyse, args.FDR,
         args.Bonferroni, headerline
         )
 
     if phenotype_scale == "continuous":
         linear_regression(
-            p, kmer_lists_splitted, samples, samples_order, alphas, n_o_p,
+            p, kmer_lists_splitted, samples, alphas, no_phenotypes,
             kmers_passed_all_phenotypes, args.regularization, args.n_splits,
             weights, args.testset_size, phenotypes, args.weights,
             args.l1_ratio, args.mpheno, headerline
@@ -2179,21 +2177,21 @@ def modeling(args):
     elif phenotype_scale == "binary":
         if args.binary_classifier == "log":
             logistic_regression(
-                p, kmer_lists_splitted, samples, samples_order, alphas, n_o_p,
+                p, kmer_lists_splitted, samples, alphas, no_phenotypes,
                 kmers_passed_all_phenotypes, args.regularization, args.n_splits,
                 weights, args.testset_size, phenotypes, args.weights,
                 args.l1_ratio, args.mpheno, headerline
                 )
         elif args.binary_classifier == "SVM":
             support_vector_classifier(
-                "k-mer_matrix.txt", samples, samples_order, alphas, n_o_p,
+                "k-mer_matrix.txt", samples, alphas, no_phenotypes,
                 kmers_passed_all_phenotypes, args.regularization, args.n_splits,
                 weights, args.testset_size, phenotypes, args.weights,
                 args.kernel, gammas, args.n_iter, args.mpheno, headerline
                 )
         elif args.binary_classifier == "RF":
         	random_forest(
-                "k-mer_matrix.txt", samples, samples_order, n_o_p,
+                "k-mer_matrix.txt", samples, no_phenotypes,
                 kmers_passed_all_phenotypes, args.n_splits,
                 weights, args.testset_size, phenotypes, args.weights,
                 args.mpheno, headerline
@@ -2202,6 +2200,6 @@ def modeling(args):
 
     if args.assembly == "+":
         assembling(
-            kmers_passed_all_phenotypes, phenotypes, n_o_p, args.mpheno, 
+            kmers_passed_all_phenotypes, phenotypes, no_phenotypes, args.mpheno, 
             headerline
             )
