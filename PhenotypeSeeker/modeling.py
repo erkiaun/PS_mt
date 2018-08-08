@@ -5,6 +5,7 @@ __version__ = "0.3.0"
 __maintainer__ = "Erki Aun"
 __email__ = "erki.aun@ut.ee"
 
+impot time
 from itertools import chain, izip, izip_longest, permutations
 from subprocess import call, Popen, PIPE, check_output
 import math
@@ -2148,6 +2149,7 @@ def modeling(args):
                     sys.stderr.write(
                         "\nConducting the k-mer specific chi-square tests:\n"
                     )
+                start = time.time()
                 pvalues_from_all_threads = p.map(
                     partial(
                         chi_squared, args.min, args.max, checkpoint, k, l, samples, samples_order,
@@ -2155,6 +2157,8 @@ def modeling(args):
                         ),
                     kmer_lists_splitted
                     )
+                end = time.time()
+                print(end - start)
         pvalues_all.append(list(chain(*pvalues_from_all_threads)))
         sys.stderr.write("\n")
     

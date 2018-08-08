@@ -66,13 +66,14 @@ def check_progress(
 # ---------------------------------------------------------
 # Self-implemented performance measure functions
 
-def VME(list1, list2):
+def VME(targets, predictions):
     # Function to calculate the very major error (VME) rate
     VMEs = 0
-    for i in zip(list1,list2):
-        if i[0] == 1 and i[1] == 0:
+    for item in zip(targets, predictions):
+        if item[0] == 1 and item[1] == 0:
             VMEs += 1
-    return str(float(VMEs)/len(list1)*100)+"%"
+    VME = str(float(VMEs)/len(list1)*100)+"%"
+    return VME
 
 def ME(targets, predictions):
     # Function to calculate the major error (ME) rate
@@ -236,7 +237,7 @@ def newick_to_GSC_weights(newick_tree):
 
 def weighted_t_test(
         min_freq, max_freq, checkpoint, k, l, samples, weights, number_of_phenotypes,
-        phenotypes, k_t_a, FDR, headerline, split_of_kmer_lists
+        phenotypes, k_t_a, FDR, split_of_kmer_lists
         ):
     # Calculates weighted Welch t-tests results for every k-mer
     samples_order = samples.keys()
@@ -244,16 +245,10 @@ def weighted_t_test(
     pvalues = []
     counter = 0
     NA = False
-    
-    if headerline:
-        outputfile = "t-test_results_" + phenotypes[k-1] + "_" + split_of_kmer_lists[0][-5:] + ".txt"
-        phenotype = phenotypes[k-1] + ": "
-    elif number_of_phenotypes > 1:
-        outputfile = "t-test_results_" +  str(k) + "_" + split_of_kmer_lists[0][-5:] + ".txt"
-        phenotype = "phenotype " + str(k) + ": "
-    else:
-        outputfile = "t-test_results_" + split_of_kmer_lists[0][-5:] + ".txt"
-        phenotype = ""
+
+    outputfile = "t-test_results_" + phenotypes[k-1] + "_" + split_of_kmer_lists[0][-5:] + ".txt"
+    phenotype = phenotypes[k-1] + ": "
+
     f2 = open(outputfile, "w+")
     for line in izip_longest(*[open(item) for item in split_of_kmer_lists], fillvalue = ''):
         counter += 1
@@ -317,22 +312,17 @@ def weighted_t_test(
 
 def t_test(
         min_freq, max_freq, checkpoint, k, l, samples, number_of_phenotypes,
-        phenotypes, k_t_a, FDR, headerline, split_of_kmer_lists
+        phenotypes, k_t_a, FDR, split_of_kmer_lists
         ):
     # Calculates Welch t-test results for every k-mer
     samples_order = samples.keys()
     pvalues = []
     counter = 0
     NA = False
-    if headerline:
-        outputfile = "t-test_results_" + phenotypes[k-1] + "_" + split_of_kmer_lists[0][-5:] + ".txt"
-        phenotype = phenotypes[k-1] + ": "
-    elif number_of_phenotypes > 1:
-        outputfile = "t-test_results_" +  str(k) + "_" + split_of_kmer_lists[0][-5:] + ".txt"
-        phenotype = "phenotype " + str(k) + ": "
-    else:
-        outputfile = "t-test_results_" + split_of_kmer_lists[0][-5:] + ".txt"
-        phenotype = ""
+ 
+    outputfile = "t-test_results_" + phenotypes[k-1] + "_" + split_of_kmer_lists[0][-5:] + ".txt"
+    phenotype = phenotypes[k-1] + ": "
+    
     f2 = open(outputfile, "w+")
     for line in izip_longest(*[open(item) for item in split_of_kmer_lists], fillvalue = ''):
         counter += 1
@@ -382,22 +372,17 @@ def t_test(
 
 def weighted_chi_squared(
     min_freq, max_freq, checkpoint, k, l, samples, weights, number_of_phenotypes,
-    phenotypes, k_t_a, FDR, headerline, split_of_kmer_lists
+    phenotypes, k_t_a, FDR, split_of_kmer_lists
         ):
     # Calculates weighted Chi-squared tests for every k-mer
     samples_order = samples.keys()
     pvalues = []
     counter = 0
     NA = False
-    if headerline:
-        outputfile = "chi-squared_test_results_" + phenotypes[k-1] + "_" + split_of_kmer_lists[0][-5:] + ".txt"
-        phenotype = phenotypes[k-1] + ": "
-    elif number_of_phenotypes > 1:
-        outputfile = "chi-squared_test_results_" +  str(k) + "_" + split_of_kmer_lists[0][-5:] + ".txt"
-        phenotype = "phenotype " + str(k) + ": "
-    else:
-        outputfile = "chi-squared_test_results_" + split_of_kmer_lists[0][-5:] + ".txt"
-        phenotype = ""    
+    
+    outputfile = "chi-squared_test_results_" + phenotypes[k-1] + "_" + split_of_kmer_lists[0][-5:] + ".txt"
+    phenotype = phenotypes[k-1] + ": "
+      
     f2 = open(outputfile, "w+")
     for line in izip_longest(*[open(item) for item in split_of_kmer_lists], fillvalue = ''):
         counter += 1
@@ -500,7 +485,7 @@ def weighted_chi_squared(
 
 def chi_squared(
         min_freq, max_freq, checkpoint, k, l, samples, number_of_phenotypes, phenotypes,
-        k_t_a, FDR, headerline, split_of_kmer_lists
+        k_t_a, FDR, split_of_kmer_lists
         ):
     # Calculates Chi-squared tests for every k-mer
     samples_order = samples.keys()
@@ -508,15 +493,10 @@ def chi_squared(
     pvalues = []
     counter = 0
 
-    if headerline:
-        outputfile = "chi-squared_test_results_" + phenotypes[k-1] + "_" + split_of_kmer_lists[0][-5:] + ".txt"
-        phenotype = phenotypes[k-1] + ": "
-    elif number_of_phenotypes > 1:
-        outputfile = "chi-squared_test_results_" +  str(k) + "_" + split_of_kmer_lists[0][-5:] + ".txt"
-        phenotype = "phenotype " + str(k) + ": "
-    else:
-        outputfile = "chi-squared_test_results_" + split_of_kmer_lists[0][-5:] + ".txt"
-        phenotype = ""    
+
+    outputfile = "chi-squared_test_results_" + phenotypes[k-1] + "_" + split_of_kmer_lists[0][-5:] + ".txt"
+    phenotype = phenotypes[k-1] + ": "
+    
     f2 = open(outputfile, "w+")
 
     for line in izip_longest(*[open(item) for item in split_of_kmer_lists], fillvalue = ''):
@@ -598,37 +578,21 @@ def chi_squared(
     f2.close()
     return(pvalues)
 
-def concatenate_test_files(headerline, k, n_o_p, num_threads, phenotype_scale, phenotypes, phenotypes_2_analyse):
+def concatenate_test_files(k, n_o_p, num_threads, phenotype_scale, phenotypes, phenotypes_2_analyse):
     if phenotype_scale == "continuous": 
-        if headerline:
-            for k in phenotypes_2_analyse:
-                call(["cat t-test_results_" + phenotypes[k-1] + "_* > t-test_results_" + phenotypes[k-1] + ".txt"], shell=True)
-                for l in range(num_threads):
-                    call(["rm t-test_results_" + phenotypes[k-1] + "_%05d.txt" %l], shell=True)
-        elif n_o_p > 1:
-            for k in phenotypes_2_analyse:
-                call(["cat t-test_results_" + str(k) + "_* > t-test_results_" + str(k) + ".txt"], shell=True)
-                for l in range(num_threads):
-                    call(["rm t-test_results_" + str(k) + "_%05d.txt" %l], shell=True)     
-        else:
-            call(["cat t-test_results_* > t-test_results.txt && rm t-test_results_*"], shell=True)
+        for k in phenotypes_2_analyse:
+            call(["cat t-test_results_" + phenotypes[k-1] + "_* > t-test_results_" + phenotypes[k-1] + ".txt"], shell=True)
+            for l in range(num_threads):
+                call(["rm t-test_results_" + phenotypes[k-1] + "_%05d.txt" %l], shell=True)
     elif phenotype_scale == "binary":
-        if headerline:
-            for k in phenotypes_2_analyse:
-                call(["cat chi-squared_test_results_" + phenotypes[k-1] + "_* > chi-squared_test_results_" + phenotypes[k-1] + ".txt"], shell=True)
-                for l in range(num_threads):
-                    call(["rm chi-squared_test_results_" + phenotypes[k-1] + "_%05d.txt" %l], shell=True)
-        elif n_o_p > 1:
-            for k in phenotypes_2_analyse:
-                call(["cat chi-squared_test_results_" + str(k) + "_* > chi-squared_test_results_" + str(k) + ".txt"], shell=True)
-                for l in range(num_threads):
-                    call(["rm chi-squared_test_results_" + str(k) + "_%05d.txt" %l], shell=True)
-        else:
-            call(["cat chi-squared_test_results_* > chi-squared_test_results.txt && rm chi-squared_test_results_*"], shell=True)
+        for k in phenotypes_2_analyse:
+            call(["cat chi-squared_test_results_" + phenotypes[k-1] + "_* > chi-squared_test_results_" + phenotypes[k-1] + ".txt"], shell=True)
+            for l in range(num_threads):
+                call(["rm chi-squared_test_results_" + phenotypes[k-1] + "_%05d.txt" %l], shell=True)
 
 def kmer_filtering_by_pvalue(l, pvalue, number_of_phenotypes, phenotype_scale, pvalues_all_phenotypes,
         phenotypes, kmer_limit, p_t_a, FDR=False, 
-        B=False, headerline=False
+        B=False
         ):
     # Filters the k-mers by their p-value achieved in statistical 
     # testing.
@@ -645,19 +609,10 @@ def kmer_filtering_by_pvalue(l, pvalue, number_of_phenotypes, phenotype_scale, p
             test = "t-test"
         elif phenotype_scale == "binary":
             test = "chi-squared_test"
-        if headerline:
-            f1 = open(test + "_results_" + phenotypes[k-1] + ".txt")
-            f2 = open(
-                "k-mers_filtered_by_pvalue_" + phenotypes[k-1] + ".txt", "w+")
-            phenotype = phenotypes[k-1] + ": "
-        elif number_of_phenotypes > 1:
-            f1 = open(test + "_results_" + str(k) + ".txt")
-            f2 = open("k-mers_filtered_by_pvalue_" + str(k) + ".txt", "w+")
-            phenotype = "phenotype " + str(k) + ": "
-        else:
-            f1 = open(test + "_results.txt")
-            f2 = open("k-mers_filtered_by_pvalue.txt", "w+")
-            phenotype = ""
+        f1 = open(test + "_results_" + phenotypes[k-1] + ".txt")
+        f2 = open(
+            "k-mers_filtered_by_pvalue_" + phenotypes[k-1] + ".txt", "w+")
+        phenotype = phenotypes[k-1] + ": "
 
         if phenotype_scale == "continuous":
             f2.write(
@@ -763,8 +718,7 @@ def get_kmer_presence_matrix(kmers_passed, split_of_kmer_lists):
 def linear_regression(
 	    p, kmer_lists_splitted, samples, samples_order, alphas, number_of_phenotypes,
 	    kmers_passed_all_phenotypes, penalty, n_splits, weights, testset_size,
-	    phenotypes, use_of_weights, l1_ratio, phenotypes_to_analyze=False, 
-        headerline=False
+	    phenotypes, use_of_weights, l1_ratio, phenotypes_to_analyze=False
 	    ):
     # Applies linear regression with Lasso regularization on k-mers
     # that passed the filtering by p-value of statistical test. K-mers
@@ -775,36 +729,19 @@ def linear_regression(
     if not phenotypes_to_analyze:
         phenotypes_to_analyze = range(1,number_of_phenotypes+1)
 
-    if len(phenotypes_to_analyze) > 1:
-        sys.stderr.write("\nConducting the linear regression analysis:\n")
-    elif headerline:
-        sys.stderr.write("\nConducting the linear regression analysis of " 
-            +  phenotypes[0] + " data...\n")
-    else:
-        sys.stderr.write("\nConducting the linear regression analysis...\n")
+    sys.stderr.write("\nConducting the linear regression analysis of " 
+        +  phenotypes[0] + " data...\n")
 
     for j, k in enumerate(phenotypes_to_analyze):
         #Open files to write results of	linear regression
-        if headerline:
-            f1 = open("summary_of_lin_reg_analysis" 
-            	     + phenotypes[k-1] + ".txt", "w+")
-            f2 = open("k-mers_and_coefficients_in_lin_reg_model_" 
-            	     + phenotypes[k-1] + ".txt", "w+")
-            model_filename = "lin_reg_model_" + phenotypes[k-1] + ".pkl"
-            if len(phenotypes_to_analyze) > 1:
-                sys.stderr.write("\tregression analysis of " 
-                    +  phenotypes[k-1] + " data...\n")
-        elif number_of_phenotypes > 1:
-            f1 = open("summary_of_lin_reg_analysis" + str(k) + ".txt", "w+")
-            f2 = open("k-mers_and_coefficients_in_lin_reg_model_" 
-            	     + str(k) + ".txt", "w+")
-            model_filename = "lin_reg_model_" +	phenotypes[k-1] + ".pkl"
-            sys.stderr.write("\tregression analysis of phenotype " 
-                +  str(k) + " data...\n")
-        else:
-            f1 = open("summary_of_lin_reg_analysis.txt", "w+")
-       	    f2 = open("k-mers_and_coefficients_in_lin_reg_model.txt", "w+")
-            model_filename = "lin_reg_model.txt"
+        f1 = open("summary_of_lin_reg_analysis" 
+        	     + phenotypes[k-1] + ".txt", "w+")
+        f2 = open("k-mers_and_coefficients_in_lin_reg_model_" 
+        	     + phenotypes[k-1] + ".txt", "w+")
+        model_filename = "lin_reg_model_" + phenotypes[k-1] + ".pkl"
+        if len(phenotypes_to_analyze) > 1:
+            sys.stderr.write("\tregression analysis of " 
+                +  phenotypes[k-1] + " data...\n")
 
         if len(kmers_passed_all_phenotypes[j]) == 0:
        	    f1.write("No k-mers passed the step of k-mer selection for " \
@@ -1002,8 +939,7 @@ def linear_regression(
 def logistic_regression(
 	    p, kmer_lists_splitted, samples, samples_order, alphas, number_of_phenotypes, 
 	    kmers_passed_all_phenotypes, penalty, n_splits, weights, testset_size,
-	    phenotypes, use_of_weights, l1_ratio, phenotypes_to_analyze=False, 
-        headerline=False
+	    phenotypes, use_of_weights, l1_ratio, phenotypes_to_analyze=False
 	    ):
     # Applies logistic regression with Lasso regularization on k-mers
     # that passed the filtering by p-value of statistical test. K-mers
@@ -1012,38 +948,21 @@ def logistic_regression(
     # parameter.
     if not phenotypes_to_analyze:
         phenotypes_to_analyze = range(1,number_of_phenotypes+1)
-    
-    if len(phenotypes_to_analyze) > 1:
-        sys.stderr.write("\nConducting the logistic regression analysis:\n")
-    elif headerline:
-        sys.stderr.write("\nConducting the logistic regression analysis of " 
-            +  phenotypes[0] + " data...\n")
-    else:
-        sys.stderr.write("\nConducting the logistic regression analysis...\n")
+
+    sys.stderr.write("\nConducting the logistic regression analysis of " 
+        +  phenotypes[0] + " data...\n")
 
     for j, k in enumerate(phenotypes_to_analyze):
         #Open files to write results of	logistic regression
-        if headerline:
-            f1 = open(
-            	"summary_of_log_reg_analysis_" + phenotypes[k-1] + ".txt", "w+"
-            	)
-            f2 = open("k-mers_and_coefficients_in_log_reg_model_" 
-            	     + phenotypes[k-1] + ".txt", "w+")
-            model_filename = "log_reg_model_" + phenotypes[k-1] + ".pkl"
-            if len(phenotypes_to_analyze) > 1:
-                sys.stderr.write("\tregression analysis of " 
-                    +  phenotypes[k-1] + " data...\n")
-        elif number_of_phenotypes > 1:
-            f1 = open("summary_of_log_reg_analysis_" + str(k) + ".txt", "w+")
-            f2 = open("k-mers_and_coefficients_in_log_reg_model_" 
-            	     + str(k) + ".txt", "w+")
-            model_filename = "log_reg_model_" +	str(k) + ".pkl"
-            sys.stderr.write("\tregression analysis of phenotype " 
-                +  str(k) + " data...\n")
-        else:
-            f1 = open("summary_of_log_reg_analysis.txt", "w+")
-       	    f2 = open("k-mers_and_coefficients_in_log_reg_model.txt", "w+")
-            model_filename = "log_reg_model.pkl"
+        f1 = open(
+        	"summary_of_log_reg_analysis_" + phenotypes[k-1] + ".txt", "w+"
+        	)
+        f2 = open("k-mers_and_coefficients_in_log_reg_model_" 
+        	     + phenotypes[k-1] + ".txt", "w+")
+        model_filename = "log_reg_model_" + phenotypes[k-1] + ".pkl"
+        if len(phenotypes_to_analyze) > 1:
+            sys.stderr.write("\tregression analysis of " 
+                +  phenotypes[k-1] + " data...\n")
         
         if len(kmers_passed_all_phenotypes[j]) == 0:
             f1.write("No k-mers passed the step of k-mer selection for \
@@ -1313,7 +1232,7 @@ def support_vector_classifier(
         kmer_matrix, samples, samples_order, alphas, number_of_phenotypes, 
         kmers_passed_all_phenotypes, penalty, n_splits, weights, testset_size,
         phenotypes, use_of_weights, kernel, gammas, n_iter,
-        phenotypes_to_analyze=False, headerline=False
+        phenotypes_to_analyze=False
         ):
     # Applies logistic regression with Lasso regularization on k-mers
     # that passed the filtering by p-value of statistical test. K-mers
@@ -1323,40 +1242,21 @@ def support_vector_classifier(
     if not phenotypes_to_analyze:
         phenotypes_to_analyze = range(1,number_of_phenotypes+1)
     
-    if len(phenotypes_to_analyze) > 1:
-        sys.stderr.write("\nConducting the SVM classifier analysis:\n")
-    elif headerline:
-        sys.stderr.write("\nConducting the SVM classifier analysis of " 
-            +  phenotypes[0] + " data...\n")
-    else:
-        sys.stderr.write("\nConducting the SVM classifier analysis...\n")
+    sys.stderr.write("\nConducting the SVM classifier analysis of " 
+        +  phenotypes[0] + " data...\n")
 
     for j, k in enumerate(phenotypes_to_analyze):
         #Open files to write results of logistic regression
-        if headerline:
-            f1 = open(
-                "summary_of_SVM_analysis_" + phenotypes[k-1] + ".txt", "w+"
-                )
-            if kernel == "linear":
-                f2 = open("k-mers_and_coefficients_in_SVM_model_" 
-                         + phenotypes[k-1] + ".txt", "w+")
-            model_filename = "SVM_model_" + phenotypes[k-1] + ".pkl"
-            if len(phenotypes_to_analyze) > 1:
-                sys.stderr.write("\tSVM analysis of " 
-                    +  phenotypes[k-1] + " data...\n")
-        elif number_of_phenotypes > 1:
-            f1 = open("summary_of_SVM_analysis_" + str(k) + ".txt", "w+")
-            if kernel == "linear":
-                f2 = open("k-mers_and_coefficients_in_SVM_model_" 
-                         + str(k) + ".txt", "w+")
-            model_filename = "SVM_model_" + str(k) + ".pkl"
-            sys.stderr.write("\tSVM analysis of phenotype " 
-                +  str(k) + " data...\n")
-        else:
-            f1 = open("summary_of_SVM_analysis.txt", "w+")
-            if kernel == "linear":
-                f2 = open("k-mers_and_coefficients_in_SVM_model.txt", "w+")
-            model_filename = "SVM_model.pkl"
+        f1 = open(
+            "summary_of_SVM_analysis_" + phenotypes[k-1] + ".txt", "w+"
+            )
+        if kernel == "linear":
+            f2 = open("k-mers_and_coefficients_in_SVM_model_" 
+                    + phenotypes[k-1] + ".txt", "w+")
+        model_filename = "SVM_model_" + phenotypes[k-1] + ".pkl"
+        if len(phenotypes_to_analyze) > 1:
+            sys.stderr.write("\tSVM analysis of " 
+                +  phenotypes[k-1] + " data...\n")
         
         if len(kmers_passed_all_phenotypes[j]) == 0:
             f1.write("No k-mers passed the step of k-mer selection for \
@@ -1622,8 +1522,7 @@ def support_vector_classifier(
 def random_forest(
 	    kmer_matrix, samples, samples_order, number_of_phenotypes, 
 	    kmers_passed_all_phenotypes, n_splits, weights, testset_size,
-	    phenotypes, use_of_weights, phenotypes_to_analyze=False, 
-        headerline=False
+	    phenotypes, use_of_weights, phenotypes_to_analyze=False
 	    ):
     # Applies logistic regression with Lasso regularization on k-mers
     # that passed the filtering by p-value of statistical test. K-mers
@@ -1633,37 +1532,21 @@ def random_forest(
     if not phenotypes_to_analyze:
         phenotypes_to_analyze = range(1,number_of_phenotypes+1)
     
-    if len(phenotypes_to_analyze) > 1:
-        sys.stderr.write("\nConducting the logistic regression analysis:\n")
-    elif headerline:
-        sys.stderr.write("\nConducting the logistic regression analysis of " 
-            +  phenotypes[0] + " data...\n")
-    else:
-        sys.stderr.write("\nConducting the logistic regression analysis...\n")
+
+    sys.stderr.write("\nConducting the logistic regression analysis of " 
+        +  phenotypes[0] + " data...\n")
 
     for j, k in enumerate(phenotypes_to_analyze):
         #Open files to write results of	logistic regression
-        if headerline:
-            f1 = open(
-            	"summary_of_log_reg_analysis_" + phenotypes[k-1] + ".txt", "w+"
-            	)
-            f2 = open("k-mers_and_coefficients_in_log_reg_model_" 
-            	     + phenotypes[k-1] + ".txt", "w+")
-            model_filename = "log_reg_model_" + phenotypes[k-1] + ".pkl"
-            if len(phenotypes_to_analyze) > 1:
-                sys.stderr.write("\tregression analysis of " 
-                    +  phenotypes[k-1] + " data...\n")
-        elif number_of_phenotypes > 1:
-            f1 = open("summary_of_log_reg_analysis_" + str(k) + ".txt", "w+")
-            f2 = open("k-mers_and_coefficients_in_log_reg_model_" 
-            	     + str(k) + ".txt", "w+")
-            model_filename = "log_reg_model_" +	str(k) + ".pkl"
-            sys.stderr.write("\tregression analysis of phenotype " 
-                +  str(k) + " data...\n")
-        else:
-            f1 = open("summary_of_log_reg_analysis.txt", "w+")
-       	    f2 = open("k-mers_and_coefficients_in_log_reg_model.txt", "w+")
-            model_filename = "log_reg_model.pkl"
+        f1 = open(
+            "summary_of_log_reg_analysis_" + phenotypes[k-1] + ".txt", "w+"
+            )
+        f2 = open("k-mers_and_coefficients_in_log_reg_model_" 
+            	+ phenotypes[k-1] + ".txt", "w+")
+        model_filename = "log_reg_model_" + phenotypes[k-1] + ".pkl"
+        if len(phenotypes_to_analyze) > 1:
+            sys.stderr.write("\tregression analysis of " 
+                +  phenotypes[k-1] + " data...\n")
         
         if len(kmers_passed_all_phenotypes[j]) == 0:
             f1.write("No k-mers passed the step of k-mer selection for \
@@ -1981,7 +1864,7 @@ def kmer_assembler(kmer_list, min_olap=None):
 
 def assembling(
         kmers_passed_all_phenotypes, phenotypes, number_of_phenotypes, 
-        phenotypes_to_analyze=False, headerline=False
+        phenotypes_to_analyze=False
         ):
     # Assembles the input k-mers and writes assembled sequences
     # into "assembled_kmers.txt" file in FastA format.
@@ -1989,15 +1872,8 @@ def assembling(
     if not phenotypes_to_analyze:
         phenotypes_to_analyze = range(1,number_of_phenotypes+1)
 
-    if len(phenotypes_to_analyze) > 1:
-        sys.stderr.write(
-            "Assembling the k-mers used in regression model of:\n"
-            )
-    elif headerline:
-        sys.stderr.write("Assembling the k-mers used in regression model of " 
-            +  phenotypes[0] + " data...\n")
-    else:
-        sys.stderr.write("Assembling the k-mers used in regression model...\n")
+    sys.stderr.write("Assembling the k-mers used in regression model of " 
+        +  phenotypes[0] + " data...\n")
 
     for j, k in enumerate(phenotypes_to_analyze):
         if len(kmers_passed_all_phenotypes[j]) == 0:
@@ -2005,15 +1881,9 @@ def assembling(
                 assembling.\n")
             continue
         #Open files to write the results of k-mer assembling
-        if headerline:
-            f1 = open("assembled_kmers_" + phenotypes[k-1] + ".fasta", "w+")
-            if len(phenotypes_to_analyze) > 1:
-                sys.stderr.write("\t" + phenotypes[k-1] + "...\n")
-        elif number_of_phenotypes > 1:
-            f1 = open("assembled_kmers_" + str(k) + ".fasta", "w+")
-            sys.stderr.write("\tphenotype " + str(k) + "...\n")
-        else:
-            f1 = open("assembled_kmers.fasta", "w+")
+        f1 = open("assembled_kmers_" + phenotypes[k-1] + ".fasta", "w+")
+        if len(phenotypes_to_analyze) > 1:
+            sys.stderr.write("\t" + phenotypes[k-1] + "...\n")
         
         kmers_to_assemble = kmers_passed_all_phenotypes[j]
         assembled_kmers = sorted(
@@ -2031,8 +1901,6 @@ def modeling(args):
     no_samples, no_phenotypes, phenotype_scale = process_input_data(
         samples, phenotypes
         )
-    
-    headerline = False
     
     # Generating the vector of alphas (hyperparameters in regression analysis)
     # based on the given command line arguments.
@@ -2119,7 +1987,7 @@ def modeling(args):
                     partial(
                         weighted_t_test, args.min, args.max, checkpoint, k, l, samples, 
                         weights, no_phenotypes, phenotypes, kmers_to_analyse, 
-                        args.FDR, headerline
+                        args.FDR
                         ), 
                     kmer_lists_splitted
                     )            
@@ -2131,7 +1999,7 @@ def modeling(args):
                 pvalues_from_all_threads = p.map(
                     partial(
                         t_test, args.min, args.max, checkpoint, k, l, samples, no_phenotypes,
-                        phenotypes, kmers_to_analyse, args.FDR, headerline
+                        phenotypes, kmers_to_analyse, args.FDR
                         ), 
                     kmer_lists_splitted
                     ) 
@@ -2144,7 +2012,7 @@ def modeling(args):
                 pvalues_from_all_threads = p.map(
                     partial(
                         weighted_chi_squared, args.min, args.max, checkpoint, k, l, samples, weights,
-                        no_phenotypes, phenotypes, kmers_to_analyse, args.FDR, headerline
+                        no_phenotypes, phenotypes, kmers_to_analyse, args.FDR
                         ),
                     kmer_lists_splitted
                     )
@@ -2156,20 +2024,20 @@ def modeling(args):
                 pvalues_from_all_threads = p.map(
                     partial(
                         chi_squared, args.min, args.max, checkpoint, k, l, samples,
-                        no_phenotypes, phenotypes, kmers_to_analyse, args.FDR, headerline
+                        no_phenotypes, phenotypes, kmers_to_analyse, args.FDR
                         ),
                     kmer_lists_splitted
                     )
         pvalues_all.append(list(chain(*pvalues_from_all_threads)))
         sys.stderr.write("\n")
     
-    concatenate_test_files(headerline, k, no_phenotypes, args.num_threads, phenotype_scale, phenotypes, phenotypes_2_analyse)
+    concatenate_test_files(k, no_phenotypes, args.num_threads, phenotype_scale, phenotypes, phenotypes_2_analyse)
 
     
     kmers_passed_all_phenotypes = kmer_filtering_by_pvalue(
         l, args.pvalue, no_phenotypes, phenotype_scale, pvalues_all, phenotypes,
         args.n_kmers, phenotypes_2_analyse, args.FDR,
-        args.Bonferroni, headerline
+        args.Bonferroni
         )
 
     if phenotype_scale == "continuous":
@@ -2177,7 +2045,7 @@ def modeling(args):
             p, kmer_lists_splitted, samples, alphas, no_phenotypes,
             kmers_passed_all_phenotypes, args.regularization, args.n_splits,
             weights, args.testset_size, phenotypes, args.weights,
-            args.l1_ratio, args.mpheno, headerline
+            args.l1_ratio, args.mpheno
             )
     elif phenotype_scale == "binary":
         if args.binary_classifier == "log":
@@ -2185,26 +2053,25 @@ def modeling(args):
                 p, kmer_lists_splitted, samples, alphas, no_phenotypes,
                 kmers_passed_all_phenotypes, args.regularization, args.n_splits,
                 weights, args.testset_size, phenotypes, args.weights,
-                args.l1_ratio, args.mpheno, headerline
+                args.l1_ratio, args.mpheno
                 )
         elif args.binary_classifier == "SVM":
             support_vector_classifier(
                 "k-mer_matrix.txt", samples, alphas, no_phenotypes,
                 kmers_passed_all_phenotypes, args.regularization, args.n_splits,
                 weights, args.testset_size, phenotypes, args.weights,
-                args.kernel, gammas, args.n_iter, args.mpheno, headerline
+                args.kernel, gammas, args.n_iter, args.mpheno
                 )
         elif args.binary_classifier == "RF":
         	random_forest(
                 "k-mer_matrix.txt", samples, no_phenotypes,
                 kmers_passed_all_phenotypes, args.n_splits,
                 weights, args.testset_size, phenotypes, args.weights,
-                args.mpheno, headerline
+                args.mpheno
                 )
 
 
     if args.assembly == "+":
         assembling(
             kmers_passed_all_phenotypes, phenotypes, no_phenotypes, args.mpheno, 
-            headerline
             )
