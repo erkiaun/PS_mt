@@ -1940,7 +1940,7 @@ def modeling(args):
     # Splitting samples for multithreading
     mt_split = []
     for i in range(args.num_threads):
-        mt_split.append([samples.keys[j] for j in xrange(i, no_samples, args.num_threads)])
+        mt_split.append([samples.keys()[j] for j in xrange(i, no_samples, args.num_threads)])
     p = Pool(args.num_threads)
     
 
