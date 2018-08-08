@@ -489,6 +489,7 @@ def chi_squared(
         ):
     # Calculates Chi-squared tests for every k-mer
     samples_order = samples.keys()
+    samples_phenotypes = [value[k] for value in samples.values()]
 
     pvalues = []
     counter = 0
@@ -518,22 +519,21 @@ def chi_squared(
         sens_w_kmer = 0
         sens_wo_kmer = 0
 
-        for j in range(len(list1)):
-            if samples[samples_order[j]][k] != "NA":
-                if (list1[j] != "0" 
-                        and samples[samples_order[j]][k] == "1"):
-                    res_w_kmer += 1
-                    samples_x.append(samples_order[j])
-                if (list1[j] == "0" 
-                        and samples[samples_order[j]][k] == "1"):
-                    res_wo_kmer += 1
-                if (list1[j] != "0" 
-                        and samples[samples_order[j]][k] == "0"):
-                    sens_w_kmer += 1
-                    samples_x.append(samples_order[j])
-                if (list1[j] == "0" 
-                        and samples[samples_order[j]][k] == "0"):
-                    sens_wo_kmer += 1
+        for i, item in enumerate(samples_phenotypes):
+            if item != "NA":
+                if item == "1":
+                    if (list1[j] != "0"):    
+                        res_w_kmer += 1
+                        samples_x.append(samples_order[j])
+                    else: 
+                        res_wo_kmer += 1
+                else:
+                    if (list1[j] != "0"):
+                        sens_w_kmer += 1
+                        samples_x.append(samples_order[j])
+                    else:
+                        sens_wo_kmer += 1
+                    
 
         res_samples = (res_w_kmer + res_wo_kmer)
         sens_samples = (sens_w_kmer + sens_wo_kmer)
