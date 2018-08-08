@@ -5,7 +5,7 @@ __version__ = "0.3.0"
 __maintainer__ = "Erki Aun"
 __email__ = "erki.aun@ut.ee"
 
-impot time
+import time
 from itertools import chain, izip, izip_longest, permutations
 from subprocess import call, Popen, PIPE, check_output
 import math
