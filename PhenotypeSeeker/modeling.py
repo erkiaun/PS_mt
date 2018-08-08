@@ -107,8 +107,8 @@ def get_input_data(inputfilename):
     no_samples = 0
     with open(inputfilename) as inputfile:
         phenotypes = inputfile.readline().strip().split()[2:]
-    for line in inputfile:
-        samples[line.split()[0]] = line.strip().split()[1:]
+        for line in inputfile:
+            samples[line.split()[0]] = line.strip().split()[1:]
     return samples, phenotypes
 
 def process_input_data(samples, phenotypes):
