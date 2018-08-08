@@ -544,15 +544,15 @@ def chi_squared(
         for i, item in enumerate(samples_phenotypes):
             if item != "NA":
                 if item == "1":
-                    if (list1[j] != "0"):    
+                    if (list1[i] != "0"):    
                         res_w_kmer += 1
-                        samples_x.append(samples_order[j])
+                        samples_x.append(samples_order[i])
                     else: 
                         res_wo_kmer += 1
                 else:
-                    if (list1[j] != "0"):
+                    if (list1[i] != "0"):
                         sens_w_kmer += 1
-                        samples_x.append(samples_order[j])
+                        samples_x.append(samples_order[i])
                     else:
                         sens_wo_kmer += 1
 
