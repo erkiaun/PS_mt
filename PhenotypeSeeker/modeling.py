@@ -560,7 +560,7 @@ def chi_squared(
         samples_wo_kmer = (res_wo_kmer + sens_wo_kmer)
         samples_total = res_samples + sens_samples
 
-        if samples_w_kmer < min_freq or sampels_wo_kmer < 2 or samples_w_kmer > max_freq:
+        if samples_w_kmer < min_freq or samples_wo_kmer < 2 or samples_w_kmer > max_freq:
             continue
 
 

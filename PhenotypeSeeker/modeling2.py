@@ -74,13 +74,14 @@ def VME(list1, list2):
             VMEs += 1
     return str(float(VMEs)/len(list1)*100)+"%"
 
-def ME(list1, list2):
+def ME(targets, predictions):
     # Function to calculate the major error (ME) rate
     MEs = 0
-    for i in zip(list1,list2):
-        if i[0] == 0 and i[1] == 1:
+    for item in zip(targets, predictions):
+        if item[0] == 0 and item[1] == 1:
              MEs += 1
-    return str(float(MEs)/len(list1)*100)+"%"
+    ME = str(float(MEs)/len(targets)*100)+"%"
+    return ME
 
 def within_1_tier_accuracy(targets, predictions):
     # Calculate the plus/minus one dilution factor accuracy
@@ -91,6 +92,10 @@ def within_1_tier_accuracy(targets, predictions):
             within_1_tier +=1
     accuracy = float(within_1_tier)/len(targets)
     return accuracy
+
+
+
+# -------------------------------------------------------------------
 
 def get_input_data(inputfilename):
     # Parses info from tabulated input file into samples ordered
