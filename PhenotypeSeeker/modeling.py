@@ -392,37 +392,37 @@ def get_samples_distribution(
         sample_phenotypes, sample_names, list1, samples_x,
         weights
         ):
-        with_pheno_with_kmer = 0
-        with_pheno_wtihout_kmer = 0
-        without_pheno_with_kmer = 0
-        without_pheno_without_kmer = 0
-        for i, item in enumerate(sample_phenotypes):
-            sample_name = sample_names[i]
-            if item != "NA":
-                if item == "1":
-                    if (list1[i] != "0"):
-                        if weights:
-                            with_pheno_with_kmer += weights[sample_name]   
-                        else:
-                            with_pheno_with_kmer += 1
-                        samples_x.append(samples_name)
+    with_pheno_with_kmer = 0
+    with_pheno_wtihout_kmer = 0
+    without_pheno_with_kmer = 0
+    without_pheno_without_kmer = 0
+    for i, item in enumerate(sample_phenotypes):
+        sample_name = sample_names[i]
+        if item != "NA":
+            if item == "1":
+                if (list1[i] != "0"):
+                    if weights:
+                        with_pheno_with_kmer += weights[sample_name]   
                     else:
-                        if weights:
-                            with_pheno_without_kmer += weights[sample_name]
-                        else: 
-                            with_pheno_without_kmer += 1
+                        with_pheno_with_kmer += 1
+                    samples_x.append(samples_name)
                 else:
-                    if (list1[i] != "0"):
-                        if weights:
-                            without_pheno_with_kmer += weights[sample_name]
-                        else:
-                            without_pheno_with_kmer += 1
-                        samples_x.append(samples_names[i])
+                    if weights:
+                        with_pheno_without_kmer += weights[sample_name]
+                    else: 
+                        with_pheno_without_kmer += 1
+            else:
+                if (list1[i] != "0"):
+                    if weights:
+                        without_pheno_with_kmer += weights[sample_name]
                     else:
-                        if weights:
-                            without_pheno_without_kmer += weights[sample_name]
-                        else:
-                            without_pheno_without_kmer += 1
+                        without_pheno_with_kmer += 1
+                    samples_x.append(samples_names[i])
+                else:
+                    if weights:
+                        without_pheno_without_kmer += weights[sample_name]
+                    else:
+                        without_pheno_without_kmer += 1
     return(
         with_pheno_with_kmer, with_pheno_wtihout_kmer,
         without_pheno_with_kmer, without_pheno_without_kmer
