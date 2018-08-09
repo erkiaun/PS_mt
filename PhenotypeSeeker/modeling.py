@@ -377,7 +377,7 @@ def _split_sample_vectors_for_multithreading(samples, num_threads):
             ]
             , shell=True)
 
-def _splitted_vectors_to_multiple_input():
+def _splitted_vectors_to_multiple_input(samples, num_threads):
     vectors_as_multiple_input = []
     for i in range(num_threads):
         vectors_as_multiple_input.append(["K-mer_lists/" + sample + "_mapped_%05d" %i for sample in samples])
