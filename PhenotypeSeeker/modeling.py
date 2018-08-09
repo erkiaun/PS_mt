@@ -429,7 +429,7 @@ def get_samples_distribution(
         )
 
 def weighted_t_test(
-        headerline, min_freq, max_freq, checkpoint, k, l, samples, weight,
+        headerline, min_freq, max_freq, checkpoint, k, l, samples, weights,
         phenotypes, k_t_a, split_of_kmer_lists
         ):
     # Calculates weighted Welch t-tests results for every k-mer
