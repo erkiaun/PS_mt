@@ -1076,7 +1076,7 @@ def linear_regression(
         features = np.array(features)
         Phenotypes = np.array(Phenotypes)
         kmers_presence_matrix = np.array(kmers_presence_matrix).transpose()
-        samples_in_analyze = np.array(samples_order)
+        samples_in_analyze = np.array(samples.keys())
         to_del = []
         for i, item in enumerate(Phenotypes):
             if item == "NA":
@@ -1306,7 +1306,7 @@ def logistic_regression(
         mat_and_feat_lists = map(list, zip(*mat_and_feat_tuples))
         kmers_presence_matrix = [item for sublist in mat_and_feat_lists[0] for item in sublist]
         features = [item for sublist in mat_and_feat_lists[1] for item in sublist]
-        Phenotypes = [samples[item][k] for item in samples_order.keys()]
+        Phenotypes = [samples[item][k] for item in samples.keys()]
 
         # Converting data into Python array formats suitable to use in
         # sklearn modelling. Also, deleting information associated with
@@ -1314,7 +1314,7 @@ def logistic_regression(
         features = np.array(features)
         Phenotypes = np.array(Phenotypes)
         kmers_presence_matrix = np.array(kmers_presence_matrix).transpose()
-        samples_in_analyze = np.array(samples_order)
+        samples_in_analyze = np.array(samples.keys())
         to_del = []
         for i, item in enumerate(Phenotypes):
             if item == "NA":
