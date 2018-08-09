@@ -2162,6 +2162,7 @@ def modeling(args):
     pvalues_all = []
     kmers_to_analyse = float(check_output(['wc', '-l', "K-mer_lists/" + samples.keys()[0] + "_mapped.txt"]).split()[0])
     checkpoint = int(math.ceil(kmers_to_analyse/(100*args.num_threads)))
+    print(phenotypes_to_analyse)
     for j, k in enumerate(phenotypes_to_analyse):
         currentKmerNum.value = 0
         previousPercent.value = 0
