@@ -368,7 +368,10 @@ def get_kmers_tested(samples, num_threads, phenotypes_to_analyse):
         )
     progress_checkpoint = int(math.ceil(kmers_to_analyse/(100*num_threads)))
     pvalues_all = []
-    return vectors_as_multiple_input, progress_checkpoint, pvalues_all
+    return(
+        vectors_as_multiple_input, progress_checkpoint, kmers_to_analyse,
+        pvalues_all
+        )
 
 def _split_sample_vectors_for_multithreading(samples, num_threads):
     for sample in samples:
@@ -2190,7 +2193,8 @@ def modeling(args):
     if args.weights == "+":
         weights = get_weights(samples, args.cutoff)
     (
-    vectors_as_multiple_input, progress_checkpoint, pvalues_all
+    vectors_as_multiple_input, progress_checkpoint, kmers_to_analyse,
+    pvalues_all
         ) = get_kmers_tested(
         samples, args.num_threads, phenotypes_to_analyse
         )
