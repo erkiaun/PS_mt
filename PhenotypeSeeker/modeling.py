@@ -430,7 +430,7 @@ def get_samples_distribution(
 
 def weighted_t_test(
         headerline, min_freq, max_freq, checkpoint, k, l, samples, weight,
-        phenotypes, k_t_a, FDR, split_of_kmer_lists
+        phenotypes, k_t_a, split_of_kmer_lists
         ):
     # Calculates weighted Welch t-tests results for every k-mer
     samples_order = samples.keys()
@@ -503,8 +503,8 @@ def weighted_t_test(
     
 
 def t_test(
-        headerline, min_freq, max_freq, checkpoint, k, l, samples, number_of_phenotypes,
-        phenotypes, k_t_a, FDR, split_of_kmer_lists
+        headerline, min_freq, max_freq, checkpoint, k, l, samples,
+        phenotypes, k_t_a, split_of_kmer_lists
         ):
     # Calculates Welch t-test results for every k-mer
     samples_order = samples.keys()
@@ -563,8 +563,8 @@ def t_test(
     return(pvalues)
 
 def weighted_chi_squared(
-    headerline, min_freq, max_freq, checkpoint, k, l, samples, weights, number_of_phenotypes,
-    phenotypes, k_t_a, FDR, split_of_kmer_lists
+    headerline, min_freq, max_freq, checkpoint, k, l, samples, weights,
+    phenotypes, k_t_a, split_of_kmer_lists
         ):
     # Calculates weighted Chi-squared tests for every k-mer
     samples_order = samples.keys()
@@ -677,8 +677,8 @@ def weighted_chi_squared(
     return(pvalues)
 
 def chi_squared(
-        headerline, min_freq, max_freq, checkpoint, k, l, samples, number_of_phenotypes, phenotypes,
-        k_t_a, FDR, split_of_kmer_lists
+        headerline, min_freq, max_freq, checkpoint, k, l, samples, phenotypes,
+        k_t_a, split_of_kmer_lists
         ):
     # Calculates Chi-squared tests for every k-mer
     sample_names = samples.keys()
@@ -771,7 +771,7 @@ def chi_squared(
     return(pvalues)
 
 def chi_squared_universal(
-        headerline, min_freq, max_freq, checkpoint, k, l, samples, weights, number_of_phenotypes,
+        headerline, min_freq, max_freq, checkpoint, k, l, samples, weights,
         phenotypes, k_t_a, no_samples, split_of_kmer_lists
         ):
     sample_names = samples.keys()
@@ -2339,11 +2339,10 @@ def modeling(args):
                 pvalues_from_all_threads = pool.map(
                     partial(
                         weighted_t_test, headerline, min_samples, max_samples, progress_checkpoint, k, lock, samples, 
-                        weights, no_phenotypes, phenotypes, kmers_to_analyse, 
-                        args.FDR
+                        weights, phenotypes, kmers_to_analyse
                         ), 
                     vectors_as_multiple_input
-                    )            
+                    )  
             else:
                 if j == 0:
                     sys.stderr.write(
@@ -2351,8 +2350,8 @@ def modeling(args):
                         )
                 pvalues_from_all_threads = pool.map(
                     partial(
-                        t_test, headerline, min_samples, max_samples, progress_checkpoint, k, lock, samples, no_phenotypes,
-                        phenotypes, kmers_to_analyse, args.FDR
+                        t_test, headerline, min_samples, max_samples, progress_checkpoint, k, lock, samples,
+                        phenotypes, kmers_to_analyse
                         ), 
                     vectors_as_multiple_input
                     ) 
