@@ -417,7 +417,7 @@ def get_samples_distribution(
                         without_pheno_with_kmer += weights[sample_name]
                     else:
                         without_pheno_with_kmer += 1
-                    samples_x.append(samples_names[i])
+                    samples_x.append(sample_names[i])
                 else:
                     if weights:
                         without_pheno_without_kmer += weights[sample_name]
@@ -716,13 +716,13 @@ def chi_squared(
                 if item == "1":
                     if (list1[i] != "0"):    
                         res_w_kmer += 1
-                        samples_x.append(samples_names[i])
+                        samples_x.append(sample_names[i])
                     else: 
                         res_wo_kmer += 1
                 else:
                     if (list1[i] != "0"):
                         sens_w_kmer += 1
-                        samples_x.append(samples_names[i])
+                        samples_x.append(sample_names[i])
                     else:
                         sens_wo_kmer += 1
                     
