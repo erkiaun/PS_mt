@@ -107,7 +107,7 @@ def get_input_data(inputfilename):
     no_samples = 0
     headerline = False
     with open(inputfilename) as inputfile:
-        if inputfile.readline().split[0] == "SampleID":
+        if inputfile.readline().split()[0] == "SampleID":
             headerline = True
             phenotypes = inputfile.readline().strip().split()[2:]
         else:
