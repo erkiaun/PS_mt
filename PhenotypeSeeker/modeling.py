@@ -366,7 +366,9 @@ def get_kmers_tested(samples, num_threads, phenotypes_to_analyse):
             ['wc', '-l', "K-mer_lists/" + samples.keys()[0] + "_mapped.txt"]
             ).split()[0]
         )
-    return vectors_as_multiple_input, kmers_to_analyse
+    progress_checkpoint = int(math.ceil(kmers_to_analyse/(100*num_threads)))
+    pvalues_all = []
+    return vectors_as_multiple_input, progress_checkpoint, pvalues_all
 
 def _split_sample_vectors_for_multithreading(samples, num_threads):
     for sample in samples:
@@ -2187,12 +2189,9 @@ def modeling(args):
     #call(["rm -r K-mer_lists/"], shell = True)
     if args.weights == "+":
         weights = get_weights(samples, args.cutoff)
-    
-
-
-
-
-    vectors_as_multiple_input, kmers_to_analyse = get_kmers_tested(
+    (
+    vectors_as_multiple_input, progress_checkpoint, pvalues_all
+        ) = get_kmers_tested(
         samples, args.num_threads, phenotypes_to_analyse
         )
     
@@ -2212,7 +2211,7 @@ def modeling(args):
                         )
                 pvalues_from_all_threads = pool.map(
                     partial(
-                        weighted_t_test, headerline, min_samples, max_samples, checkpoint, k, lock, samples, 
+                        weighted_t_test, headerline, min_samples, max_samples, progress_checkpoint, k, lock, samples, 
                         weights, no_phenotypes, phenotypes, kmers_to_analyse, 
                         args.FDR
                         ), 
@@ -2225,7 +2224,7 @@ def modeling(args):
                         )
                 pvalues_from_all_threads = pool.map(
                     partial(
-                        t_test, headerline, min_samples, max_samples, checkpoint, k, lock, samples, no_phenotypes,
+                        t_test, headerline, min_samples, max_samples, progress_checkpoint, k, lock, samples, no_phenotypes,
                         phenotypes, kmers_to_analyse, args.FDR
                         ), 
                     vectors_as_multiple_input
@@ -2238,7 +2237,7 @@ def modeling(args):
                     )
                 pvalues_from_all_threads = pool.map(
                     partial(
-                        weighted_chi_squared, headerline, min_samples, max_samples, checkpoint, k, lock, samples, weights,
+                        weighted_chi_squared, headerline, min_samples, max_samples, progress_checkpoint, k, lock, samples, weights,
                         no_phenotypes, phenotypes, kmers_to_analyse, args.FDR
                         ),
                     vectors_as_multiple_input
@@ -2250,7 +2249,7 @@ def modeling(args):
                     )
                 pvalues_from_all_threads = pool.map(
                     partial(
-                        chi_squared, headerline, min_samples, max_samples, checkpoint, k, lock, samples,
+                        chi_squared, headerline, min_samples, max_samples, progress_checkpoint, k, lock, samples,
                         no_phenotypes, phenotypes, kmers_to_analyse, args.FDR
                         ),
                     vectors_as_multiple_input
