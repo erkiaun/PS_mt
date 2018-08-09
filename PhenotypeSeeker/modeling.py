@@ -736,7 +736,7 @@ def chi_squared(
     f2.close()
     return(pvalues)
 
-#def chi-squared_universal():
+def chi-squared_universal():
 
 def concatenate_test_files(n_o_p, num_threads, phenotype_scale, phenotypes, phenotypes_2_analyse, headerline=False):
     if phenotype_scale == "continuous":
@@ -2192,6 +2192,7 @@ def modeling(args):
         map_samples, lock, samples, args.length, no_samples
         ), mt_split)    
     #call(["rm -r K-mer_lists/"], shell = True)
+    weights = []
     if args.weights == "+":
         weights = get_weights(samples, args.cutoff)
     (
@@ -2274,7 +2275,7 @@ def modeling(args):
 
     if phenotype_scale == "continuous":
         linear_regression(
-            pool, kmer_lists_splitted, samples, alphas, no_phenotypes,
+            pool, vectors_as_multiple_input, samples, alphas, no_phenotypes,
             kmers_passed_all_phenotypes, args.regularization, args.n_splits,
             weights, args.testset_size, phenotypes, args.weights,
             args.l1_ratio, args.mpheno, headerline
@@ -2282,7 +2283,7 @@ def modeling(args):
     elif phenotype_scale == "binary":
         if args.binary_classifier == "log":
             logistic_regression(
-                pool, kmer_lists_splitted, samples, alphas, no_phenotypes,
+                pool, vectors_as_multiple_input, samples, alphas, no_phenotypes,
                 kmers_passed_all_phenotypes, args.regularization, args.n_splits,
                 weights, args.testset_size, phenotypes, args.weights,
                 args.l1_ratio, args.mpheno, headerline
