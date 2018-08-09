@@ -204,8 +204,8 @@ def get_kmer_lists(
     # Generates k-mer lists for every sample in sample_names variable 
     # (list or dict).
     call(["mkdir", "-p", "K-mer_lists"])
-    genomefail_address = samples_info[sample][0]
     for sample in input_samples:
+        genomefail_address = samples_info[sample][0]
         call(
         	["glistmaker " + genomefail_address + " -o K-mer_lists/" 
         	+ sample + " -w " + kmer_length + " -c " + freq], 
@@ -229,26 +229,52 @@ def get_feature_vector(length, min_freq, samples):
         ]
     call(glistmaker_args)
 
-def map_samples_modeling(lock, samples_info, kmer_length, sample_names):
+def map_samples_modeling(
+        lock, samples_info, kmer_length, no_samples, sample_names
+        ):
     #Takes k-mers, which passed frequency filtering as feature space and maps samples k-mer lists
     #to that feature space. A vector of k-mers frequency information is created for every sample.
-    totalFiles = len(samples_info)
-    for item in sample_names:
-        out_name = "K-mer_lists/"+ item + "_mapped.txt"
-        with open(out_name, "w+") as f1:
-            call(["glistquery", "K-mer_lists/" + item + "_" + kmer_length  + ".list", "-l", "K-mer_lists/feature_vector_" + kmer_length  + ".list"], stdout=f1)
+    for sample in sample_names:
+        outputfile = "K-mer_lists/"+ sample + "_mapped.txt"
+        with open(outputfile, "w+") as op_fail:
+            call(
+                [
+                "glistquery", "K-mer_lists/" + sample + "_" + kmer_length +
+                ".list", "-l", "K-mer_lists/feature_vector_" + kmer_length +
+                ".list"
+                ]
+                , stdout=f1)
         lock.acquire()
         currentSampleNum.value += 1
         lock.release()
-        output = "\t%d of %d samples mapped." % (currentSampleNum.value, totalFiles)
+        output = "\t%d of %d samples mapped." % (
+            currentSampleNum.value, no_samples
+            )
         stderr_print(output)
 
-def mash_caller(samples_info, freq):
+
+# -------------------------------------------------------------------
+# Functions for calculating the mash distances and GSC weights for
+# input samples.
+
+def get_weights(samples, cutoff):
+    _mash_caller(samples, cutoff)
+    _mash_output_to_distance_matrix(samples.keys(), "mash_distances.mat")
+    dist_mat = _distance_matrix_modifier("distances.mat")
+    _distance_matrix_to_phyloxml(samples.keys(), dist_mat)   
+    _phyloxml_to_newick("tree_xml.txt")
+    sys.stderr.write("Calculating the Gerstein Sonnhammer Coathia " \
+        "weights from mash distance matrix...")
+    weights = _newick_to_GSC_weights("tree_newick.txt")
+    return weights
+
+def _mash_caller(samples_info, freq):
     #Estimating phylogenetic distances between samples using mash
     sys.stderr.write("\nEstimating the Mash distances between samples...\n")
     mash_args = ["mash", "sketch", "-o", "reference", "-m", freq]
-    for item in samples_info:
-        mash_args.append(samples_info[item][0])
+    for sample in samples_info:
+        genomefail_address = samples_info[item][0]
+        mash_args.append(genomefail_address)
     process = Popen(mash_args, stderr=PIPE)
     for line in iter(process.stderr.readline, ''):
         stderr_print(line.strip())
@@ -256,7 +282,7 @@ def mash_caller(samples_info, freq):
     with open("mash_distances.mat", "w+") as f1:
         call(["mash", "dist", "reference.msh", "reference.msh"], stdout=f1)
 
-def mash_output_to_distance_matrix(samples_order, mash_distances):
+def _mash_output_to_distance_matrix(samples_order, mash_distances):
     with open(mash_distances) as f1:
         with open("distances.mat", "w+") as f2:
             counter = 0
@@ -271,40 +297,37 @@ def mash_output_to_distance_matrix(samples_order, mash_distances):
                         	"\n" + samples_order[counter/len(samples_order)]
                         	)
 
-def distance_matrix_modifier(distance_matrix):
+def _distance_matrix_modifier(distance_matrix):
     # Modifies distance matrix to be suitable argument 
     # for Bio.Phylo.TreeConstruction._DistanceMatrix function
     distancematrix = []
     with open(distance_matrix) as f1:
         counter = 2
         for line in f1:
-            line = line.strip()
-            list1 = line.split()
-            distancematrix.append(list1[1:counter])
+            line = line.strip().split()
+            distancematrix.append(line[1:counter])
             counter += 1
     for i in range(len(distancematrix)):
         for j in range(len(distancematrix[i])):
             distancematrix[i][j] = float(distancematrix[i][j])
     return(distancematrix)
 
-def distance_matrix_to_phyloxml(samples_order, distance_matrix):
+def _distance_matrix_to_phyloxml(samples_order, distance_matrix):
     #Converting distance matrix to phyloxml
     dm = _DistanceMatrix(samples_order, distance_matrix)
     tree_xml = DistanceTreeConstructor().nj(dm)
     with open("tree_xml.txt", "w+") as f1:
         Bio.Phylo.write(tree_xml, f1, "phyloxml")
 
-def phyloxml_to_newick(phyloxml):
+def _phyloxml_to_newick(phyloxml):
     #Converting phyloxml to newick
     with open("tree_newick.txt", "w+") as f1:
         Bio.Phylo.convert(phyloxml, "phyloxml", f1, "newick")
 
-def newick_to_GSC_weights(newick_tree):
+def _newick_to_GSC_weights(newick_tree):
     # Calculating Gerstein Sonnhammer Coathia weights from Newick 
     # string. Returns dictionary where sample names are keys and GSC 
     # weights are values.
-    sys.stderr.write("Calculating the Gerstein Sonnhammer Coathia " \
-        "weights from mash distance matrix...")
     tree=LoadTree(newick_tree)
     weights=GSC(tree)
     for item in weights:
@@ -320,13 +343,14 @@ def open_test_result_output(headerline, testtype_results, phenotypes, k):
         outputfile = testtype_results + split_of_kmer_lists[0][-5:] + ".txt"
     f2 = open(outputfile, "w+")
 
-def set_phenotype_for_printing(headerline, phenotypes, k):
+def get_text1_4_stderr(headerline, phenotypes, k):
     if headerline:
-        phenotype = phenotype + ": "
+        text2_4_stderr = phenotype + ": "
     elif number_of_phenotypes > 1:
-        phenotype = "phenotype " + str(k) + ": "
+        text2_4_stderr = "phenotype " + str(k) + ": "
     else:
-        phenotype = ""
+        text2_4_stderr = ""
+    return text2_4_stderr
 
 def weighted_t_test(
         headerline, min_freq, max_freq, checkpoint, k, l, samples, weights, number_of_phenotypes,
@@ -334,13 +358,13 @@ def weighted_t_test(
         ):
     # Calculates weighted Welch t-tests results for every k-mer
     samples_order = samples.keys()
-
     pvalues = []
     counter = 0
     NA = False
 
     open_test_result_output(headerline, "t-test_results_", phenotypes, k)
-    phenotype_text_for_stderr = phenotype_text_for_stderr(headerline, phenotypes, k)
+    text1_4_stderr = get_text1_4_stderr(headerline, phenotypes, k)
+    text2_4_stderr = "tests conducted."
 
     f2 = open(outputfile, "w+")
     for line in izip_longest(*[open(item) for item in split_of_kmer_lists], fillvalue = ''):
@@ -350,7 +374,7 @@ def weighted_t_test(
             currentKmerNum.value += checkpoint
             l.release()
             check_progress(
-                previousPercent.value, currentKmerNum.value, k_t_a, "tests conducted.", phenotype_text_for_stderr
+                previousPercent.value, currentKmerNum.value, k_t_a, text2_4_stderr, text1_4_stderr
             )
         samples_x = []
         x = []
@@ -414,8 +438,9 @@ def t_test(
     NA = False
  
     open_test_result_output(headerline, "t-test_results_", phenotypes, k)
-    phenotype_text_for_stderr = phenotype_text_for_stderr(headerline, phenotypes, k)
-    
+    text1_4_stderr = get_text1_4_stderr(headerline, phenotypes, k)
+    text2_4_stderr = "tests conducted."
+
     f2 = open(outputfile, "w+")
     for line in izip_longest(*[open(item) for item in split_of_kmer_lists], fillvalue = ''):
         counter += 1
@@ -424,7 +449,7 @@ def t_test(
             currentKmerNum.value += checkpoint
             l.release()
             check_progress(
-                previousPercent.value, currentKmerNum.value, k_t_a, "tests conducted.", phenotype_text_for_stderr
+                previousPercent.value, currentKmerNum.value, k_t_a, text2_4_stderr, text1_4_stderr
             )
         samples_x = []
         x = []
@@ -474,8 +499,9 @@ def weighted_chi_squared(
     NA = False
     
     open_test_result_output(headerline, "chi-squared_test_results_", phenotypes, k)
-    phenotype_text_for_stderr = phenotype_text_for_stderr(headerline, phenotypes, k)
-      
+    text1_4_stderr = get_text1_4_stderr(headerline, phenotypes, k)
+    text2_4_stderr = "tests conducted."
+
     f2 = open(outputfile, "w+")
     for line in izip_longest(*[open(item) for item in split_of_kmer_lists], fillvalue = ''):
         counter += 1
@@ -484,7 +510,7 @@ def weighted_chi_squared(
             currentKmerNum.value += checkpoint
             l.release()
             check_progress(
-                previousPercent.value, currentKmerNum.value, k_t_a, "tests conducted.", phenotype_text_for_stderr
+                previousPercent.value, currentKmerNum.value, k_t_a, text2_4_stderr, text1_4_stderr
             )
         samples_x = []
         samples_wo_kmer = 0
@@ -588,10 +614,10 @@ def chi_squared(
     counter = 0
 
     open_test_result_output(headerline, "t-test_results_", phenotypes, k)
-    phenotype_text_for_stderr = phenotype_text_for_stderr(headerline, phenotypes, k)
-    
-    f2 = open(outputfile, "w+")
+    text1_4_stderr = get_text1_4_stderr(headerline, phenotypes, k)
+    text2_4_stderr = "tests conducted."
 
+    f2 = open(outputfile, "w+")
     for line in izip_longest(*[open(item) for item in split_of_kmer_lists], fillvalue = ''):
         counter += 1
         if counter%checkpoint == 0:
@@ -599,7 +625,7 @@ def chi_squared(
             currentKmerNum.value += checkpoint
             l.release()
             check_progress(
-                previousPercent.value, currentKmerNum.value, k_t_a, "tests conducted.", phenotype_text_for_stderr
+                previousPercent.value, currentKmerNum.value, k_t_a, text2_4_stderr, text1_4_stderr
             )
         samples_x = []
 
@@ -2120,18 +2146,12 @@ def modeling(args):
     get_feature_vector(args.length, min_samples, samples)   
     sys.stderr.write("\nMapping samples to the feature vector space:\n")
     currentSampleNum.value = 0
-    pool.map(partial(map_samples_modeling, lock, samples, args.length), mt_split)
-    
+    pool.map(partial(
+        map_samples_modeling, lock, samples, args.length, no_samples
+        ), mt_split)    
     #call(["rm -r K-mer_lists/"], shell = True)
-    
-    weights = []
-    if args.weights == "+":   
-        mash_caller(samples, args.cutoff)
-        mash_output_to_distance_matrix(samples.keys(), "mash_distances.mat")
-        dist_mat = distance_matrix_modifier("distances.mat")
-        distance_matrix_to_phyloxml(samples.keys(), dist_mat)   
-        phyloxml_to_newick("tree_xml.txt")
-        weights = newick_to_GSC_weights("tree_newick.txt")
+    if args.weights == "+":
+        weights = get_weights(samples, args.cutoff)
     
     for sample in samples:
         call(["split -a 5 -d -n r/" + str(args.num_threads) + " K-mer_lists/" + sample  + "_mapped.txt " + "K-mer_lists/" + sample + "_mapped_"], shell=True)
