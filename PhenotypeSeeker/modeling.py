@@ -136,14 +136,16 @@ def process_input_data(samples, take_logs):
 def process_input_args(
         alphas, alpha_min, alpha_max, n_alphas,
         gammas, gamma_min, gamma_max, n_gammas, 
-        min_samples, max_samples, no_samples
+        min_samples, max_samples, no_samples,
+        mpheno, no_phenotypes
         ):
     alphas = _get_alphas(alphas, alpha_min, alpha_max, n_alphas)
     gammas = _get_gammas(gammas, gamma_min, gamma_max, n_gammas)
     min_samples, max_samples = _get_min_max(
         min_samples, max_samples, no_samples
         )
-    return alphas, gammas, min_samples, max_samples
+    phenotypes_to_analyse = _get_phenotypes_to_analyse(mpheno, no_phenotypes)
+    return alphas, gammas, min_samples, max_samples, phenotypes_to_analyse
 
 def _get_alphas(alphas, alpha_min, alpha_max, n_alphas):       
     # Generating the vector of alphas (hyperparameters in regression analysis)
@@ -175,7 +177,25 @@ def _get_min_max(min_samples, max_samples, no_samples):
         max_samples= no_samples - 2
     return min_samples, max_samples
 
+def _get_phenotypes_to_analyse(mpheno, no_phenotypes):
+    if not mpheno:
+        phenotypes_to_analyse = range(1, no_phenotypes+1)
+    else: 
+        phenotypes_to_analyse = mpheno
+    return phenotypes_to_analyse
 
+# ---------------------------------------------------------
+# Set parameters for multithreading
+def get_multithreading_parameters(num_threads, samples, no_samples):
+    lock = Manager().Lock()
+    # Splitting samples for multithreading
+    mt_split = []
+    for i in range(num_threads):
+        mt_split.append(
+            [samples.keys()[j] for j in xrange(i, no_samples, num_threads)]
+            )
+    pool = Pool(num_threads)
+    return lock, pool
 
 # ---------------------------------------------------------
 # Functions for processing the input arguments
@@ -718,6 +738,7 @@ def kmer_filtering_by_pvalue(l, pvalue, number_of_phenotypes, phenotype_scale, p
         max_pvalue_by_limit = float('%.2E' % pvalues_ascending[kmer_limit-1])
         if B:
             for line in f1:
+                counter += 1
                 max_pvalue_by_B = (
                     pvalue/nr_of_kmers_tested
                     )
@@ -856,7 +877,7 @@ def linear_regression(
 
         # Generating a binary k-mer presence/absence matrix and a list
         # of k-mer names based on information in k-mer_matrix.txt 
-        mat_and_feat_tuples = p.map(partial(get_kmer_presence_matrix,
+        mat_and_feat_tuples = pool.map(partial(get_kmer_presence_matrix,
             set(kmers_passed_all_phenotypes[j])), kmer_lists_splitted)
         mat_and_feat_lists = map(list, zip(*mat_and_feat_tuples))
         kmers_presence_matrix = [item for sublist in mat_and_feat_lists[0] for item in sublist]
@@ -1095,7 +1116,7 @@ def logistic_regression(
 
         # Generating a binary k-mer presence/absence matrix and a list
         # of k-mer names based on information in k-mer_matrix.txt
-        mat_and_feat_tuples = p.map(partial(get_kmer_presence_matrix,
+        mat_and_feat_tuples = pool.map(partial(get_kmer_presence_matrix,
             set(kmers_passed_all_phenotypes[j])), kmer_lists_splitted)
         mat_and_feat_lists = map(list, zip(*mat_and_feat_tuples))
         kmers_presence_matrix = [item for sublist in mat_and_feat_lists[0] for item in sublist]
@@ -2082,33 +2103,24 @@ def modeling(args):
     (
     no_samples, no_phenotypes, headerline, phenotypes, phenotype_scale
         ) = process_input_data(samples, args.take_logs)
-    alphas, gammas, min_samples, max_samples = process_input_args(
-        args.alphas, args.alpha_min, args.alpha_max, args.n_alphas,
-        args.gammas, args.gamma_min, args.gamma_max, args.n_gammas,
-        args.min, args.max, no_samples 
+    (
+    alphas, gammas, min_samples, max_samples, phenotypes_to_analyse
+        ) = process_input_args(
+            args.alphas, args.alpha_min, args.alpha_max, args.n_alphas,
+            args.gammas, args.gamma_min, args.gamma_max, args.n_gammas,
+            args.min, args.max, no_samples, args.mpheno, no_phenotypes 
+            )
+    lock, pool = get_multithreading_parameters(
+        args.num_threads, samples, no_samples
         )
-
-    if not args.mpheno:
-        phenotypes_2_analyse = range(1, no_phenotypes+1)
-    else: 
-        phenotypes_2_analyse = args.mpheno
-
-    l = Manager().Lock()
-
-    # Splitting samples for multithreading
-    mt_split = []
-    for i in range(args.num_threads):
-        mt_split.append([samples.keys()[j] for j in xrange(i, no_samples, args.num_threads)])
-    p = Pool(args.num_threads)
-    
 
     sys.stderr.write("Generating the k-mer feature vector.\n")
     get_feature_vector(args.length, min_samples, samples)
     sys.stderr.write("Generating the k-mer lists for input samples:\n")
-    p.map(partial(get_kmer_lists, l, samples, args.length, args.cutoff), mt_split)   
+    pool.map(partial(get_kmer_lists, lock, samples, args.length, args.cutoff), mt_split)   
     sys.stderr.write("\nMapping samples to the feature vector space:\n")
     currentSampleNum.value = 0
-    p.map(partial(map_samples_modeling, l, samples, args.length), mt_split)
+    pool.map(partial(map_samples_modeling, lock, samples, args.length), mt_split)
     
     #call(["rm -r K-mer_lists/"], shell = True)
     
@@ -2131,7 +2143,7 @@ def modeling(args):
     pvalues_all = []
     kmers_to_analyse = float(check_output(['wc', '-l', "K-mer_lists/" + samples.keys()[0] + "_mapped.txt"]).split()[0])
     checkpoint = int(math.ceil(kmers_to_analyse/(100*args.num_threads)))
-    for j, k in enumerate(phenotypes_2_analyse):
+    for j, k in enumerate(phenotypes_to_analyse):
         currentKmerNum.value = 0
         previousPercent.value = 0
         if phenotype_scale == "continuous":
@@ -2140,9 +2152,9 @@ def modeling(args):
                     sys.stderr.write(
                         "\nConducting the k-mer specific weighted Welch t-tests:\n"
                         )
-                pvalues_from_all_threads = p.map(
+                pvalues_from_all_threads = pool.map(
                     partial(
-                        weighted_t_test, headerline, min_samples, max_samples, checkpoint, k, l, samples, 
+                        weighted_t_test, headerline, min_samples, max_samples, checkpoint, k, lock, samples, 
                         weights, no_phenotypes, phenotypes, kmers_to_analyse, 
                         args.FDR
                         ), 
@@ -2153,9 +2165,9 @@ def modeling(args):
                     sys.stderr.write(
                         "\nConducting the k-mer specific Welch t-tests:\n"
                         )
-                pvalues_from_all_threads = p.map(
+                pvalues_from_all_threads = pool.map(
                     partial(
-                        t_test, headerline, min_samples, max_samples, checkpoint, k, l, samples, no_phenotypes,
+                        t_test, headerline, min_samples, max_samples, checkpoint, k, lock, samples, no_phenotypes,
                         phenotypes, kmers_to_analyse, args.FDR
                         ), 
                     kmer_lists_splitted
@@ -2166,9 +2178,9 @@ def modeling(args):
                     sys.stderr.write(
                         "\nConducting the k-mer specific weighted chi-square tests:\n"
                     )
-                pvalues_from_all_threads = p.map(
+                pvalues_from_all_threads = pool.map(
                     partial(
-                        weighted_chi_squared, headerline, min_samples, max_samples, checkpoint, k, l, samples, weights,
+                        weighted_chi_squared, headerline, min_samples, max_samples, checkpoint, k, lock, samples, weights,
                         no_phenotypes, phenotypes, kmers_to_analyse, args.FDR
                         ),
                     kmer_lists_splitted
@@ -2178,9 +2190,9 @@ def modeling(args):
                     sys.stderr.write(
                         "\nConducting the k-mer specific chi-square tests:\n"
                     )
-                pvalues_from_all_threads = p.map(
+                pvalues_from_all_threads = pool.map(
                     partial(
-                        chi_squared, headerline, min_samples, max_samples, checkpoint, k, l, samples,
+                        chi_squared, headerline, min_samples, max_samples, checkpoint, k, lock, samples,
                         no_phenotypes, phenotypes, kmers_to_analyse, args.FDR
                         ),
                     kmer_lists_splitted
@@ -2188,12 +2200,12 @@ def modeling(args):
         pvalues_all.append(list(chain(*pvalues_from_all_threads)))
         sys.stderr.write("\n")
     
-    concatenate_test_files(no_phenotypes, args.num_threads, phenotype_scale, phenotypes, phenotypes_2_analyse, headerline)
+    concatenate_test_files(no_phenotypes, args.num_threads, phenotype_scale, phenotypes, phenotypes_to_analyse, headerline)
 
     
     kmers_passed_all_phenotypes = kmer_filtering_by_pvalue(
-        l, args.pvalue, no_phenotypes, phenotype_scale, pvalues_all, phenotypes,
-        args.n_kmers, phenotypes_2_analyse, args.FDR,
+        lock, args.pvalue, no_phenotypes, phenotype_scale, pvalues_all, phenotypes,
+        args.n_kmers, phenotypes_to_analyse, args.FDR,
         args.Bonferroni, headerline
         )
 
