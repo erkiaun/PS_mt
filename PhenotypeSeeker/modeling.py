@@ -334,13 +334,13 @@ def _newick_to_GSC_weights(newick_tree):
         weights[item] = 1 - weights[item]
     return(weights)
 
-def open_test_result_output(headerline, testtype_results, phenotypes, k):
+def open_test_result_output(headerline, testtype_results, phenotypes, k, code):
     if headerline:
-        outputfile = testtype_results + phenotype + "_" + split_of_kmer_lists[0][-5:] + ".txt"
+        outputfile = testtype_results + phenotypes[k-1] + "_" + code + ".txt"
     elif number_of_phenotypes > 1:
-        outputfile = testtype_results +  str(k) + "_" + split_of_kmer_lists[0][-5:] + ".txt"
+        outputfile = testtype_results +  str(k) + "_" + code + ".txt"
     else:
-        outputfile = testtype_results + split_of_kmer_lists[0][-5:] + ".txt"
+        outputfile = testtype_results + code + ".txt"
     f2 = open(outputfile, "w+")
 
 def get_text1_4_stderr(headerline, phenotypes, k):
@@ -361,8 +361,9 @@ def weighted_t_test(
     pvalues = []
     counter = 0
     NA = False
-
-    open_test_result_output(headerline, "t-test_results_", phenotypes, k)
+    
+    code = split_of_kmer_lists[0][-5:]
+    open_test_result_output(headerline, "t-test_results_", phenotypes, k, code)
     text1_4_stderr = get_text1_4_stderr(headerline, phenotypes, k)
     text2_4_stderr = "tests conducted."
 
@@ -437,7 +438,8 @@ def t_test(
     counter = 0
     NA = False
  
-    open_test_result_output(headerline, "t-test_results_", phenotypes, k)
+    code = split_of_kmer_lists[0][-5:]
+    open_test_result_output(headerline, "t-test_results_", phenotypes, k, code)
     text1_4_stderr = get_text1_4_stderr(headerline, phenotypes, k)
     text2_4_stderr = "tests conducted."
 
