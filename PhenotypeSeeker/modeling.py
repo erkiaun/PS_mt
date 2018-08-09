@@ -2139,6 +2139,7 @@ def modeling(args):
         args.num_threads, samples, no_samples
         )
     sys.stderr.write("Generating the k-mer lists for input samples:\n")
+    print(mt_split)
     pool.map(partial(
         get_kmer_lists, lock, samples, args.length, no_samples, args.cutoff
         ), mt_split)
