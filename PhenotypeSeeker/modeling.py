@@ -2363,7 +2363,7 @@ def modeling(args):
             pvalues_from_all_threads = pool.map(
                 partial(
                     chi_squared_universal, headerline, min_samples, max_samples, progress_checkpoint, k, lock, samples, weights,
-                    no_phenotypes, phenotypes, kmers_to_analyse, no_samples
+                    phenotypes, kmers_to_analyse, no_samples
                     ),
                 vectors_as_multiple_input
                 )
