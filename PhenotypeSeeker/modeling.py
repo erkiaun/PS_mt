@@ -522,7 +522,7 @@ def t_test(
     f2.close()
     return(pvalues)
 
-def chi_squared_universal(
+def chi_squared(
         headerline, min_freq, max_freq, checkpoint, k, l, samples, weights,
         phenotypes, k_t_a, no_samples, split_of_kmer_lists
         ):
@@ -584,7 +584,7 @@ def chi_squared_universal(
         pvalues.append(chisquare_results[1])
         f2.write(
             kmer + "\t%.2f\t%.2E\t" % chisquare_results 
-            + str(samples_with_kmer)  +"\t| " + " ".join(samples_x) + "\n"
+            + str(w_kmer)  +"\t| " + " ".join(samples_x) + "\n"
             )
     l.acquire()
     currentKmerNum.value += counter%checkpoint
@@ -2165,7 +2165,7 @@ def modeling(args):
                 )
             pvalues_from_all_threads = pool.map(
                 partial(
-                    chi_squared_universal, headerline, min_samples, max_samples, progress_checkpoint, k, lock, samples, weights,
+                    chi_squared, headerline, min_samples, max_samples, progress_checkpoint, k, lock, samples, weights,
                     phenotypes, kmers_to_analyse, no_samples
                     ),
                 vectors_as_multiple_input
