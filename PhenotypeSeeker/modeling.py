@@ -334,24 +334,6 @@ def _newick_to_GSC_weights(newick_tree):
         weights[item] = 1 - weights[item]
     return(weights)
 
-def test_result_output(headerline, testtype_results, phenotypes, k, code):
-    if headerline:
-        outputfile = testtype_results + phenotypes[k-1] + "_" + code + ".txt"
-    elif len(phenotypes) > 1:
-        outputfile = testtype_results +  str(k) + "_" + code + ".txt"
-    else:
-        outputfile = testtype_results + code + ".txt"
-    return outputfile
-
-def get_text1_4_stderr(headerline, phenotypes, k):
-    if headerline:
-        text2_4_stderr = phenotype + ": "
-    elif len(phenotypes) > 1:
-        text2_4_stderr = "phenotype " + str(k) + ": "
-    else:
-        text2_4_stderr = ""
-    return text2_4_stderr
-
 
 # -------------------------------------------------------------------
 # Functions for calculating the association test results for kmers.
@@ -387,6 +369,64 @@ def _splitted_vectors_to_multiple_input(samples, num_threads):
     for i in range(num_threads):
         vectors_as_multiple_input.append(["K-mer_lists/" + sample + "_mapped_%05d" %i for sample in samples])
     return vectors_as_multiple_input
+
+def test_result_output(headerline, testtype_results, phenotypes, k, code):
+    if headerline:
+        outputfile = testtype_results + phenotypes[k-1] + "_" + code + ".txt"
+    elif len(phenotypes) > 1:
+        outputfile = testtype_results +  str(k) + "_" + code + ".txt"
+    else:
+        outputfile = testtype_results + code + ".txt"
+    return outputfile
+
+def get_text1_4_stderr(headerline, phenotypes, k):
+    if headerline:
+        text2_4_stderr = phenotype + ": "
+    elif len(phenotypes) > 1:
+        text2_4_stderr = "phenotype " + str(k) + ": "
+    else:
+        text2_4_stderr = ""
+    return text2_4_stderr
+
+def get_samples_distribution(
+        sample_phenotypes, sample_names, list1, samples_x,
+        weights
+        ):
+        with_pheno_with_kmer = 0
+        with_pheno_wtihout_kmer = 0
+        without_pheno_with_kmer = 0
+        without_pheno_without_kmer = 0
+        for i, item in enumerate(sample_phenotypes):
+            sample_name = sample_names[i]
+            if item != "NA":
+                if item == "1":
+                    if (list1[i] != "0"):
+                        if weights:
+                            with_pheno_with_kmer += weights[sample_name]   
+                        else:
+                            with_pheno_with_kmer += 1
+                        samples_x.append(samples_name)
+                    else:
+                        if weights:
+                            with_pheno_without_kmer += weights[sample_name]
+                        else: 
+                            with_pheno_without_kmer += 1
+                else:
+                    if (list1[i] != "0"):
+                        if weights:
+                            without_pheno_with_kmer += weights[sample_name]
+                        else:
+                            without_pheno_with_kmer += 1
+                        samples_x.append(samples_names[i])
+                    else:
+                        if weights:
+                            without_pheno_without_kmer += weights[sample_name]
+                        else:
+                            without_pheno_without_kmer += 1
+    return(
+        with_pheno_with_kmer, with_pheno_wtihout_kmer,
+        without_pheno_with_kmer, without_pheno_without_kmer
+        )
 
 
 
@@ -668,6 +708,7 @@ def chi_squared(
                 previousPercent.value, currentKmerNum.value, k_t_a, text2_4_stderr, text1_4_stderr
             )
         samples_x = []
+        samples_wo_kmer = 0
 
         kmer = line[0].split()[0]
         list1 = [j.split()[1].strip() for j in line]
@@ -736,7 +777,91 @@ def chi_squared(
     f2.close()
     return(pvalues)
 
-#def chi-squared_universal():
+def chi_squared_universal(
+        headerline, min_freq, max_freq, checkpoint, k, l, samples, weights, number_of_phenotypes,
+        phenotypes, k_t_a, no_samples, split_of_kmer_lists
+        ):
+    sample_names = samples.keys()
+    sample_phenotypes = [sample_data[k] for sample_data in samples.values()]
+    pvalues = []
+    counter = 0
+
+    code = split_of_kmer_lists[0][-5:]
+    f2 = open(test_result_output(headerline, "chi-squared_test_results_", phenotypes, k, code), "w")
+    text1_4_stderr = get_text1_4_stderr(headerline, phenotypes, k)
+    text2_4_stderr = "tests conducted."
+
+    for line in izip_longest(*[open(item) for item in split_of_kmer_lists], fillvalue = ''):
+        counter += 1
+        if counter%checkpoint == 0:
+            l.acquire()
+            currentKmerNum.value += checkpoint
+            l.release()
+            check_progress(
+                previousPercent.value, currentKmerNum.value, k_t_a, text2_4_stderr, text1_4_stderr
+            )
+        samples_x = []
+        samples_wo_kmer = 0
+
+        kmer = line[0].split()[0]
+        list1 = [j.split()[1].strip() for j in line]
+
+        (
+        with_pheno_with_kmer, with_pheno_without_kmer,
+        without_pheno_with_kmer, without_pheno_without_kmer
+        ) = get_samples_distribution(
+        sample_phenotypes, sample_names, list1, samples_x, weights
+        )
+
+        samples_with_pheno = (with_pheno_with_kmer + with_pheno_without_kmer)
+        samples_without_pheno = (
+            without_pheno_with_kmer + without_pheno_without_kmer
+            )
+        samples_with_kmer = (with_pheno_with_kmer + without_pheno_with_kmer)
+        samples_without_kmer = (
+            with_pheno_without_kmer + without_pheno_without_kmer
+            )
+        samples_total = samples_with_pheno + samples_without_pheno
+
+        if samples_w_kmer < min_freq or samples_without_kmer < 2 or samples_w_kmer > max_freq:
+            continue
+
+        with_pheno_with_kmer_expected = ((samples_with_pheno * samples_with_kmer)
+                         / float(samples_total))
+        with_pheno_without_kmer_expected = ((samples_with_pheno * samples_without_kmer) 
+                          / float(samples_total))
+        without_pheno_with_kmer_expected  = ((samples_without_pheno * samples_with_kmer)
+                          / float(samples_total))
+        without_pheno_without_kmer_expected = ((samples_without_pheno * samples_without_kmer)
+                           / float(samples_total))
+
+        chisquare_results = stats.chisquare(
+            [
+            with_pheno_with_kmer, with_pheno_without_kmer,
+            without_pheno_with_kmer, without_pheno_without_kmer
+            ],
+            [
+            with_pheno_with_kmer_expected, with_pheno_without_kmer_expected, 
+            without_pheno_with_kmer_expected, without_pheno_without_kmer_expected
+            ],
+            1
+            )
+
+        pvalues.append(chisquare_results[1])
+
+        f2.write(
+            kmer + "\t%.2f\t%.2E\t" % chisquare_results 
+            + str(no_samples)  +"\t| " + " ".join(samples_x) + "\n"
+            )
+    l.acquire()
+    currentKmerNum.value += counter%checkpoint
+    l.release()
+    check_progress(
+        previousPercent.value, currentKmerNum.value, k_t_a, text2_4_stderr, text1_4_stderr
+        )                
+    f2.close()
+    return(pvalues)
+
 
 def concatenate_test_files(n_o_p, num_threads, phenotype_scale, phenotypes, phenotypes_2_analyse, headerline=False):
     if phenotype_scale == "continuous":
@@ -892,7 +1017,7 @@ def get_kmer_presence_matrix(kmers_passed, split_of_kmer_lists):
     return(kmers_presence_matrix, features)
 
 def linear_regression(
-	    p, kmer_lists_splitted, samples, samples_order, alphas, number_of_phenotypes,
+	    p, kmer_lists_splitted, samples, alphas, number_of_phenotypes,
 	    kmers_passed_all_phenotypes, penalty, n_splits, weights, testset_size,
 	    phenotypes, use_of_weights, l1_ratio, phenotypes_to_analyze=False,
         headerline=False
@@ -1131,7 +1256,7 @@ def linear_regression(
         f2.close()
 
 def logistic_regression(
-	    p, kmer_lists_splitted, samples, samples_order, alphas, number_of_phenotypes, 
+	    p, kmer_lists_splitted, samples, alphas, number_of_phenotypes, 
 	    kmers_passed_all_phenotypes, penalty, n_splits, weights, testset_size,
 	    phenotypes, use_of_weights, l1_ratio, phenotypes_to_analyze=False,
         headerline=False
@@ -2237,30 +2362,17 @@ def modeling(args):
                     vectors_as_multiple_input
                     ) 
         elif phenotype_scale == "binary":
-            if args.weights == "+":
-                if j == 0:
-                    sys.stderr.write(
-                        "\nConducting the k-mer specific weighted chi-square tests:\n"
-                    )
-                pvalues_from_all_threads = pool.map(
-                    partial(
-                        weighted_chi_squared, headerline, min_samples, max_samples, progress_checkpoint, k, lock, samples, weights,
-                        no_phenotypes, phenotypes, kmers_to_analyse, args.FDR
-                        ),
-                    vectors_as_multiple_input
-                    )
-            else:
-                if j == 0:
-                    sys.stderr.write(
-                        "\nConducting the k-mer specific chi-square tests:\n"
-                    )
-                pvalues_from_all_threads = pool.map(
-                    partial(
-                        chi_squared, headerline, min_samples, max_samples, progress_checkpoint, k, lock, samples,
-                        no_phenotypes, phenotypes, kmers_to_analyse, args.FDR
-                        ),
-                    vectors_as_multiple_input
-                    )
+            if j == 0:
+                sys.stderr.write(
+                    "\nConducting the k-mer specific weighted chi-square tests:\n"
+                )
+            pvalues_from_all_threads = pool.map(
+                partial(
+                    chi_squared_universal, headerline, min_samples, max_samples, progress_checkpoint, k, lock, samples, weights,
+                    no_phenotypes, phenotypes, kmers_to_analyse, no_samples
+                    ),
+                vectors_as_multiple_input
+                )
         pvalues_all.append(list(chain(*pvalues_from_all_threads)))
         sys.stderr.write("\n")
 
