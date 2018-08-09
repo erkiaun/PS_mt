@@ -388,46 +388,6 @@ def get_text1_4_stderr(headerline, phenotypes, k):
         text2_4_stderr = ""
     return text2_4_stderr
 
-def get_samples_distribution(
-        sample_phenotypes, sample_names, list1, samples_x,
-        weights
-        ):
-    with_pheno_with_kmer = 0
-    with_pheno_without_kmer = 0
-    without_pheno_with_kmer = 0
-    without_pheno_without_kmer = 0
-    for i, item in enumerate(sample_phenotypes):
-        sample_name = sample_names[i]
-        if item != "NA":
-            if item == "1":
-                if (list1[i] != "0"):
-                    if weights:
-                        with_pheno_with_kmer += weights[sample_name]   
-                    else:
-                        with_pheno_with_kmer += 1
-                    samples_x.append(sample_name)
-                else:
-                    if weights:
-                        with_pheno_without_kmer += weights[sample_name]
-                    else: 
-                        with_pheno_without_kmer += 1
-            else:
-                if (list1[i] != "0"):
-                    if weights:
-                        without_pheno_with_kmer += weights[sample_name]
-                    else:
-                        without_pheno_with_kmer += 1
-                    samples_x.append(sample_names[i])
-                else:
-                    if weights:
-                        without_pheno_without_kmer += weights[sample_name]
-                    else:
-                        without_pheno_without_kmer += 1
-    return(
-        with_pheno_with_kmer, with_pheno_without_kmer,
-        without_pheno_with_kmer, without_pheno_without_kmer
-        )
-
 def weighted_t_test(
         headerline, min_freq, max_freq, checkpoint, k, l, samples, weights,
         phenotypes, k_t_a, split_of_kmer_lists
@@ -562,214 +522,6 @@ def t_test(
     f2.close()
     return(pvalues)
 
-def weighted_chi_squared(
-    headerline, min_freq, max_freq, checkpoint, k, l, samples, weights,
-    phenotypes, k_t_a, split_of_kmer_lists
-        ):
-    # Calculates weighted Chi-squared tests for every k-mer
-    samples_order = samples.keys()
-    sample_phenotypes = [sample_data[k] for sample_data in samples.values()]
-    pvalues = []
-    counter = 0
-    NA = False
-    
-    code = split_of_kmer_lists[0][-5:]
-    f2 = open(test_result_output(headerline, "chi-squared_test_results_", phenotypes, k, code), "w")
-    text1_4_stderr = get_text1_4_stderr(headerline, phenotypes, k)
-    text2_4_stderr = "tests conducted."
-    for line in izip_longest(*[open(item) for item in split_of_kmer_lists], fillvalue = ''):
-        counter += 1
-        if counter%checkpoint == 0:
-            l.acquire()
-            currentKmerNum.value += checkpoint
-            l.release()
-            check_progress(
-                previousPercent.value, currentKmerNum.value, k_t_a, text2_4_stderr, text1_4_stderr
-            )
-        samples_x = []
-        samples_wo_kmer = 0
-
-        kmer = line[0].split()[0]
-        list1 = [j.split()[1].strip() for j in line]
-
-        weights_of_res_w_kmer = 0
-        weights_of_res_wo_kmer = 0
-        weights_of_sens_w_kmer = 0
-        weights_of_sens_wo_kmer = 0
-
-        for j in range(len(list1)):
-            if samples[samples_order[j]][k] != "NA":
-                if (list1[j] != "0" 
-                        and samples[samples_order[j]][k] == "1"):
-                    weights_of_res_w_kmer += weights[samples_order[j]]
-                    samples_x.append(samples_order[j])
-                if (list1[j] == "0" 
-                        and samples[samples_order[j]][k] == "1"):
-                    weights_of_res_wo_kmer += weights[samples_order[j]]
-                    samples_wo_kmer += 1
-                if (list1[j] != "0" 
-                        and samples[samples_order[j]][k] == "0"):
-                    weights_of_sens_w_kmer += weights[samples_order[j]]
-                    samples_x.append(samples_order[j])
-                if (list1[j] == "0" 
-                        and samples[samples_order[j]][k] == "0"):
-                    weights_of_sens_wo_kmer += weights[
-                        samples_order[j]
-                        ]
-                    samples_wo_kmer += 1
-
-        if len(samples_x) < min_freq or samples_wo_kmer < 2 or len(samples_x) > max_freq:
-            continue
-
-        weights_of_res_samples = (weights_of_res_w_kmer
-                                 + weights_of_res_wo_kmer)
-        weights_of_sens_samples = (weights_of_sens_w_kmer
-                                  + weights_of_sens_wo_kmer)
-        weights_of_samples_w_kmer = (weights_of_res_w_kmer
-                                    + weights_of_sens_w_kmer)
-        weights_of_samples_wo_kmer = (weights_of_res_wo_kmer
-                                     + weights_of_sens_wo_kmer)
-        weights_of_samples_total = (weights_of_res_samples
-                                   + weights_of_sens_samples)
-
-        weights_of_res_w_kmer_exp = (
-            (weights_of_res_samples*weights_of_samples_w_kmer) 
-            / float(weights_of_samples_total)
-            )
-        weights_of_res_wo_kmer_exp = (
-            (weights_of_res_samples*weights_of_samples_wo_kmer)
-            / float(weights_of_samples_total)
-            )
-        weights_of_sens_w_kmer_exp = (
-            (weights_of_sens_samples*weights_of_samples_w_kmer)
-            / float(weights_of_samples_total)
-            )
-        weights_of_sens_wo_kmer_exp = (
-            (weights_of_sens_samples*weights_of_samples_wo_kmer)
-            / float(weights_of_samples_total)
-            ) 
-
-        chisquare_results = stats.chisquare(
-            [
-            weights_of_res_w_kmer, weights_of_res_wo_kmer,
-            weights_of_sens_w_kmer, weights_of_sens_wo_kmer
-        ],
-            [
-            weights_of_res_w_kmer_exp, weights_of_res_wo_kmer_exp,
-            weights_of_sens_w_kmer_exp, weights_of_sens_wo_kmer_exp
-            ],
-            1
-            )
-                
-        pvalues.append(chisquare_results[1])
-
-        f2.write(
-            kmer + "\t%.2f\t%.2E\t" % chisquare_results 
-            + str(len(samples_x)) +"\t| " + " ".join(samples_x) + "\n"
-            )
-    l.acquire()
-    currentKmerNum.value += counter%checkpoint
-    l.release()
-    check_progress(
-        previousPercent.value, currentKmerNum.value, k_t_a, text2_4_stderr, text1_4_stderr
-        )
-    f2.close()
-    return(pvalues)
-
-def chi_squared(
-        headerline, min_freq, max_freq, checkpoint, k, l, samples, phenotypes,
-        k_t_a, split_of_kmer_lists
-        ):
-    # Calculates Chi-squared tests for every k-mer
-    sample_names = samples.keys()
-    sample_phenotypes = [sample_data[k] for sample_data in samples.values()]
-
-    pvalues = []
-    counter = 0
-
-    code = split_of_kmer_lists[0][-5:]
-    f2 = open(test_result_output(headerline, "chi-squared_test_results_", phenotypes, k, code), "w")
-    text1_4_stderr = get_text1_4_stderr(headerline, phenotypes, k)
-    text2_4_stderr = "tests conducted."
-    for line in izip_longest(*[open(item) for item in split_of_kmer_lists], fillvalue = ''):
-        counter += 1
-        if counter%checkpoint == 0:
-            l.acquire()
-            currentKmerNum.value += checkpoint
-            l.release()
-            check_progress(
-                previousPercent.value, currentKmerNum.value, k_t_a, text2_4_stderr, text1_4_stderr
-            )
-        samples_x = []
-        samples_wo_kmer = 0
-
-        kmer = line[0].split()[0]
-        list1 = [j.split()[1].strip() for j in line]
-
-        res_w_kmer = 0
-        res_wo_kmer = 0
-        sens_w_kmer = 0
-        sens_wo_kmer = 0
-
-        for i, item in enumerate(sample_phenotypes):
-            if item != "NA":
-                if item == "1":
-                    if (list1[i] != "0"):    
-                        res_w_kmer += 1
-                        samples_x.append(sample_names[i])
-                    else: 
-                        res_wo_kmer += 1
-                else:
-                    if (list1[i] != "0"):
-                        sens_w_kmer += 1
-                        samples_x.append(sample_names[i])
-                    else:
-                        sens_wo_kmer += 1
-                    
-
-        res_samples = (res_w_kmer + res_wo_kmer)
-        sens_samples = (sens_w_kmer + sens_wo_kmer)
-        samples_w_kmer = (res_w_kmer + sens_w_kmer)
-        samples_wo_kmer = (res_wo_kmer + sens_wo_kmer)
-        samples_total = res_samples + sens_samples
-
-        if samples_w_kmer < min_freq or samples_wo_kmer < 2 or samples_w_kmer > max_freq:
-            continue
-
-
-        res_w_kmer_exp = ((res_samples * samples_w_kmer)
-                         / float(samples_total))
-        res_wo_kmer_exp = ((res_samples * samples_wo_kmer) 
-                          / float(samples_total))
-        sens_w_kmer_exp = ((sens_samples * samples_w_kmer)
-                          / float(samples_total))
-        sens_wo_kmer_exp = ((sens_samples * samples_wo_kmer)
-                           / float(samples_total))
-
-        chisquare_results = stats.chisquare(
-            [res_w_kmer, res_wo_kmer, sens_w_kmer, sens_wo_kmer],
-            [
-            res_w_kmer_exp, res_wo_kmer_exp, 
-            sens_w_kmer_exp, sens_wo_kmer_exp
-            ],
-            1
-            )
-                
-        pvalues.append(chisquare_results[1])
-
-        f2.write(
-            kmer + "\t%.2f\t%.2E\t" % chisquare_results 
-            + str(len(samples_x))  +"\t| " + " ".join(samples_x) + "\n"
-            )
-    l.acquire()
-    currentKmerNum.value += counter%checkpoint
-    l.release()
-    check_progress(
-        previousPercent.value, currentKmerNum.value, k_t_a, text2_4_stderr, text1_4_stderr
-        )                
-    f2.close()
-    return(pvalues)
-
 def chi_squared_universal(
         headerline, min_freq, max_freq, checkpoint, k, l, samples, weights,
         phenotypes, k_t_a, no_samples, split_of_kmer_lists
@@ -800,53 +552,39 @@ def chi_squared_universal(
         list1 = [j.split()[1].strip() for j in line]
 
         (
-        with_pheno_with_kmer, with_pheno_without_kmer,
-        without_pheno_with_kmer, without_pheno_without_kmer
+        w_pheno_w_kmer, w_pheno_wo_kmer, wo_pheno_w_kmer, wo_pheno_wo_kmer
         ) = get_samples_distribution(
-        sample_phenotypes, sample_names, list1, samples_x, weights
-        )
-
-        samples_with_pheno = (with_pheno_with_kmer + with_pheno_without_kmer)
-        samples_without_pheno = (
-            without_pheno_with_kmer + without_pheno_without_kmer
+            sample_phenotypes, sample_names, list1, samples_x, weights
             )
-        samples_with_kmer = (with_pheno_with_kmer + without_pheno_with_kmer)
-        samples_without_kmer = (
-            with_pheno_without_kmer + without_pheno_without_kmer
+        (w_pheno, wo_pheno, w_kmer, wo_kmer, total) = get_totals_in_classes(
+            w_pheno_w_kmer, w_pheno_wo_kmer, wo_pheno_w_kmer, wo_pheno_wo_kmer
             )
-        samples_total = samples_with_pheno + samples_without_pheno
 
-        if (samples_with_kmer < min_freq or
-            samples_without_kmer < 2 or
-            samples_with_kmer > max_freq):
+        if w_kmer < min_freq or wo_kmer < 2 or w_kmer > max_freq:
             continue
 
-        with_pheno_with_kmer_expected = ((samples_with_pheno * samples_with_kmer)
-                         / float(samples_total))
-        with_pheno_without_kmer_expected = ((samples_with_pheno * samples_without_kmer) 
-                          / float(samples_total))
-        without_pheno_with_kmer_expected  = ((samples_without_pheno * samples_with_kmer)
-                          / float(samples_total))
-        without_pheno_without_kmer_expected = ((samples_without_pheno * samples_without_kmer)
-                           / float(samples_total))
+        (
+        w_pheno_w_kmer_expected, w_pheno_wo_kmer_expected,
+        wo_pheno_w_kmer_expected, wo_pheno_wo_kmer_expected
+        ) = get_expected_distribution(
+            w_pheno, wo_pheno, w_kmer, wo_kmer, total)  
 
         chisquare_results = stats.chisquare(
             [
-            with_pheno_with_kmer, with_pheno_without_kmer,
-            without_pheno_with_kmer, without_pheno_without_kmer
+            w_pheno_w_kmer, w_pheno_wo_kmer,
+            wo_pheno_w_kmer, wo_pheno_wo_kmer
             ],
             [
-            with_pheno_with_kmer_expected, with_pheno_without_kmer_expected, 
-            without_pheno_with_kmer_expected, without_pheno_without_kmer_expected
+            w_pheno_w_kmer_expected, w_pheno_wo_kmer_expected, 
+            wo_pheno_w_kmer_expected, wo_pheno_wo_kmer_expected
             ],
             1
             )
-
+        
         pvalues.append(chisquare_results[1])
-
         f2.write(
             kmer + "\t%.2f\t%.2E\t" % chisquare_results 
-            + str(no_samples)  +"\t| " + " ".join(samples_x) + "\n"
+            + str(samples_with_kmer)  +"\t| " + " ".join(samples_x) + "\n"
             )
     l.acquire()
     currentKmerNum.value += counter%checkpoint
@@ -857,6 +595,73 @@ def chi_squared_universal(
     f2.close()
     return(pvalues)
 
+def get_samples_distribution(
+        sample_phenotypes, sample_names, list1, samples_x,
+        weights
+        ):
+    with_pheno_with_kmer = 0
+    with_pheno_without_kmer = 0
+    without_pheno_with_kmer = 0
+    without_pheno_without_kmer = 0
+    for i, item in enumerate(sample_phenotypes):
+        sample_name = sample_names[i]
+        if item != "NA":
+            if item == "1":
+                if (list1[i] != "0"):
+                    if weights:
+                        with_pheno_with_kmer += weights[sample_name]   
+                    else:
+                        with_pheno_with_kmer += 1
+                    samples_x.append(sample_name)
+                else:
+                    if weights:
+                        with_pheno_without_kmer += weights[sample_name]
+                    else: 
+                        with_pheno_without_kmer += 1
+            else:
+                if (list1[i] != "0"):
+                    if weights:
+                        without_pheno_with_kmer += weights[sample_name]
+                    else:
+                        without_pheno_with_kmer += 1
+                    samples_x.append(sample_names[i])
+                else:
+                    if weights:
+                        without_pheno_without_kmer += weights[sample_name]
+                    else:
+                        without_pheno_without_kmer += 1
+    return(
+        with_pheno_with_kmer, with_pheno_without_kmer,
+        without_pheno_with_kmer, without_pheno_without_kmer
+        )
+
+def get_totals_in_classes(
+        w_pheno_w_kmer, w_pheno_wo_kmer, wo_pheno_w_kmer, wo_pheno_wo_kmer
+        ):
+    w_pheno = (w_pheno_w_kmer + w_pheno_w_kmer)
+    wo_pheno = (
+        wo_pheno_w_kmer + wo_pheno_wo_kmer
+        )
+    w_kmer = (w_pheno_w_kmer + wo_pheno_w_kmer)
+    wo_kmer = (
+        w_pheno_wo_kmer + wo_pheno_wo_kmer
+        )
+    total = samples_w_pheno + samples_wo_pheno
+    return w_pheno, wo_pheno, w_kmer, wo_kmer, total
+
+def get_expected_distribution(w_pheno, wo_pheno, w_kmer, wo_kmer, total):
+    w_pheno_w_kmer_expected = ((w_pheno * w_kmer)
+                     / float(total))
+    w_pheno_wo_kmer_expected = ((w_pheno * wo_kmer) 
+                      / float(total))
+    wo_pheno_w_kmer_expected  = ((wo_pheno * w_kmer)
+                      / float(total))
+    wo_pheno_wo_kmer_expected = ((wo_pheno * wo_kmer)
+                       / float(total))
+    return(
+        w_pheno_w_kmer_expected, w_pheno_wo_kmer_expected,
+        wo_pheno_w_kmer_expected, wo_pheno_wo_kmer_expected
+        )
 
 def concatenate_test_files(n_o_p, num_threads, phenotype_scale, phenotypes, phenotypes_2_analyse, headerline=False):
     if phenotype_scale == "continuous":
@@ -1067,8 +872,12 @@ def linear_regression(
         mat_and_feat_tuples = pool.map(partial(get_kmer_presence_matrix,
             set(kmers_passed_all_phenotypes[j])), kmer_lists_splitted)
         mat_and_feat_lists = map(list, zip(*mat_and_feat_tuples))
-        kmers_presence_matrix = [item for sublist in mat_and_feat_lists[0] for item in sublist]
-        features = [item for sublist in mat_and_feat_lists[1] for item in sublist]
+        kmers_presence_matrix = [
+            item for sublist in mat_and_feat_lists[0] for item in sublist
+            ]
+        features = [
+            item for sublist in mat_and_feat_lists[1] for item in sublist
+            ]
         Phenotypes = [samples[item][k] for item in samples.keys()]
 
 
@@ -2321,12 +2130,6 @@ def modeling(args):
         ) = get_kmers_tested(
         samples, args.num_threads, phenotypes_to_analyse
         )
-    
-    
-    
-    
-
-
     for j, k in enumerate(phenotypes_to_analyse):
         currentKmerNum.value = 0
         previousPercent.value = 0
