@@ -1067,7 +1067,7 @@ def linear_regression(
         mat_and_feat_lists = map(list, zip(*mat_and_feat_tuples))
         kmers_presence_matrix = [item for sublist in mat_and_feat_lists[0] for item in sublist]
         features = [item for sublist in mat_and_feat_lists[1] for item in sublist]
-        Phenotypes = [samples[item][k] for item in samples_order]
+        Phenotypes = [samples[item][k] for item in samples.keys()]
 
 
         # Converting data into Python array formats suitable to use in
@@ -1306,7 +1306,7 @@ def logistic_regression(
         mat_and_feat_lists = map(list, zip(*mat_and_feat_tuples))
         kmers_presence_matrix = [item for sublist in mat_and_feat_lists[0] for item in sublist]
         features = [item for sublist in mat_and_feat_lists[1] for item in sublist]
-        Phenotypes = [samples[item][k] for item in samples_order]
+        Phenotypes = [samples[item][k] for item in samples_order.keys()]
 
         # Converting data into Python array formats suitable to use in
         # sklearn modelling. Also, deleting information associated with
