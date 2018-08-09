@@ -198,7 +198,7 @@ def get_multithreading_parameters(num_threads, samples, no_samples):
     return lock, pool, mt_split
 
 def get_kmer_lists(
-        lock, samples_info, kmer_length, freq, no_samples, input_samples
+        lock, samples_info, kmer_length, no_samples, freq, input_samples
         ):
     # Makes "K-mer_lists" directory where all lists are stored.
     # Generates k-mer lists for every sample in sample_names variable 
@@ -2139,7 +2139,6 @@ def modeling(args):
         args.num_threads, samples, no_samples
         )
     sys.stderr.write("Generating the k-mer lists for input samples:\n")
-    print(mt_split)
     pool.map(partial(
         get_kmer_lists, lock, samples, args.length, no_samples, args.cutoff
         ), mt_split)
