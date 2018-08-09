@@ -2080,9 +2080,8 @@ def modeling(args):
     # The main function of "phenotypeseeker modeling"
     samples = get_input_data(args.inputfile)
     (
-    no_samples, no_phenotypes, headerline, phenotypes, phenotype_scale,
-    args.take_logs
-        ) = process_input_data(samples)
+    no_samples, no_phenotypes, headerline, phenotypes, phenotype_scale
+        ) = process_input_data(samples, args.take_logs)
     alphas, gammas, min_samples, max_samples = process_input_args(
         args.alphas, args.alpha_min, args.alpha_max, args.n_alphas,
         args.gammas, args.gamma_min, args.gamma_max, args.n_gammas,
