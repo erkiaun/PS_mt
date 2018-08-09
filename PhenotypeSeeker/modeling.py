@@ -197,8 +197,27 @@ def get_multithreading_parameters(num_threads, samples, no_samples):
     pool = Pool(num_threads)
     return lock, pool, mt_split
 
-# ---------------------------------------------------------
-# Functions for processing the input arguments
+def get_kmer_lists(
+        lock, samples_info, kmer_length, freq, no_samples, input_samples
+        ):
+    # Makes "K-mer_lists" directory where all lists are stored.
+    # Generates k-mer lists for every sample in sample_names variable 
+    # (list or dict).
+    call(["mkdir", "-p", "K-mer_lists"])
+    genomefail_address = samples_info[sample][0]
+    for sample in input_samples:
+        call(
+        	["glistmaker " + genomefail_address + " -o K-mer_lists/" 
+        	+ sample + " -w " + kmer_length + " -c " + freq], 
+        	shell=True
+        	)
+        lock.acquire()
+        currentSampleNum.value += 1
+        lock.release()
+        output = "\t%d of %d lists generated." % (
+            currentSampleNum.value, no_samples
+            )
+        stderr_print(output)
 
 def get_feature_vector(length, min_freq, samples):
     call(["mkdir", "-p", "K-mer_lists"])
@@ -209,26 +228,6 @@ def get_feature_vector(length, min_freq, samples):
         '-c', str(min_freq), '-w', length, '-o', 'K-mer_lists/feature_vector'
         ]
     call(glistmaker_args)
-
-def get_kmer_lists(lock, samples_info, kmer_length, freq, input_samples):
-    # Makes "K-mer_lists" directory where all lists are stored.
-    # Generates k-mer lists for every sample in sample_names variable 
-    # (list or dict).
-    totalFiles = len(samples_info)
-    call(["mkdir", "-p", "K-mer_lists"])
-    for item in input_samples:
-        call(
-        	["glistmaker " + str(samples_info[item][0]) + " -o K-mer_lists/" 
-        	+ item + " -w " + kmer_length + " -c " + freq], 
-        	shell=True
-        	)
-        lock.acquire()
-        currentSampleNum.value += 1
-        lock.release()
-        output = "\t%d of %d lists generated." % (
-            currentSampleNum.value, totalFiles
-            )
-        stderr_print(output)
 
 def map_samples_modeling(lock, samples_info, kmer_length, sample_names):
     #Takes k-mers, which passed frequency filtering as feature space and maps samples k-mer lists
@@ -2113,11 +2112,12 @@ def modeling(args):
     lock, pool, mt_split = get_multithreading_parameters(
         args.num_threads, samples, no_samples
         )
-
-    sys.stderr.write("Generating the k-mer feature vector.\n")
-    get_feature_vector(args.length, min_samples, samples)
     sys.stderr.write("Generating the k-mer lists for input samples:\n")
-    pool.map(partial(get_kmer_lists, lock, samples, args.length, args.cutoff), mt_split)   
+    pool.map(partial(
+        get_kmer_lists, lock, samples, args.length, no_samples, args.cutoff
+        ), mt_split)
+    sys.stderr.write("Generating the k-mer feature vector.\n")
+    get_feature_vector(args.length, min_samples, samples)   
     sys.stderr.write("\nMapping samples to the feature vector space:\n")
     currentSampleNum.value = 0
     pool.map(partial(map_samples_modeling, lock, samples, args.length), mt_split)
