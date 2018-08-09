@@ -352,6 +352,44 @@ def get_text1_4_stderr(headerline, phenotypes, k):
         text2_4_stderr = ""
     return text2_4_stderr
 
+
+# -------------------------------------------------------------------
+# Functions for calculating the association test results for kmers.
+
+def get_kmers_tested(samples, num_threads, phenotypes_to_analyse):
+    _split_sample_vectors_for_multithreading(samples, num_threads)
+    vectors_as_multiple_input = _splitted_vectors_to_multiple_input(
+        samples, num_threads
+        )
+    kmers_to_analyse = float(
+        check_output(
+            ['wc', '-l', "K-mer_lists/" + samples.keys()[0] + "_mapped.txt"]
+            ).split()[0]
+        )
+    return vectors_as_multiple_input, kmers_to_analyse
+
+def _split_sample_vectors_for_multithreading(samples, num_threads):
+    for sample in samples:
+        call(
+            [
+            "split -a 5 -d -n r/" + str(num_threads) + " K-mer_lists/" +
+            sample + "_mapped.txt " + "K-mer_lists/" + sample + "_mapped_"
+            ]
+            , shell=True)
+
+def _splitted_vectors_to_multiple_input():
+    vectors_as_multiple_input = []
+    for i in range(num_threads):
+        vectors_as_multiple_input.append(["K-mer_lists/" + sample + "_mapped_%05d" %i for sample in samples])
+    return vectors_as_multiple_input
+
+
+
+
+
+
+
+
 def weighted_t_test(
         headerline, min_freq, max_freq, checkpoint, k, l, samples, weight,
         phenotypes, k_t_a, FDR, split_of_kmer_lists
@@ -420,7 +458,7 @@ def weighted_t_test(
     currentKmerNum.value += counter%checkpoint
     l.release()
     check_progress(
-        previousPercent.value, currentKmerNum.value, k_t_a, "tests conducted.", phenotype_text_for_stderr
+        previousPercent.value, currentKmerNum.value, k_t_a, text2_4_stderr, text1_4_stderr
     )
     f2.close()
     return(pvalues)
@@ -481,7 +519,7 @@ def t_test(
     currentKmerNum.value += counter%checkpoint
     l.release()
     check_progress(
-        previousPercent.value, currentKmerNum.value, k_t_a, "tests conducted.", phenotype_text_for_stderr
+        previousPercent.value, currentKmerNum.value, k_t_a, text2_4_stderr, text1_4_stderr
     )
     f2.close()
     return(pvalues)
@@ -492,12 +530,13 @@ def weighted_chi_squared(
         ):
     # Calculates weighted Chi-squared tests for every k-mer
     samples_order = samples.keys()
+    sample_phenotypes = [sample_data[k] for sample_data in samples.values()]
     pvalues = []
     counter = 0
     NA = False
     
     code = split_of_kmer_lists[0][-5:]
-    f2 = open(test_result_output(headerline, "t-test_results_", phenotypes, k, code), "w")
+    f2 = open(test_result_output(headerline, "chi-squared_test_results_", phenotypes, k, code), "w")
     text1_4_stderr = get_text1_4_stderr(headerline, phenotypes, k)
     text2_4_stderr = "tests conducted."
     for line in izip_longest(*[open(item) for item in split_of_kmer_lists], fillvalue = ''):
@@ -594,7 +633,7 @@ def weighted_chi_squared(
     currentKmerNum.value += counter%checkpoint
     l.release()
     check_progress(
-        previousPercent.value, currentKmerNum.value, k_t_a, "tests conducted.", phenotype_text_for_stderr
+        previousPercent.value, currentKmerNum.value, k_t_a, text2_4_stderr, text1_4_stderr
         )
     f2.close()
     return(pvalues)
@@ -611,7 +650,7 @@ def chi_squared(
     counter = 0
 
     code = split_of_kmer_lists[0][-5:]
-    f2 = open(test_result_output(headerline, "t-test_results_", phenotypes, k, code), "w")
+    f2 = open(test_result_output(headerline, "chi-squared_test_results_", phenotypes, k, code), "w")
     text1_4_stderr = get_text1_4_stderr(headerline, phenotypes, k)
     text2_4_stderr = "tests conducted."
     for line in izip_longest(*[open(item) for item in split_of_kmer_lists], fillvalue = ''):
@@ -687,7 +726,7 @@ def chi_squared(
     currentKmerNum.value += counter%checkpoint
     l.release()
     check_progress(
-        previousPercent.value, currentKmerNum.value, k_t_a, "tests conducted.", phenotype_text_for_stderr
+        previousPercent.value, currentKmerNum.value, k_t_a, text2_4_stderr, text1_4_stderr
         )                
     f2.close()
     return(pvalues)
@@ -2149,16 +2188,19 @@ def modeling(args):
     if args.weights == "+":
         weights = get_weights(samples, args.cutoff)
     
-    for sample in samples:
-        call(["split -a 5 -d -n r/" + str(args.num_threads) + " K-mer_lists/" + sample  + "_mapped.txt " + "K-mer_lists/" + sample + "_mapped_"], shell=True)
-    
-    kmer_lists_splitted = []
-    for i in range(args.num_threads):
-        kmer_lists_splitted.append(["K-mer_lists/" + sample + "_mapped_%05d" %i for sample in samples])
 
-    pvalues_all = []
-    kmers_to_analyse = float(check_output(['wc', '-l', "K-mer_lists/" + samples.keys()[0] + "_mapped.txt"]).split()[0])
-    checkpoint = int(math.ceil(kmers_to_analyse/(100*args.num_threads)))
+
+
+
+    vectors_as_multiple_input, kmers_to_analyse = get_kmers_tested(
+        samples, args.num_threads, phenotypes_to_analyse
+        )
+    
+    
+    
+    
+
+
     for j, k in enumerate(phenotypes_to_analyse):
         currentKmerNum.value = 0
         previousPercent.value = 0
@@ -2174,7 +2216,7 @@ def modeling(args):
                         weights, no_phenotypes, phenotypes, kmers_to_analyse, 
                         args.FDR
                         ), 
-                    kmer_lists_splitted
+                    vectors_as_multiple_input
                     )            
             else:
                 if j == 0:
@@ -2186,7 +2228,7 @@ def modeling(args):
                         t_test, headerline, min_samples, max_samples, checkpoint, k, lock, samples, no_phenotypes,
                         phenotypes, kmers_to_analyse, args.FDR
                         ), 
-                    kmer_lists_splitted
+                    vectors_as_multiple_input
                     ) 
         elif phenotype_scale == "binary":
             if args.weights == "+":
@@ -2199,7 +2241,7 @@ def modeling(args):
                         weighted_chi_squared, headerline, min_samples, max_samples, checkpoint, k, lock, samples, weights,
                         no_phenotypes, phenotypes, kmers_to_analyse, args.FDR
                         ),
-                    kmer_lists_splitted
+                    vectors_as_multiple_input
                     )
             else:
                 if j == 0:
@@ -2211,11 +2253,11 @@ def modeling(args):
                         chi_squared, headerline, min_samples, max_samples, checkpoint, k, lock, samples,
                         no_phenotypes, phenotypes, kmers_to_analyse, args.FDR
                         ),
-                    kmer_lists_splitted
+                    vectors_as_multiple_input
                     )
         pvalues_all.append(list(chain(*pvalues_from_all_threads)))
         sys.stderr.write("\n")
-    '''
+
     concatenate_test_files(no_phenotypes, args.num_threads, phenotype_scale, phenotypes, phenotypes_to_analyse, headerline)
 
     
@@ -2261,4 +2303,3 @@ def modeling(args):
             kmers_passed_all_phenotypes, phenotypes, no_phenotypes, args.mpheno,
             headerline 
             )
-    '''
