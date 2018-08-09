@@ -334,7 +334,7 @@ def _newick_to_GSC_weights(newick_tree):
         weights[item] = 1 - weights[item]
     return(weights)
 
-def open_test_result_output(headerline, testtype_results, phenotypes, k, code):
+def test_result_output(headerline, testtype_results, phenotypes, k, code):
     if headerline:
         outputfile = testtype_results + phenotypes[k-1] + "_" + code + ".txt"
     elif number_of_phenotypes > 1:
@@ -364,7 +364,6 @@ def weighted_t_test(
     
     code = split_of_kmer_lists[0][-5:]
     f2 = open(test_result_output(headerline, "t-test_results_", phenotypes, k, code), "w")
-    open_test_result_output(headerline, "t-test_results_", phenotypes, k, code)
     text1_4_stderr = get_text1_4_stderr(headerline, phenotypes, k)
     text2_4_stderr = "tests conducted."
     for line in izip_longest(*[open(item) for item in split_of_kmer_lists], fillvalue = ''):
@@ -499,7 +498,6 @@ def weighted_chi_squared(
     
     code = split_of_kmer_lists[0][-5:]
     f2 = open(test_result_output(headerline, "t-test_results_", phenotypes, k, code), "w")
-    open_test_result_output(headerline, "chi-squared_test_results_", phenotypes, k, code)
     text1_4_stderr = get_text1_4_stderr(headerline, phenotypes, k)
     text2_4_stderr = "tests conducted."
     for line in izip_longest(*[open(item) for item in split_of_kmer_lists], fillvalue = ''):
@@ -614,7 +612,6 @@ def chi_squared(
 
     code = split_of_kmer_lists[0][-5:]
     f2 = open(test_result_output(headerline, "t-test_results_", phenotypes, k, code), "w")
-    open_test_result_output(headerline, "chi-squared_test_results_", phenotypes, k, code)
     text1_4_stderr = get_text1_4_stderr(headerline, phenotypes, k)
     text2_4_stderr = "tests conducted."
     for line in izip_longest(*[open(item) for item in split_of_kmer_lists], fillvalue = ''):
