@@ -107,11 +107,12 @@ def get_input_data(inputfilename):
     no_samples = 0
     headerline = False
     with open(inputfilename) as inputfile:
-        if inputfile.readline().split()[0] == "SampleID":
+        firstline = inputfile.readline().strip().split()
+        if firstline[0] == "SampleID":
             headerline = True
-            phenotypes = inputfile.readline().strip().split()[2:]
+            phenotypes = firstline.split()[2:]
         else:
-            samples[line.split()[0]] = line.strip().split()[1:]
+            samples[firstline[0]] = firstline[1:]
         for line in inputfile:
             samples[line.split()[0]] = line.strip().split()[1:]
     return samples, phenotypes, headerline
