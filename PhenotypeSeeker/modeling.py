@@ -341,7 +341,7 @@ def open_test_result_output(headerline, testtype_results, phenotypes, k, code):
         outputfile = testtype_results +  str(k) + "_" + code + ".txt"
     else:
         outputfile = testtype_results + code + ".txt"
-    f2 = open(outputfile, "w+")
+    return outputfile
 
 def get_text1_4_stderr(headerline, phenotypes, k):
     if headerline:
@@ -363,11 +363,10 @@ def weighted_t_test(
     NA = False
     
     code = split_of_kmer_lists[0][-5:]
+    f2 = open(test_result_output(headerline, "t-test_results_", phenotypes, k, code), "w")
     open_test_result_output(headerline, "t-test_results_", phenotypes, k, code)
     text1_4_stderr = get_text1_4_stderr(headerline, phenotypes, k)
     text2_4_stderr = "tests conducted."
-
-    f2 = open(outputfile, "w+")
     for line in izip_longest(*[open(item) for item in split_of_kmer_lists], fillvalue = ''):
         counter += 1
         if counter%checkpoint == 0:
@@ -439,11 +438,9 @@ def t_test(
     NA = False
  
     code = split_of_kmer_lists[0][-5:]
-    open_test_result_output(headerline, "t-test_results_", phenotypes, k, code)
+    f2 = open(test_result_output(headerline, "t-test_results_", phenotypes, k, code), "w")
     text1_4_stderr = get_text1_4_stderr(headerline, phenotypes, k)
     text2_4_stderr = "tests conducted."
-
-    f2 = open(outputfile, "w+")
     for line in izip_longest(*[open(item) for item in split_of_kmer_lists], fillvalue = ''):
         counter += 1
         if counter%checkpoint == 0:
@@ -500,11 +497,11 @@ def weighted_chi_squared(
     counter = 0
     NA = False
     
-    open_test_result_output(headerline, "chi-squared_test_results_", phenotypes, k)
+    code = split_of_kmer_lists[0][-5:]
+    f2 = open(test_result_output(headerline, "t-test_results_", phenotypes, k, code), "w")
+    open_test_result_output(headerline, "chi-squared_test_results_", phenotypes, k, code)
     text1_4_stderr = get_text1_4_stderr(headerline, phenotypes, k)
     text2_4_stderr = "tests conducted."
-
-    f2 = open(outputfile, "w+")
     for line in izip_longest(*[open(item) for item in split_of_kmer_lists], fillvalue = ''):
         counter += 1
         if counter%checkpoint == 0:
@@ -615,11 +612,11 @@ def chi_squared(
     pvalues = []
     counter = 0
 
-    open_test_result_output(headerline, "chi-squared_test_results_", phenotypes, k)
+    code = split_of_kmer_lists[0][-5:]
+    f2 = open(test_result_output(headerline, "t-test_results_", phenotypes, k, code), "w")
+    open_test_result_output(headerline, "chi-squared_test_results_", phenotypes, k, code)
     text1_4_stderr = get_text1_4_stderr(headerline, phenotypes, k)
     text2_4_stderr = "tests conducted."
-
-    f2 = open(outputfile, "w+")
     for line in izip_longest(*[open(item) for item in split_of_kmer_lists], fillvalue = ''):
         counter += 1
         if counter%checkpoint == 0:
