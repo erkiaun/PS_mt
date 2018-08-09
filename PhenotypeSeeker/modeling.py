@@ -129,6 +129,7 @@ def process_input_data(samples):
 
 def process_input_args(alphas, alpha_min, alpha_max, n_alphas):
     alphas = get_alphas(alphas, alpha_min, alpha_max, n_alphas)
+    return alphas
 
 def get_alphas(alphas, alpha_min, alpha_max, n_alphas):       
     # Generating the vector of alphas (hyperparameters in regression analysis)
@@ -139,6 +140,7 @@ def get_alphas(alphas, alpha_min, alpha_max, n_alphas):
             math.log10(alpha_max), num=n_alphas)
     else: 
         alphas = np.array(alphas)
+    return alphas
 
 def get_feature_vector(length, min_freq, samples):
     call(["mkdir", "-p", "K-mer_lists"])
@@ -2042,7 +2044,7 @@ def modeling(args):
     (
     no_samples, no_phenotypes, headerline, phenotypes, phenotype_scale
         ) = process_input_data(samples)
-    alphas = process_input_args(args.alphas, alpha_min, alpha_max, n_alphas)
+    alphas = process_input_args(args.alphas, args.alpha_min, args.alpha_max, args.n_alphas)
 
     # Generating the vector of alphas (hyperparameters in regression analysis)
     # based on the given command line arguments.
