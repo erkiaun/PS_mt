@@ -272,9 +272,9 @@ def _mash_caller(samples_info, freq):
     #Estimating phylogenetic distances between samples using mash
     sys.stderr.write("\nEstimating the Mash distances between samples...\n")
     mash_args = ["mash", "sketch", "-o", "reference", "-m", freq]
-    for sample in samples_info:
-        genomefail_address = samples_info[item][0]
-        mash_args.append(genomefail_address)
+    for sample_data in samples_info.values():
+        genome_file_address = sample_data[0]
+        mash_args.append(genome_file_address)
     process = Popen(mash_args, stderr=PIPE)
     for line in iter(process.stderr.readline, ''):
         stderr_print(line.strip())
@@ -816,7 +816,9 @@ def chi_squared_universal(
             )
         samples_total = samples_with_pheno + samples_without_pheno
 
-        if samples_w_kmer < min_freq or samples_without_kmer < 2 or samples_w_kmer > max_freq:
+        if (samples_with_kmer < min_freq or
+            samples_without_kmer < 2 or
+            samples_with_kmer > max_freq):
             continue
 
         with_pheno_with_kmer_expected = ((samples_with_pheno * samples_with_kmer)
