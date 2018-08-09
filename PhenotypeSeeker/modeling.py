@@ -428,13 +428,6 @@ def get_samples_distribution(
         without_pheno_with_kmer, without_pheno_without_kmer
         )
 
-
-
-
-
-
-
-
 def weighted_t_test(
         headerline, min_freq, max_freq, checkpoint, k, l, samples, weight,
         phenotypes, k_t_a, FDR, split_of_kmer_lists
@@ -1017,7 +1010,7 @@ def get_kmer_presence_matrix(kmers_passed, split_of_kmer_lists):
     return(kmers_presence_matrix, features)
 
 def linear_regression(
-	    p, kmer_lists_splitted, samples, alphas, number_of_phenotypes,
+	    pool, kmer_lists_splitted, samples, alphas, number_of_phenotypes,
 	    kmers_passed_all_phenotypes, penalty, n_splits, weights, testset_size,
 	    phenotypes, use_of_weights, l1_ratio, phenotypes_to_analyze=False,
         headerline=False
@@ -1256,7 +1249,7 @@ def linear_regression(
         f2.close()
 
 def logistic_regression(
-	    p, kmer_lists_splitted, samples, alphas, number_of_phenotypes, 
+	    pool, kmer_lists_splitted, samples, alphas, number_of_phenotypes, 
 	    kmers_passed_all_phenotypes, penalty, n_splits, weights, testset_size,
 	    phenotypes, use_of_weights, l1_ratio, phenotypes_to_analyze=False,
         headerline=False
