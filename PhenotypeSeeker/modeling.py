@@ -393,7 +393,7 @@ def get_samples_distribution(
         weights
         ):
     with_pheno_with_kmer = 0
-    with_pheno_wtihout_kmer = 0
+    with_pheno_without_kmer = 0
     without_pheno_with_kmer = 0
     without_pheno_without_kmer = 0
     for i, item in enumerate(sample_phenotypes):
