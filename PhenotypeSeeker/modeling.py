@@ -178,6 +178,7 @@ def _get_min_max(min_samples, max_samples, no_samples):
     return min_samples, max_samples
 
 def _get_phenotypes_to_analyse(mpheno, no_phenotypes):
+    print(mpheno)
     if not mpheno:
         phenotypes_to_analyse = range(1, no_phenotypes+1)
     else: 
@@ -2162,7 +2163,6 @@ def modeling(args):
     pvalues_all = []
     kmers_to_analyse = float(check_output(['wc', '-l', "K-mer_lists/" + samples.keys()[0] + "_mapped.txt"]).split()[0])
     checkpoint = int(math.ceil(kmers_to_analyse/(100*args.num_threads)))
-    print(phenotypes_to_analyse)
     for j, k in enumerate(phenotypes_to_analyse):
         currentKmerNum.value = 0
         previousPercent.value = 0
