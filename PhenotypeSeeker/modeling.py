@@ -125,7 +125,7 @@ def process_input_data(samples, take_logs):
         for phenotype_values in samples.values():
             phenotype_values = map(lambda x: math.log(x, 2), phenotype_values)
     no_samples = len(samples)
-    no_phenotypes = len(phenotypes)
+    no_phenotypes = len(samples.values()[0][1:])
     return no_samples, no_phenotypes, headerline, phenotypes, phenotype_scale
 
 
@@ -178,7 +178,6 @@ def _get_min_max(min_samples, max_samples, no_samples):
     return min_samples, max_samples
 
 def _get_phenotypes_to_analyse(mpheno, no_phenotypes):
-    print(mpheno)
     if not mpheno:
         phenotypes_to_analyse = range(1, no_phenotypes+1)
     else: 
