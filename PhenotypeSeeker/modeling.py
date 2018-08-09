@@ -97,12 +97,8 @@ def within_1_tier_accuracy(targets, predictions):
 
 
 # -------------------------------------------------------------------
-
+# Read the data from inputfile into "samples" directory
 def get_input_data(inputfilename):
-    # Parses info from tabulated input file into samples ordered
-    # dictionary. Stores the order of samples in "samples_order" list.
-    # Counts the number of samples and phenotypes and stores those
-    # values in n_o_s and n_o_p variables, respectively.
     samples = OrderedDict()
     no_samples = 0
     headerline = False
@@ -112,7 +108,9 @@ def get_input_data(inputfilename):
             samples[line.split()[0]] = line.strip().split()[1:]
     return samples
 
-def process_input_data(samples):
+# -------------------------------------------------------------------
+# Process the input data and get the main parameters
+def process_input_data(samples, take_logs):
     headerline = False
     phenotypes = []    
     phenotype_scale = "binary"
@@ -123,15 +121,31 @@ def process_input_data(samples):
     for sample, sample_data in samples.iteritems():
         if not all(x == "0" or x == "1" or x == "NA" for x in sample_data[1:]):
             phenotype_scale = "continuous"
+    if take_logs:
+        for phenotype_values in samples.values():
+            phenotype_values = map(lambda x: math.log(x, 2), phenotype_values)
     no_samples = len(samples)
     no_phenotypes = len(phenotypes)
     return no_samples, no_phenotypes, headerline, phenotypes, phenotype_scale
 
-def process_input_args(alphas, alpha_min, alpha_max, n_alphas):
-    alphas = get_alphas(alphas, alpha_min, alpha_max, n_alphas)
-    return alphas
 
-def get_alphas(alphas, alpha_min, alpha_max, n_alphas):       
+
+# ---------------------------------------------------------
+# Functions for processing the command line input arguments
+
+def process_input_args(
+        alphas, alpha_min, alpha_max, n_alphas,
+        gammas, gamma_min, gamma_max, n_gammas, 
+        min_samples, max_samples, no_samples
+        ):
+    alphas = _get_alphas(alphas, alpha_min, alpha_max, n_alphas)
+    gammas = _get_gammas(gammas, gamma_min, gamma_max, n_gammas)
+    min_samples, max_samples = _get_min_max(
+        min_samples, max_samples, no_samples
+        )
+    return alphas, gammas, min_samples, max_samples
+
+def _get_alphas(alphas, alpha_min, alpha_max, n_alphas):       
     # Generating the vector of alphas (hyperparameters in regression analysis)
     # based on the given command line arguments.
     if alphas == None:
@@ -141,6 +155,30 @@ def get_alphas(alphas, alpha_min, alpha_max, n_alphas):
     else: 
         alphas = np.array(alphas)
     return alphas
+
+def _get_gammas(gammas, gamma_min, gamma_max, n_gammas):
+    # Generating the vector of alphas (hyperparameters in regression analysis)
+    # based on the given command line arguments.
+    if gammas == None:
+        gammas = np.logspace(
+            math.log10(gamma_min),
+            math.log10(gamma_max), num=n_gammas)
+    else: 
+        gammas = np.array(gammas)
+    return gammas
+
+def _get_min_max(min_samples, max_samples, no_samples):
+    # Set the min and max arguments to default values
+    if min_samples == "0":
+        min_samples = 2
+    if max_samples == "0":
+        max_samples= no_samples - 2
+    return min_samples, max_samples
+
+
+
+# ---------------------------------------------------------
+# Functions for processing the input arguments
 
 def get_feature_vector(length, min_freq, samples):
     call(["mkdir", "-p", "K-mer_lists"])
@@ -613,7 +651,7 @@ def chi_squared(
     f2.close()
     return(pvalues)
 
-def concatenate_test_files(k, n_o_p, num_threads, phenotype_scale, phenotypes, phenotypes_2_analyse, headerline=False):
+def concatenate_test_files(n_o_p, num_threads, phenotype_scale, phenotypes, phenotypes_2_analyse, headerline=False):
     if phenotype_scale == "continuous":
         test = "t-test"
     else:
@@ -2042,30 +2080,14 @@ def modeling(args):
     # The main function of "phenotypeseeker modeling"
     samples = get_input_data(args.inputfile)
     (
-    no_samples, no_phenotypes, headerline, phenotypes, phenotype_scale
+    no_samples, no_phenotypes, headerline, phenotypes, phenotype_scale,
+    args.take_logs
         ) = process_input_data(samples)
-    alphas = process_input_args(args.alphas, args.alpha_min, args.alpha_max, args.n_alphas)
-
-    # Generating the vector of alphas (hyperparameters in regression analysis)
-    # based on the given command line arguments.
-    if args.gammas == None:
-        gammas = np.logspace(
-            math.log10(args.gamma_min),
-            math.log10(args.gamma_max), num=args.n_gammas)
-    else: 
-        gammas = np.array(args.gammas)
-
-    if args.take_logs:
-        for sample, phen_vals in samples.iteritems():
-            samples[sample] = map(lambda x: math.log(x, 2), phen_vals)
-
-
-    # Set the min and max arguments to default values
-    if args.min == "0":
-        args.min = 2
-    if args.max == "0":
-        args.max = no_samples - 2
-    
+    alphas, gammas, min_samples, max_samples = process_input_args(
+        args.alphas, args.alpha_min, args.alpha_max, args.n_alphas,
+        args.gammas, args.gamma_min, args.gamma_max, args.n_gammas,
+        args.min, args.max, no_samples 
+        )
 
     if not args.mpheno:
         phenotypes_2_analyse = range(1, no_phenotypes+1)
@@ -2082,7 +2104,7 @@ def modeling(args):
     
 
     sys.stderr.write("Generating the k-mer feature vector.\n")
-    get_feature_vector(args.length, args.min, samples)
+    get_feature_vector(args.length, min_samples, samples)
     sys.stderr.write("Generating the k-mer lists for input samples:\n")
     p.map(partial(get_kmer_lists, l, samples, args.length, args.cutoff), mt_split)   
     sys.stderr.write("\nMapping samples to the feature vector space:\n")
@@ -2121,7 +2143,7 @@ def modeling(args):
                         )
                 pvalues_from_all_threads = p.map(
                     partial(
-                        weighted_t_test, headerline, args.min, args.max, checkpoint, k, l, samples, 
+                        weighted_t_test, headerline, min_samples, max_samples, checkpoint, k, l, samples, 
                         weights, no_phenotypes, phenotypes, kmers_to_analyse, 
                         args.FDR
                         ), 
@@ -2134,7 +2156,7 @@ def modeling(args):
                         )
                 pvalues_from_all_threads = p.map(
                     partial(
-                        t_test, headerline, args.min, args.max, checkpoint, k, l, samples, no_phenotypes,
+                        t_test, headerline, min_samples, max_samples, checkpoint, k, l, samples, no_phenotypes,
                         phenotypes, kmers_to_analyse, args.FDR
                         ), 
                     kmer_lists_splitted
@@ -2147,7 +2169,7 @@ def modeling(args):
                     )
                 pvalues_from_all_threads = p.map(
                     partial(
-                        weighted_chi_squared, headerline, args.min, args.max, checkpoint, k, l, samples, weights,
+                        weighted_chi_squared, headerline, min_samples, max_samples, checkpoint, k, l, samples, weights,
                         no_phenotypes, phenotypes, kmers_to_analyse, args.FDR
                         ),
                     kmer_lists_splitted
@@ -2159,7 +2181,7 @@ def modeling(args):
                     )
                 pvalues_from_all_threads = p.map(
                     partial(
-                        chi_squared, headerline, args.min, args.max, checkpoint, k, l, samples,
+                        chi_squared, headerline, min_samples, max_samples, checkpoint, k, l, samples,
                         no_phenotypes, phenotypes, kmers_to_analyse, args.FDR
                         ),
                     kmer_lists_splitted
@@ -2167,7 +2189,7 @@ def modeling(args):
         pvalues_all.append(list(chain(*pvalues_from_all_threads)))
         sys.stderr.write("\n")
     
-    concatenate_test_files(k, no_phenotypes, args.num_threads, phenotype_scale, phenotypes, phenotypes_2_analyse, headerline)
+    concatenate_test_files(no_phenotypes, args.num_threads, phenotype_scale, phenotypes, phenotypes_2_analyse, headerline)
 
     
     kmers_passed_all_phenotypes = kmer_filtering_by_pvalue(
