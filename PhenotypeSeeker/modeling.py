@@ -424,7 +424,7 @@ def get_samples_distribution(
                     else:
                         without_pheno_without_kmer += 1
     return(
-        with_pheno_with_kmer, with_pheno_wtihout_kmer,
+        with_pheno_with_kmer, with_pheno_without_kmer,
         without_pheno_with_kmer, without_pheno_without_kmer
         )
 
