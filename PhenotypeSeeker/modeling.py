@@ -2218,7 +2218,7 @@ def modeling(args):
                     )
         pvalues_all.append(list(chain(*pvalues_from_all_threads)))
         sys.stderr.write("\n")
-    
+    '''
     concatenate_test_files(no_phenotypes, args.num_threads, phenotype_scale, phenotypes, phenotypes_to_analyse, headerline)
 
     
@@ -2264,3 +2264,4 @@ def modeling(args):
             kmers_passed_all_phenotypes, phenotypes, no_phenotypes, args.mpheno,
             headerline 
             )
+    '''
