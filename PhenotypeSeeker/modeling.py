@@ -405,7 +405,7 @@ def get_samples_distribution(
                         with_pheno_with_kmer += weights[sample_name]   
                     else:
                         with_pheno_with_kmer += 1
-                    samples_x.append(samples_name)
+                    samples_x.append(sample_name)
                 else:
                     if weights:
                         with_pheno_without_kmer += weights[sample_name]
