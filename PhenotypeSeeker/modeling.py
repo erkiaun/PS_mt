@@ -72,7 +72,7 @@ def VME(targets, predictions):
     for item in zip(targets, predictions):
         if item[0] == 1 and item[1] == 0:
             VMEs += 1
-    VME = str(float(VMEs)/len(list1)*100)+"%"
+    VME = str(float(VMEs)/len(targets)*100)+"%"
     return VME
 
 def ME(targets, predictions):
