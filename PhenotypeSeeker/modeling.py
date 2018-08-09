@@ -106,6 +106,7 @@ def get_input_data(inputfilename):
     samples = OrderedDict()
     no_samples = 0
     headerline = False
+    phenotypes = []
     with open(inputfilename) as inputfile:
         firstline = inputfile.readline().strip().split()
         if firstline[0] == "SampleID":
