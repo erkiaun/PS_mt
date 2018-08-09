@@ -580,7 +580,7 @@ def chi_squared_universal(
             ],
             1
             )
-        
+
         pvalues.append(chisquare_results[1])
         f2.write(
             kmer + "\t%.2f\t%.2E\t" % chisquare_results 
@@ -646,7 +646,7 @@ def get_totals_in_classes(
     wo_kmer = (
         w_pheno_wo_kmer + wo_pheno_wo_kmer
         )
-    total = samples_w_pheno + samples_wo_pheno
+    total = w_pheno + wo_pheno
     return w_pheno, wo_pheno, w_kmer, wo_kmer, total
 
 def get_expected_distribution(w_pheno, wo_pheno, w_kmer, wo_kmer, total):
