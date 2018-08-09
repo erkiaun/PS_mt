@@ -337,7 +337,7 @@ def _newick_to_GSC_weights(newick_tree):
 def test_result_output(headerline, testtype_results, phenotypes, k, code):
     if headerline:
         outputfile = testtype_results + phenotypes[k-1] + "_" + code + ".txt"
-    elif number_of_phenotypes > 1:
+    elif len(phenotypes) > 1:
         outputfile = testtype_results +  str(k) + "_" + code + ".txt"
     else:
         outputfile = testtype_results + code + ".txt"
@@ -346,14 +346,14 @@ def test_result_output(headerline, testtype_results, phenotypes, k, code):
 def get_text1_4_stderr(headerline, phenotypes, k):
     if headerline:
         text2_4_stderr = phenotype + ": "
-    elif number_of_phenotypes > 1:
+    elif len(phenotypes) > 1:
         text2_4_stderr = "phenotype " + str(k) + ": "
     else:
         text2_4_stderr = ""
     return text2_4_stderr
 
 def weighted_t_test(
-        headerline, min_freq, max_freq, checkpoint, k, l, samples, weights, number_of_phenotypes,
+        headerline, min_freq, max_freq, checkpoint, k, l, samples, weight,
         phenotypes, k_t_a, FDR, split_of_kmer_lists
         ):
     # Calculates weighted Welch t-tests results for every k-mer
