@@ -108,27 +108,37 @@ def get_input_data(inputfilename):
     headerline = False
     phenotypes = []
     with open(inputfilename) as inputfile:
-        firstline = inputfile.readline().strip().split()
-        if firstline[0] == "SampleID":
-            headerline = True
-            phenotypes = firstline.split()[2:]
-        else:
-            samples[firstline[0]] = firstline[1:]
         for line in inputfile:
             samples[line.split()[0]] = line.strip().split()[1:]
-    return samples, phenotypes, headerline
+    return samples
 
-def process_input_data(samples, phenotypes):
-    no_samples = len(samples)
-    no_phenotypes = len(phenotypes)
-    
+def process_input_data(samples):
+    headerline = False
+    phenotypes = []    
     phenotype_scale = "binary"
+    if samples.keys()[0] == "SampleID":
+        headerline = True
+        phenotypes = samples.values()[0][1:]
+        del samples["SampleID"]
     for sample, sample_data in samples.iteritems():
         if not all(x == "0" or x == "1" or x == "NA" for x in sample_data[1:]):
             phenotype_scale = "continuous"
+    no_samples = len(samples)
+    no_phenotypes = len(phenotypes)
+    return no_samples, no_phenotypes, headerline, phenotypes, phenotype_scale
 
-    return no_samples, no_phenotypes, phenotype_scale
+def process_input_args(alphas, alpha_min, alpha_max, n_alphas):
+    alphas = get_alphas(alphas, alpha_min, alpha_max, n_alphas)
 
+def get_alphas(alphas, alpha_min, alpha_max, n_alphas):       
+    # Generating the vector of alphas (hyperparameters in regression analysis)
+    # based on the given command line arguments.
+    if alphas == None:
+        alphas = np.logspace(
+            math.log10(alpha_min),
+            math.log10(alpha_max), num=n_alphas)
+    else: 
+        alphas = np.array(alphas)
 
 def get_feature_vector(length, min_freq, samples):
     call(["mkdir", "-p", "K-mer_lists"])
@@ -295,11 +305,11 @@ def weighted_t_test(
             if samples.values()[j][k] != "NA":
                 if list1[j] == "0":
                     y.append(float(samples.values()[j][k]))
-                    y_weights.append(weights[samples.keys[j]])
+                    y_weights.append(weights[samples.keys()[j]])
                 else:
                     x.append(float(samples.values()[j][k]))
-                    x_weights.append(weights[samples.keys[j]])
-                    samples_x.append(samples.keys[j])
+                    x_weights.append(weights[samples.keys()[j]])
+                    samples_x.append(samples.keys()[j])
         if len(x) < min_freq or len(y) < 2 or len(x) > max_freq:
             continue
                 
@@ -2028,19 +2038,12 @@ def assembling(
 
 def modeling(args):
     # The main function of "phenotypeseeker modeling"
-    samples, phenotypes, headerline = get_input_data(args.inputfile)
-    no_samples, no_phenotypes, phenotype_scale = process_input_data(
-        samples, phenotypes
-        )
-    
-    # Generating the vector of alphas (hyperparameters in regression analysis)
-    # based on the given command line arguments.
-    if args.alphas == None:
-        alphas = np.logspace(
-            math.log10(args.alpha_min),
-            math.log10(args.alpha_max), num=args.n_alphas)
-    else: 
-        alphas = np.array(args.alphas)
+    samples = get_input_data(args.inputfile)
+    (
+    no_samples, no_phenotypes, headerline, phenotypes, phenotype_scale
+        ) = process_input_data(samples)
+    alphas = process_input_args(args.alphas, alpha_min, alpha_max, n_alphas)
+
     # Generating the vector of alphas (hyperparameters in regression analysis)
     # based on the given command line arguments.
     if args.gammas == None:
@@ -2103,7 +2106,7 @@ def modeling(args):
         kmer_lists_splitted.append(["K-mer_lists/" + sample + "_mapped_%05d" %i for sample in samples])
 
     pvalues_all = []
-    kmers_to_analyse = float(check_output(['wc', '-l', "K-mer_lists/" + samples.keys[0] + "_mapped.txt"]).split()[0])
+    kmers_to_analyse = float(check_output(['wc', '-l', "K-mer_lists/" + samples.keys()[0] + "_mapped.txt"]).split()[0])
     checkpoint = int(math.ceil(kmers_to_analyse/(100*args.num_threads)))
     for j, k in enumerate(phenotypes_2_analyse):
         currentKmerNum.value = 0
