@@ -195,7 +195,7 @@ def get_multithreading_parameters(num_threads, samples, no_samples):
             [samples.keys()[j] for j in xrange(i, no_samples, num_threads)]
             )
     pool = Pool(num_threads)
-    return lock, pool
+    return lock, pool, mt_split
 
 # ---------------------------------------------------------
 # Functions for processing the input arguments
@@ -203,8 +203,8 @@ def get_multithreading_parameters(num_threads, samples, no_samples):
 def get_feature_vector(length, min_freq, samples):
     call(["mkdir", "-p", "K-mer_lists"])
     glistmaker_args = ["glistmaker"]
-    for item in samples:
-        glistmaker_args.append(samples[item][0])
+    for sample_data in samples.values():
+        glistmaker_args.append(sample_data[0])
     glistmaker_args += [
         '-c', str(min_freq), '-w', length, '-o', 'K-mer_lists/feature_vector'
         ]
@@ -2110,7 +2110,7 @@ def modeling(args):
             args.gammas, args.gamma_min, args.gamma_max, args.n_gammas,
             args.min, args.max, no_samples, args.mpheno, no_phenotypes 
             )
-    lock, pool = get_multithreading_parameters(
+    lock, pool, mt_split = get_multithreading_parameters(
         args.num_threads, samples, no_samples
         )
 
