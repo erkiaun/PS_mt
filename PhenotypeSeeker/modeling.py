@@ -613,7 +613,7 @@ def chi_squared(
     pvalues = []
     counter = 0
 
-    open_test_result_output(headerline, "t-test_results_", phenotypes, k)
+    open_test_result_output(headerline, "chi-squared_test_results_", phenotypes, k)
     text1_4_stderr = get_text1_4_stderr(headerline, phenotypes, k)
     text2_4_stderr = "tests conducted."
 
