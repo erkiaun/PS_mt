@@ -736,7 +736,7 @@ def chi_squared(
     f2.close()
     return(pvalues)
 
-def chi-squared_universal():
+#def chi-squared_universal():
 
 def concatenate_test_files(n_o_p, num_threads, phenotype_scale, phenotypes, phenotypes_2_analyse, headerline=False):
     if phenotype_scale == "continuous":
