@@ -207,7 +207,7 @@ def get_kmer_lists(
     for sample in input_samples:
         genomefail_address = samples_info[sample][0]
         call(
-        	["glistmaker " + genomefail_address + " -o K-mer_lists/" 
+        	["glistmaker " + str(genomefail_address) + " -o K-mer_lists/" 
         	+ sample + " -w " + kmer_length + " -c " + freq], 
         	shell=True
         	)
