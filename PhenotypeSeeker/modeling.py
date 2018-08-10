@@ -467,10 +467,10 @@ def t_test_universial(
         kmer = line[0].split()[0]
         list1 = [j.split()[1].strip() for j in line]
 
-        get_phenotypes_distribution_ttest(
+        get_samples_distribution_ttest(
             x, y, x_weights, y_weights, weights, list1, 
             samples_x, sample_phenotypes, sample_names
-            )
+            ):
 
         if len(x) < min_freq or len(y) < 2 or len(x) > max_freq:
             continue
