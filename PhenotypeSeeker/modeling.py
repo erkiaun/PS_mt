@@ -2163,7 +2163,7 @@ def modeling(args):
     ) = test_kmers_association_with_phenotype(
         samples, args.num_threads, phenotypes_to_analyse, phenotype_scale,
         headerline, min_samples, max_samples, lock, weights, phenotypes, 
-        pool, no_phenotypes
+        no_phenotypes, pool
         )
     kmers_passed_all_phenotypes = kmer_filtering_by_pvalue(
         lock, args.pvalue, no_phenotypes, phenotype_scale, 
