@@ -498,7 +498,7 @@ def t_test_universial(
     f2.close()
     return(pvalues)
 
-
+'''
 def weighted_t_test(
         headerline, min_freq, max_freq, checkpoint, k, l, samples, weights,
         phenotypes, k_t_a, split_of_kmer_lists
@@ -632,7 +632,7 @@ def t_test(
     )
     f2.close()
     return(pvalues)
-
+'''
 def chi_squared(
         headerline, min_freq, max_freq, checkpoint, k, l, samples, weights,
         phenotypes, k_t_a, no_samples, split_of_kmer_lists
