@@ -432,11 +432,11 @@ def t_test(x, y):
     meanx = round((sum(x)/len(x)), 2)
     meany = round((sum(y)/len(y)), 2)
     ttest = stats.ttest_ind(x, y, equal_var=False)
-    t_statistc = ttest[0]
+    t_statistic = ttest[0]
     p_value = ttest[1]
     return t_statistic, p_value, mean_x, mean_y
 
-def t_test_universial(
+def get_t_tests(
         headerline, min_freq, max_freq, checkpoint, k, l, samples, weights,
         phenotypes, k_t_a, split_of_kmer_lists
         ):
@@ -498,144 +498,9 @@ def t_test_universial(
     f2.close()
     return(pvalues)
 
-'''
-def weighted_t_test(
+def get_chi_squared_tests(
         headerline, min_freq, max_freq, checkpoint, k, l, samples, weights,
         phenotypes, k_t_a, split_of_kmer_lists
-        ):
-    # Calculates weighted Welch t-tests results for every k-mer
-    samples_order = samples.keys()
-    pvalues = []
-    counter = 0
-    NA = False
-    
-    code = split_of_kmer_lists[0][-5:]
-    f2 = open(test_result_output(headerline, "t-test_results_", phenotypes, k, code), "w")
-    text1_4_stderr = get_text1_4_stderr(headerline, phenotypes, k)
-    text2_4_stderr = "tests conducted."
-    for line in izip_longest(*[open(item) for item in split_of_kmer_lists], fillvalue = ''):
-        counter += 1
-        if counter%checkpoint == 0:
-            l.acquire()
-            currentKmerNum.value += checkpoint
-            l.release()
-            check_progress(
-                previousPercent.value, currentKmerNum.value, k_t_a, text2_4_stderr, text1_4_stderr
-            )
-        samples_x = []
-        x = []
-        y = []
-        x_weights = []
-        y_weights = []
-
-        kmer = line[0].split()[0]
-        list1 = [j.split()[1].strip() for j in line]
-        for j in range(len(list1)):
-            if samples.values()[j][k] != "NA":
-                if list1[j] == "0":
-                    y.append(float(samples.values()[j][k]))
-                    y_weights.append(weights[samples.keys()[j]])
-                else:
-                    x.append(float(samples.values()[j][k]))
-                    x_weights.append(weights[samples.keys()[j]])
-                    samples_x.append(samples.keys()[j])
-        if len(x) < min_freq or len(y) < 2 or len(x) > max_freq:
-            continue
-                
-        #Parametes for group containig the k-mer
-        wtd_mean_y = np.average(y, weights=y_weights)
-        sumofweightsy = sum(y_weights)
-        sumofweightsy2 = sum(i**2 for i in y_weights)
-        vary = (sumofweightsy / (sumofweightsy**2 - sumofweightsy2)) * sum(y_weights * (y - wtd_mean_y)**2)
-    
-        #Parameters for group not containig the k-mer
-        wtd_mean_x = np.average(x, weights=x_weights)
-        sumofweightsx = sum(x_weights)
-        sumofweightsx2 = sum(i**2 for i in x_weights)
-        varx = (sumofweightsx / (sumofweightsx**2 - sumofweightsx2)) * sum(x_weights * (x - wtd_mean_x)**2)
-
-        #Calculating the weighted Welch's t-test results
-        dif = wtd_mean_x-wtd_mean_y
-        sxy = math.sqrt((varx/sumofweightsx)+(vary/sumofweightsy))
-        df = (((varx/sumofweightsx)+(vary/sumofweightsy))**2)/((((varx/sumofweightsx)**2)/(sumofweightsx-1))+((vary/sumofweightsy)**2/(sumofweightsy-1)))
-        t_statistic = dif/sxy
-        pvalue = stats.t.sf(abs(t), df)*2
-                
-        pvalues.append(pvalue)
-        f2.write(kmer + "\t" + str(round(t_statistic, 2)) + "\t" + "%.2E" % pvalue + "\t" + str(round(wtd_mean_x, 2)) + "\t" + str(round(wtd_mean_y,2)) + "\t" + str(len(samples_x)) + "\t| " + " ".join(samples_x) + "\n")
-    l.acquire()
-    currentKmerNum.value += counter%checkpoint
-    l.release()
-    check_progress(
-        previousPercent.value, currentKmerNum.value, k_t_a, text2_4_stderr, text1_4_stderr
-    )
-    f2.close()
-    return(pvalues)
-    
-
-def t_test(
-        headerline, min_freq, max_freq, checkpoint, k, l, samples,
-        phenotypes, k_t_a, split_of_kmer_lists
-        ):
-    # Calculates Welch t-test results for every k-mer
-    samples_order = samples.keys()
-    pvalues = []
-    counter = 0
-    NA = False
- 
-    code = split_of_kmer_lists[0][-5:]
-    f2 = open(test_result_output(headerline, "t-test_results_", phenotypes, k, code), "w")
-    text1_4_stderr = get_text1_4_stderr(headerline, phenotypes, k)
-    text2_4_stderr = "tests conducted."
-    for line in izip_longest(*[open(item) for item in split_of_kmer_lists], fillvalue = ''):
-        counter += 1
-        if counter%checkpoint == 0:
-            l.acquire()
-            currentKmerNum.value += checkpoint
-            l.release()
-            check_progress(
-                previousPercent.value, currentKmerNum.value, k_t_a, text2_4_stderr, text1_4_stderr
-            )
-        samples_x = []
-        x = []
-        y = []
-
-        kmer = line[0].split()[0]
-        list1 = [j.split()[1].strip() for j in line]
-
-        for j in range(len(list1)):
-            if samples[samples_order[j]][k] != "NA":
-                if list1[j] == "0":
-                    y.append(float(samples[samples_order[j]][k]))
-                else:
-                    x.append(float(samples[samples_order[j]][k]))
-                    samples_x.append(samples_order[j])
-        if len(x) < min_freq or len(y) < 2 or len(x) > max_freq:
-            continue
- 
-        #Calculating the Welch's t-test results using scipy.stats
-        meanx = round((sum(x)/len(x)), 2)
-        meany = round((sum(y)/len(y)), 2)
-        ttest = stats.ttest_ind(x, y, equal_var=False)
-
-        pvalues.append(ttest[1])
-        f2.write(
-            kmer + "\t%.2f\t%.2E\t" % ttest + str(meanx) + "\t"
-            + str(meany) + "\t" + str(len(samples_x))  +"\t| "
-            + " ".join(samples_x) + "\n"
-            )
-    l.acquire()
-    currentKmerNum.value += counter%checkpoint
-    l.release()
-    check_progress(
-        previousPercent.value, currentKmerNum.value, k_t_a, text2_4_stderr, text1_4_stderr
-    )
-    f2.close()
-    return(pvalues)
-'''
-def chi_squared(
-        headerline, min_freq, max_freq, checkpoint, k, l, samples, weights,
-        phenotypes, k_t_a, no_samples, split_of_kmer_lists
         ):
     sample_names = samples.keys()
     sample_phenotypes = [sample_data[k] for sample_data in samples.values()]
@@ -2235,6 +2100,8 @@ def modeling(args):
     weights = []
     if args.weights == "+":
         weights = get_weights(samples, args.cutoff)
+
+
     (
     vectors_as_multiple_input, progress_checkpoint, kmers_to_analyse,
     pvalues_all
@@ -2251,7 +2118,7 @@ def modeling(args):
                     )
             pvalues_from_all_threads = pool.map(
                 partial(
-                    t_test_universial, headerline, min_samples, max_samples, progress_checkpoint, k, lock, samples, 
+                    get_t_tests, headerline, min_samples, max_samples, progress_checkpoint, k, lock, samples, 
                     weights, phenotypes, kmers_to_analyse
                     ), 
                 vectors_as_multiple_input
@@ -2263,8 +2130,8 @@ def modeling(args):
                 )
             pvalues_from_all_threads = pool.map(
                 partial(
-                    chi_squared, headerline, min_samples, max_samples, progress_checkpoint, k, lock, samples, weights,
-                    phenotypes, kmers_to_analyse, no_samples
+                    get_chi_squared_tests, headerline, min_samples, max_samples, progress_checkpoint, k, lock, samples, weights,
+                    phenotypes, kmers_to_analyse
                     ),
                 vectors_as_multiple_input
                 )
