@@ -340,8 +340,7 @@ def _newick_to_GSC_weights(newick_tree):
 
 def test_kmers_association_with_phenotype(
         samples, num_threads, phenotypes_to_analyse, phenotype_scale,
-        headerline, min_samples, max_samples, lock, weights, phenotypes,
-        kmers_to_analyse
+        headerline, min_samples, max_samples, lock, weights, phenotypes
         ):
     pvalues_all_phenotypes
     if phenotype_scale == "continuous":
@@ -349,7 +348,7 @@ def test_kmers_association_with_phenotype(
     else:
         sys.stderr.write("\nConducting the k-mer specific chi-square tests:\n")
     (
-    vectors_as_multiple_input, progress_checkpoint, kmers_to_analyse
+    vectors_as_multiple_input, progress_checkpoint, no_kmers_to_analyse
     ) = get_params_for_kmers_testing(
         samples, num_threads, phenotypes_to_analyse
         )
@@ -360,7 +359,7 @@ def test_kmers_association_with_phenotype(
             partial(
                 get_kmers_tested, headerline, min_samples, max_samples,
                 progress_checkpoint, k, lock, samples, weights, phenotypes,
-                kmers_to_analyse, phenotype_scale
+                no_kmers_to_analyse, phenotype_scale
                 ), 
             vectors_as_multiple_input
             )
@@ -399,7 +398,7 @@ def _splitted_vectors_to_multiple_input(samples, num_threads):
 
 def get_kmers_tested(
         headerline, min_freq, max_freq, checkpoint, k, l, samples, weights,
-        phenotypes, k_t_a, phenotype_scale, split_of_kmer_lists
+        phenotypes, no_kmers_to_analyse, phenotype_scale, split_of_kmer_lists
         ):
     sample_names = samples.keys()
     sample_phenotypes = [sample_data[k] for sample_data in samples.values()]
@@ -419,7 +418,8 @@ def get_kmers_tested(
             currentKmerNum.value += checkpoint
             l.release()
             check_progress(
-                previousPercent.value, currentKmerNum.value, k_t_a, text2_4_stderr, text1_4_stderr
+                previousPercent.value, currentKmerNum.value,
+                no_kmers_to_analyse, text2_4_stderr, text1_4_stderr
             )
         kmer = line[0].split()[0]
         kmer_presence = [j.split()[1].strip() for j in line]
@@ -440,7 +440,8 @@ def get_kmers_tested(
     currentKmerNum.value += counter%checkpoint
     l.release()
     check_progress(
-        previousPercent.value, currentKmerNum.value, k_t_a, text2_4_stderr, text1_4_stderr
+        previousPercent.value, currentKmerNum.value,
+        no_kmers_to_analyse, text2_4_stderr, text1_4_stderr
     )
     test_results_file.close()
     return(pvalues)
@@ -2120,8 +2121,7 @@ def modeling(args):
         weights = get_weights(samples, args.cutoff)
     pvalues_all_phenotypes = test_kmers_association_with_phenotype(
         samples, args.num_threads, phenotypes_to_analyse, phenotype_scale,
-        headerline, min_samples, max_samples, lock, weights, phenotypes,
-        kmers_to_analyse
+        headerline, min_samples, max_samples, lock, weights, phenotypes
         )
 
     concatenate_test_files(no_phenotypes, args.num_threads, phenotype_scale, phenotypes, phenotypes_to_analyse, headerline)
