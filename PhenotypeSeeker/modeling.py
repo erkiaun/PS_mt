@@ -477,7 +477,8 @@ def get_tests(
                 sample_phenotypes, sample_names, kmer, kmer_presence,
                 weights, min_freq, max_freq, test_results_file
                 )
-        pvalues.append(pvalue)
+        if pvalue:
+            pvalues.append(pvalue)
     l.acquire()
     currentKmerNum.value += counter%checkpoint
     l.release()
@@ -485,7 +486,6 @@ def get_tests(
         previousPercent.value, currentKmerNum.value, k_t_a, text2_4_stderr, text1_4_stderr
     )
     test_results_file.close()
-    print(pvalues)
     return(pvalues)
 
 def conduct_t_testing(
