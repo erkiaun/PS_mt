@@ -531,7 +531,7 @@ def get_t_tests(
             )
 
         if len(x) < min_freq or len(y) < 2 or len(x) > max_freq:
-            continue
+            return
 
         if weights:
             t_statistic, pvalue, mean_x, mean_y = weighted_t_test(
@@ -546,6 +546,7 @@ def get_t_tests(
             str(round(mean_y,2)) + "\t" + str(len(samples_x)) + "\t| " + \
             " ".join(samples_x) + "\n"
             )
+        return pvalue
     '''
         pvalues.append(pvalue)
     l.acquire()
@@ -601,7 +602,7 @@ def get_chi_squared_tests(
             )
 
         if w_kmer < min_freq or wo_kmer < 2 or w_kmer > max_freq:
-            continue
+            return
 
         (
         w_pheno_w_kmer_expected, w_pheno_wo_kmer_expected,
