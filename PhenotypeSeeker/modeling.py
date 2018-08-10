@@ -338,7 +338,38 @@ def _newick_to_GSC_weights(newick_tree):
 # -------------------------------------------------------------------
 # Functions for calculating the association test results for kmers.
 
-def get_kmers_tested(samples, num_threads, phenotypes_to_analyse):
+def test_kmers_association_with_phenotype(
+        samples, num_threads, phenotypes_to_analyse, phenotype_scale,
+        headerline, min_samples, max_samples, lock, weights, phenotypes,
+        kmers_to_analyse, phenotype_scale
+        ):
+    pvalues_all_phenotypes
+    if phenotype_scale == "continuous":
+        sys.stderr.write("\nConducting the k-mer specific Welch t-tests:\n")
+    else:
+        sys.stderr.write("\nConducting the k-mer specific chi-square tests:\n")
+    (
+    vectors_as_multiple_input, progress_checkpoint, kmers_to_analyse
+    ) = get_params_for_kmers_testing(
+        samples, num_threads, phenotypes_to_analyse
+        )
+    for j, k in enumerate(phenotypes_to_analyse):
+        currentKmerNum.value = 0
+        previousPercent.value = 0
+        pvalues_from_all_threads = pool.map(
+            partial(
+                get_kmers_tested, headerline, min_samples, max_samples,
+                progress_checkpoint, k, lock, samples, weights, phenotypes,
+                kmers_to_analyse, phenotype_scale
+                ), 
+            vectors_as_multiple_input
+            )
+        pvalues_all_phenotypes.append(list(chain(*pvalues_from_all_threads)))
+        sys.stderr.write("\n")
+    return pvalues_all_phenotypes
+
+
+def get_params_for_kmers_testing(samples, num_threads, phenotypes_to_analyse):
     _split_sample_vectors_for_multithreading(samples, num_threads)
     vectors_as_multiple_input = _splitted_vectors_to_multiple_input(
         samples, num_threads
@@ -349,11 +380,7 @@ def get_kmers_tested(samples, num_threads, phenotypes_to_analyse):
             ).split()[0]
         )
     progress_checkpoint = int(math.ceil(kmers_to_analyse/(100*num_threads)))
-    pvalues_all = []
-    return(
-        vectors_as_multiple_input, progress_checkpoint, kmers_to_analyse,
-        pvalues_all
-        )
+    return(vectors_as_multiple_input, progress_checkpoint, kmers_to_analyse)
 
 def _split_sample_vectors_for_multithreading(samples, num_threads):
     for sample in samples:
@@ -369,6 +396,54 @@ def _splitted_vectors_to_multiple_input(samples, num_threads):
     for i in range(num_threads):
         vectors_as_multiple_input.append(["K-mer_lists/" + sample + "_mapped_%05d" %i for sample in samples])
     return vectors_as_multiple_input
+
+def get_kmers_tested(
+        headerline, min_freq, max_freq, checkpoint, k, l, samples, weights,
+        phenotypes, k_t_a, phenotype_scale, split_of_kmer_lists
+        ):
+    sample_names = samples.keys()
+    sample_phenotypes = [sample_data[k] for sample_data in samples.values()]
+    pvalues = []
+    counter = 0
+
+    multithreading_code = split_of_kmer_lists[0][-5:]
+    test_results_file = open(test_result_output(
+        headerline, phenotype_scale, phenotypes, k, multithreading_code
+        ), "w")
+    text1_4_stderr = get_text1_4_stderr(headerline, phenotypes, k)
+    text2_4_stderr = "tests conducted."
+    for line in izip_longest(*[open(item) for item in split_of_kmer_lists], fillvalue = ''):
+        counter += 1
+        if counter%checkpoint == 0:
+            l.acquire()
+            currentKmerNum.value += checkpoint
+            l.release()
+            check_progress(
+                previousPercent.value, currentKmerNum.value, k_t_a, text2_4_stderr, text1_4_stderr
+            )
+        kmer = line[0].split()[0]
+        kmer_presence = [j.split()[1].strip() for j in line]
+
+        if phenotype_scale == "binary":
+            pvalue = conduct_chi_squared_test(
+                sample_phenotypes, sample_names, kmer, kmer_presence,
+                weights, min_freq, max_freq, test_results_file
+                )
+        elif phenotype_scale == "continuous":
+            pvalue = conduct_t_test(
+                sample_phenotypes, sample_names, kmer, kmer_presence,
+                weights, min_freq, max_freq, test_results_file
+                )
+        if pvalue:
+            pvalues.append(pvalue)
+    l.acquire()
+    currentKmerNum.value += counter%checkpoint
+    l.release()
+    check_progress(
+        previousPercent.value, currentKmerNum.value, k_t_a, text2_4_stderr, text1_4_stderr
+    )
+    test_results_file.close()
+    return(pvalues)
 
 def test_result_output(headerline, phenotype_scale, phenotypes, k, code):
     if phenotype_scale == "continuous":
@@ -391,6 +466,39 @@ def get_text1_4_stderr(headerline, phenotypes, k):
     else:
         text2_4_stderr = ""
     return text2_4_stderr
+
+def conduct_t_test(
+    sample_phenotypes, sample_names, kmer, kmer_presence, 
+    weights, min_freq, max_freq, test_results_file
+    ):
+    samples_w_kmer = []
+    x = []
+    y = []
+    x_weights = []
+    y_weights = []
+    
+    get_samples_distribution_ttest(
+        x, y, x_weights, y_weights, weights, kmer_presence, 
+        samples_w_kmer, sample_phenotypes, sample_names
+        )
+
+    if len(x) < min_freq or len(y) < 2 or len(x) > max_freq:
+        return
+
+    if weights:
+        t_statistic, pvalue, mean_x, mean_y = weighted_t_test(
+            x, y, x_weights, y_weights
+            )
+    else:
+        t_statistic, pvalue, mean_x, mean_y = t_test(x, y)
+
+    test_results_file.write(
+        kmer + "\t" + str(round(t_statistic, 2)) + "\t" + \
+        "%.2E" % pvalue + "\t" + str(round(mean_x, 2)) + "\t" + \
+        str(round(mean_y,2)) + "\t" + str(len(samples_w_kmer)) + "\t| " + \
+        " ".join(samples_w_kmer) + "\n"
+        )
+    return pvalue
 
 def get_samples_distribution_ttest(
         x, y, x_weights, y_weights, weights, list1, 
@@ -440,208 +548,47 @@ def t_test(x, y):
     p_value = ttest[1]
     return t_statistic, p_value, meanx, meany
 
-def get_tests(
-        headerline, min_freq, max_freq, checkpoint, k, l, samples, weights,
-        phenotypes, k_t_a, phenotype_scale, split_of_kmer_lists
-        ):
-    sample_names = samples.keys()
-    sample_phenotypes = [sample_data[k] for sample_data in samples.values()]
-    pvalues = []
-    counter = 0
-
-    multithreading_code = split_of_kmer_lists[0][-5:]
-    test_results_file = open(test_result_output(
-        headerline, phenotype_scale, phenotypes, k, multithreading_code
-        ), "w")
-    text1_4_stderr = get_text1_4_stderr(headerline, phenotypes, k)
-    text2_4_stderr = "tests conducted."
-    for line in izip_longest(*[open(item) for item in split_of_kmer_lists], fillvalue = ''):
-        counter += 1
-        if counter%checkpoint == 0:
-            l.acquire()
-            currentKmerNum.value += checkpoint
-            l.release()
-            check_progress(
-                previousPercent.value, currentKmerNum.value, k_t_a, text2_4_stderr, text1_4_stderr
-            )
-        kmer = line[0].split()[0]
-        kmer_presence = [j.split()[1].strip() for j in line]
-
-        if phenotype_scale == "binary":
-            pvalue = conduct_chi_squared_testing(
-                sample_phenotypes, sample_names, kmer, kmer_presence,
-                weights, min_freq, max_freq, test_results_file
-                )
-        elif phenotype_scale == "continuous":
-            pvalue = conduct_t_testing(
-                sample_phenotypes, sample_names, kmer, kmer_presence,
-                weights, min_freq, max_freq, test_results_file
-                )
-        if pvalue:
-            pvalues.append(pvalue)
-    l.acquire()
-    currentKmerNum.value += counter%checkpoint
-    l.release()
-    check_progress(
-        previousPercent.value, currentKmerNum.value, k_t_a, text2_4_stderr, text1_4_stderr
-    )
-    test_results_file.close()
-    return(pvalues)
-
-def conduct_t_testing(
-    sample_phenotypes, sample_names, kmer, kmer_presence, 
-    weights, min_freq, max_freq, test_results_file
-    ):
-    '''
-def get_t_tests(
-        headerline, min_freq, max_freq, checkpoint, k, l, samples, weights,
-        phenotypes, k_t_a, split_of_kmer_lists
-        ):
-    sample_names = samples.keys()
-    sample_phenotypes = [sample_data[k] for sample_data in samples.values()]
-    pvalues = []
-    counter = 0
-
-    code = split_of_kmer_lists[0][-5:]
-    f2 = open(test_result_output(headerline, "t-test_results_", phenotypes, k, code), "w")
-    text1_4_stderr = get_text1_4_stderr(headerline, phenotypes, k)
-    text2_4_stderr = "tests conducted."
-    for line in izip_longest(*[open(item) for item in split_of_kmer_lists], fillvalue = ''):
-        counter += 1
-        if counter%checkpoint == 0:
-            l.acquire()
-            currentKmerNum.value += checkpoint
-            l.release()
-            check_progress(
-                previousPercent.value, currentKmerNum.value, k_t_a, text2_4_stderr, text1_4_stderr
-            )
-        samples_x = []
-        kmer = line[0].split()[0]
-        kmer_presence = [j.split()[1].strip() for j in line]
-    '''
-    if True:
-        samples_w_kmer = []
-        x = []
-        y = []
-        x_weights = []
-        y_weights = []
-
-        
-        get_samples_distribution_ttest(
-            x, y, x_weights, y_weights, weights, kmer_presence, 
-            samples_w_kmer, sample_phenotypes, sample_names
-            )
-
-        if len(x) < min_freq or len(y) < 2 or len(x) > max_freq:
-            return
-
-        if weights:
-            t_statistic, pvalue, mean_x, mean_y = weighted_t_test(
-                x, y, x_weights, y_weights
-                )
-        else:
-            t_statistic, pvalue, mean_x, mean_y = t_test(x, y)
-
-        test_results_file.write(
-            kmer + "\t" + str(round(t_statistic, 2)) + "\t" + \
-            "%.2E" % pvalue + "\t" + str(round(mean_x, 2)) + "\t" + \
-            str(round(mean_y,2)) + "\t" + str(len(samples_w_kmer)) + "\t| " + \
-            " ".join(samples_w_kmer) + "\n"
-            )
-        return pvalue
-    '''
-        pvalues.append(pvalue)
-    l.acquire()
-    currentKmerNum.value += counter%checkpoint
-    l.release()
-    check_progress(
-        previousPercent.value, currentKmerNum.value, k_t_a, text2_4_stderr, text1_4_stderr
-    )
-    f2.close()
-    return(pvalues)
-    '''
-
-def conduct_chi_squared_testing(
+def conduct_chi_squared_test(
     sample_phenotypes, sample_names, kmer, kmer_presence,
     weights, min_freq, max_freq, test_results_file
     ):
-    '''
-def get_chi_squared_tests(
-        headerline, min_freq, max_freq, checkpoint, k, l, samples, weights,
-        phenotypes, k_t_a, split_of_kmer_lists
-        ):
-    
-    sample_names = samples.keys()
-    sample_phenotypes = [sample_data[k] for sample_data in samples.values()]
-    pvalues = []
-    counter = 0
-
-    code = split_of_kmer_lists[0][-5:]
-    f2 = open(test_result_output(headerline, "chi-squared_test_results_", phenotypes, k, code), "w")
-    text1_4_stderr = get_text1_4_stderr(headerline, phenotypes, k)
-    text2_4_stderr = "tests conducted."
-
-    for line in izip_longest(*[open(item) for item in split_of_kmer_lists], fillvalue = ''):
-        counter += 1
-        if counter%checkpoint == 0:
-            l.acquire()
-            currentKmerNum.value += checkpoint
-            l.release()
-            check_progress(
-                previousPercent.value, currentKmerNum.value, k_t_a, text2_4_stderr, text1_4_stderr
-            )
-        samples_x = []
-        kmer = line[0].split()[0]
-        kmer_presence = [j.split()[1].strip() for j in line]
-    '''
-    if True:
-        samples_w_kmer = []
-        (
+    samples_w_kmer = []
+    (
+    w_pheno_w_kmer, w_pheno_wo_kmer, wo_pheno_w_kmer, wo_pheno_wo_kmer
+    ) = get_samples_distribution_chisquared(
+        sample_phenotypes, sample_names, kmer_presence, samples_w_kmer, weights
+        )
+    (w_pheno, wo_pheno, w_kmer, wo_kmer, total) = get_totals_in_classes(
         w_pheno_w_kmer, w_pheno_wo_kmer, wo_pheno_w_kmer, wo_pheno_wo_kmer
-        ) = get_samples_distribution_chisquared(
-            sample_phenotypes, sample_names, kmer_presence, samples_w_kmer, weights
-            )
-        (w_pheno, wo_pheno, w_kmer, wo_kmer, total) = get_totals_in_classes(
-            w_pheno_w_kmer, w_pheno_wo_kmer, wo_pheno_w_kmer, wo_pheno_wo_kmer
-            )
+        )
 
-        if w_kmer < min_freq or wo_kmer < 2 or w_kmer > max_freq:
-            return
+    if w_kmer < min_freq or wo_kmer < 2 or w_kmer > max_freq:
+        return
 
-        (
-        w_pheno_w_kmer_expected, w_pheno_wo_kmer_expected,
+    (
+    w_pheno_w_kmer_expected, w_pheno_wo_kmer_expected,
+    wo_pheno_w_kmer_expected, wo_pheno_wo_kmer_expected
+    ) = get_expected_distribution(
+        w_pheno, wo_pheno, w_kmer, wo_kmer, total)  
+
+    chisquare_results = stats.chisquare(
+        [
+        w_pheno_w_kmer, w_pheno_wo_kmer,
+        wo_pheno_w_kmer, wo_pheno_wo_kmer
+        ],
+        [
+        w_pheno_w_kmer_expected, w_pheno_wo_kmer_expected, 
         wo_pheno_w_kmer_expected, wo_pheno_wo_kmer_expected
-        ) = get_expected_distribution(
-            w_pheno, wo_pheno, w_kmer, wo_kmer, total)  
-
-        chisquare_results = stats.chisquare(
-            [
-            w_pheno_w_kmer, w_pheno_wo_kmer,
-            wo_pheno_w_kmer, wo_pheno_wo_kmer
-            ],
-            [
-            w_pheno_w_kmer_expected, w_pheno_wo_kmer_expected, 
-            wo_pheno_w_kmer_expected, wo_pheno_wo_kmer_expected
-            ],
-            1
-            )
-        test_results_file.write(
-            kmer + "\t%.2f\t%.2E\t" % chisquare_results 
-            + str(w_kmer)  +"\t| " + " ".join(samples_w_kmer) + "\n"
-            )
-        pvalue = chisquare_results[1]
+        ],
+        1
+        )
+    test_results_file.write(
+        kmer + "\t%.2f\t%.2E\t" % chisquare_results 
+        + str(w_kmer)  +"\t| " + " ".join(samples_w_kmer) + "\n"
+        )
+    pvalue = chisquare_results[1]
     return pvalue
-    '''
-        pvalues.append(pvalue)
-    l.acquire()
-    currentKmerNum.value += counter%checkpoint
-    l.release()
-    check_progress(
-        previousPercent.value, currentKmerNum.value, k_t_a, text2_4_stderr, text1_4_stderr
-        )                
-    f2.close()
-    return(pvalues)
-    '''
+
 def get_samples_distribution_chisquared(
         sample_phenotypes, sample_names, list1, samples_w_kmer,
         weights
@@ -2171,67 +2118,19 @@ def modeling(args):
     weights = []
     if args.weights == "+":
         weights = get_weights(samples, args.cutoff)
-
-    if phenotype_scale == "continuous":
-        sys.stderr.write(
-            "\nConducting the k-mer specific Welch t-tests:\n"
-            )
-    else:
-        sys.stderr.write(
-            "\nConducting the k-mer specific chi-square tests:\n"
-            )
-    (
-    vectors_as_multiple_input, progress_checkpoint, kmers_to_analyse,
-    pvalues_all
-        ) = get_kmers_tested(
-        samples, args.num_threads, phenotypes_to_analyse
+    pvalues_all_phenotypes = test_kmers_association_with_phenotype(
+        samples, args.num_threads, phenotypes_to_analyse, phenotype_scale,
+        headerline, min_samples, max_samples, lock, weights, phenotypes,
+        kmers_to_analyse, phenotype_scale
         )
-    for j, k in enumerate(phenotypes_to_analyse):
-        currentKmerNum.value = 0
-        previousPercent.value = 0
-        pvalues_from_all_threads = pool.map(
-            partial(
-                get_tests, headerline, min_samples, max_samples, progress_checkpoint, k, lock, samples, 
-                weights, phenotypes, kmers_to_analyse, phenotype_scale
-                ), 
-            vectors_as_multiple_input
-            )
-        '''
-        if phenotype_scale == "continuous":
-            if j == 0:
-                sys.stderr.write(
-                    "\nConducting the k-mer specific Welch t-tests:\n"
-                    )
-            pvalues_from_all_threads = pool.map(
-                partial(
-                    get_t_tests, headerline, min_samples, max_samples, progress_checkpoint, k, lock, samples, 
-                    weights, phenotypes, kmers_to_analyse
-                    ), 
-                vectors_as_multiple_input
-                )
-        elif phenotype_scale == "binary":
-            if j == 0:
-                sys.stderr.write(
-                    "\nConducting the k-mer specific chi-square tests:\n"
-                )
-            pvalues_from_all_threads = pool.map(
-                partial(
-                    get_chi_squared_tests, headerline, min_samples, max_samples, progress_checkpoint, k, lock, samples, weights,
-                    phenotypes, kmers_to_analyse
-                    ),
-                vectors_as_multiple_input
-                )
-        '''
-        pvalues_all.append(list(chain(*pvalues_from_all_threads)))
-        sys.stderr.write("\n")
 
     concatenate_test_files(no_phenotypes, args.num_threads, phenotype_scale, phenotypes, phenotypes_to_analyse, headerline)
 
     
     kmers_passed_all_phenotypes = kmer_filtering_by_pvalue(
-        lock, args.pvalue, no_phenotypes, phenotype_scale, pvalues_all, phenotypes,
-        args.n_kmers, phenotypes_to_analyse, args.FDR,
-        args.Bonferroni, headerline
+        lock, args.pvalue, no_phenotypes, phenotype_scale, pvalues_all_phenotypes, 
+        phenotypes, args.n_kmers, phenotypes_to_analyse, args.FDR, args.Bonferroni, 
+        headerline
         )
 
     if phenotype_scale == "continuous":
