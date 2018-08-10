@@ -468,12 +468,12 @@ def get_tests(
         kmer = line[0].split()[0]
         kmer_presence = [j.split()[1].strip() for j in line]
 
-        if phenotype_scale = "binary":
+        if phenotype_scale == "binary":
             pvalue = conduct_chi_squared_testing(
                 sample_phenotypes, sample_names, kmer,
                 kmer_presence, samples_w_kmer, weights
                 )
-        elif phenotype_scale = "continuous":
+        elif phenotype_scale == "continuous":
             pvalue = conduct_t_testing(
                 sample_phenotypes, sample_names, kmer,
                 kmer_presence, samples_w_kmer, weights
