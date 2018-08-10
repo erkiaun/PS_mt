@@ -371,6 +371,7 @@ def _splitted_vectors_to_multiple_input(samples, num_threads):
     return vectors_as_multiple_input
 
 def test_result_output(headerline, phenotype_scale, phenotypes, k, code):
+    print(phenotype_scale)
     if phenotype_scale == "continuous":
         beginning_text = "t-test_results_"
     elif phenotype_scale == "binary":
