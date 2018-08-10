@@ -422,10 +422,10 @@ def weighted_t_test(x, y, x_weights, y_weights):
     dif = wtd_mean_x-wtd_mean_y
     sxy = math.sqrt((varx/sumofweightsx)+(vary/sumofweightsy))
     df = (((varx/sumofweightsx)+(vary/sumofweightsy))**2)/((((varx/sumofweightsx)**2)/(sumofweightsx-1))+((vary/sumofweightsy)**2/(sumofweightsy-1)))
-    t_statistic = dif/sxy
+    t= dif/sxy
     pvalue = stats.t.sf(abs(t), df)*2
 
-    return t_statistic, pvalue, wtd_mean_x, wtd_mean_y
+    return t, pvalue, wtd_mean_x, wtd_mean_y
 
 def t_test(x, y):
     #Calculating the Welch's t-test results using scipy.stats
