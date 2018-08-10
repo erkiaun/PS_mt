@@ -388,6 +388,117 @@ def get_text1_4_stderr(headerline, phenotypes, k):
         text2_4_stderr = ""
     return text2_4_stderr
 
+def get_samples_distribution_ttest(
+        x, y, x_weights, y_weights, weights, list1, 
+        samples_x, sample_phenotypes, sample_names
+        ):
+    for i, item in enumerate(sample_phenotypes):
+        sample_name = sample_names[i]
+        if item != "NA":
+            if list1[j] == "0":
+                y.append(float(item))
+                if weights:
+                    y_weights.append(weights[sample_name])
+            else:
+                x.append(float(item))
+                if weights:
+                    x_weights.append(weights[sample_name])
+                samples_x.append(sample_name)
+
+def weighted_t_test(x, y, x_weighs, y_weights):
+    #Parametes for group containig the k-mer
+    wtd_mean_y = np.average(y, weights=y_weights)
+    sumofweightsy = sum(y_weights)
+    sumofweightsy2 = sum(i**2 for i in y_weights)
+    vary = (sumofweightsy / (sumofweightsy**2 - sumofweightsy2)) * sum(y_weights * (y - wtd_mean_y)**2)
+    
+    #Parameters for group not containig the k-mer
+    wtd_mean_x = np.average(x, weights=x_weights)
+    sumofweightsx = sum(x_weights)
+    sumofweightsx2 = sum(i**2 for i in x_weights)
+    varx = (sumofweightsx / (sumofweightsx**2 - sumofweightsx2)) * sum(x_weights * (x - wtd_mean_x)**2)
+
+    #Calculating the weighted Welch's t-test results
+    dif = wtd_mean_x-wtd_mean_y
+    sxy = math.sqrt((varx/sumofweightsx)+(vary/sumofweightsy))
+    df = (((varx/sumofweightsx)+(vary/sumofweightsy))**2)/((((varx/sumofweightsx)**2)/(sumofweightsx-1))+((vary/sumofweightsy)**2/(sumofweightsy-1)))
+    t_statistic = dif/sxy
+    pvalue = stats.t.sf(abs(t), df)*2
+
+    return t_statistic, pvalue, wtd_mean_x, wtd_mean_y
+
+def t_test(x, y):
+    #Calculating the Welch's t-test results using scipy.stats
+    meanx = round((sum(x)/len(x)), 2)
+    meany = round((sum(y)/len(y)), 2)
+    ttest = stats.ttest_ind(x, y, equal_var=False)
+    t_statistc = ttest[0]
+    p_value = ttest[1]
+    return t_statistic, p_value, mean_x, mean_y
+
+def t_test_universial(
+        headerline, min_freq, max_freq, checkpoint, k, l, samples, weights,
+        phenotypes, k_t_a, split_of_kmer_lists
+        ):
+    sample_names = samples.keys()
+    sample_phenotypes = [sample_data[k] for sample_data in samples.values()]
+    pvalues = []
+    counter = 0
+
+    code = split_of_kmer_lists[0][-5:]
+    f2 = open(test_result_output(headerline, "t-test_results_", phenotypes, k, code), "w")
+    text1_4_stderr = get_text1_4_stderr(headerline, phenotypes, k)
+    text2_4_stderr = "tests conducted."
+    for line in izip_longest(*[open(item) for item in split_of_kmer_lists], fillvalue = ''):
+        counter += 1
+        if counter%checkpoint == 0:
+            l.acquire()
+            currentKmerNum.value += checkpoint
+            l.release()
+            check_progress(
+                previousPercent.value, currentKmerNum.value, k_t_a, text2_4_stderr, text1_4_stderr
+            )
+        samples_x = []
+        x = []
+        y = []
+        x_weights = []
+        y_weights = []
+
+        kmer = line[0].split()[0]
+        list1 = [j.split()[1].strip() for j in line]
+
+        get_phenotypes_distribution_ttest(
+        x, y, x_weights, y_weights, weights, list1, 
+        samples_x, sample_phenotypes, sample_names
+        ):
+
+        if len(x) < min_freq or len(y) < 2 or len(x) > max_freq:
+            continue
+
+        if weights:
+            t_statistic, pvalue, mean_x, mean_y = weighted_t_test(
+                x, y, x_weights, y_weights
+                )
+        else:
+            t_statistic, pvalue, mean_x, mean_y = t_test(x, y)
+
+        pvalues.append(pvalue)
+        f2.write(
+            kmer + "\t" + str(round(t_statistic, 2)) + "\t" + \
+            "%.2E" % pvalue + "\t" + str(round(mean_x, 2)) + "\t" + \
+            str(round(mean_y,2)) + "\t" + str(len(samples_x)) + "\t| " + \
+            " ".join(samples_x) + "\n"
+            )
+    l.acquire()
+    currentKmerNum.value += counter%checkpoint
+    l.release()
+    check_progress(
+        previousPercent.value, currentKmerNum.value, k_t_a, text2_4_stderr, text1_4_stderr
+    )
+    f2.close()
+    return(pvalues)
+
+
 def weighted_t_test(
         headerline, min_freq, max_freq, checkpoint, k, l, samples, weights,
         phenotypes, k_t_a, split_of_kmer_lists
@@ -447,11 +558,11 @@ def weighted_t_test(
         dif = wtd_mean_x-wtd_mean_y
         sxy = math.sqrt((varx/sumofweightsx)+(vary/sumofweightsy))
         df = (((varx/sumofweightsx)+(vary/sumofweightsy))**2)/((((varx/sumofweightsx)**2)/(sumofweightsx-1))+((vary/sumofweightsy)**2/(sumofweightsy-1)))
-        t = dif/sxy
+        t_statistic = dif/sxy
         pvalue = stats.t.sf(abs(t), df)*2
                 
         pvalues.append(pvalue)
-        f2.write(kmer + "\t" + str(round(t, 2)) + "\t" + "%.2E" % pvalue + "\t" + str(round(wtd_mean_x, 2)) + "\t" + str(round(wtd_mean_y,2)) + "\t" + str(len(samples_x)) + "\t| " + " ".join(samples_x) + "\n")
+        f2.write(kmer + "\t" + str(round(t_statistic, 2)) + "\t" + "%.2E" % pvalue + "\t" + str(round(wtd_mean_x, 2)) + "\t" + str(round(wtd_mean_y,2)) + "\t" + str(len(samples_x)) + "\t| " + " ".join(samples_x) + "\n")
     l.acquire()
     currentKmerNum.value += counter%checkpoint
     l.release()
@@ -553,7 +664,7 @@ def chi_squared(
 
         (
         w_pheno_w_kmer, w_pheno_wo_kmer, wo_pheno_w_kmer, wo_pheno_wo_kmer
-        ) = get_samples_distribution(
+        ) = get_samples_distribution_chisquared(
             sample_phenotypes, sample_names, list1, samples_x, weights
             )
         (w_pheno, wo_pheno, w_kmer, wo_kmer, total) = get_totals_in_classes(
@@ -595,7 +706,7 @@ def chi_squared(
     f2.close()
     return(pvalues)
 
-def get_samples_distribution(
+def get_samples_distribution_chisquared(
         sample_phenotypes, sample_names, list1, samples_x,
         weights
         ):
@@ -2134,34 +2245,21 @@ def modeling(args):
         currentKmerNum.value = 0
         previousPercent.value = 0
         if phenotype_scale == "continuous":
-            if args.weights == "+":
-                if j == 0:
-                    sys.stderr.write(
-                        "\nConducting the k-mer specific weighted Welch t-tests:\n"
-                        )
-                pvalues_from_all_threads = pool.map(
-                    partial(
-                        weighted_t_test, headerline, min_samples, max_samples, progress_checkpoint, k, lock, samples, 
-                        weights, phenotypes, kmers_to_analyse
-                        ), 
-                    vectors_as_multiple_input
-                    )  
-            else:
-                if j == 0:
-                    sys.stderr.write(
-                        "\nConducting the k-mer specific Welch t-tests:\n"
-                        )
-                pvalues_from_all_threads = pool.map(
-                    partial(
-                        t_test, headerline, min_samples, max_samples, progress_checkpoint, k, lock, samples,
-                        phenotypes, kmers_to_analyse
-                        ), 
-                    vectors_as_multiple_input
-                    ) 
+            if j == 0:
+                sys.stderr.write(
+                    "\nConducting the k-mer specific Welch t-tests:\n"
+                    )
+            pvalues_from_all_threads = pool.map(
+                partial(
+                    t_test_universial, headerline, min_samples, max_samples, progress_checkpoint, k, lock, samples, 
+                    weights, phenotypes, kmers_to_analyse
+                    ), 
+                vectors_as_multiple_input
+                )
         elif phenotype_scale == "binary":
             if j == 0:
                 sys.stderr.write(
-                    "\nConducting the k-mer specific weighted chi-square tests:\n"
+                    "\nConducting the k-mer specific chi-square tests:\n"
                 )
             pvalues_from_all_threads = pool.map(
                 partial(
