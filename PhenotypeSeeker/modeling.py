@@ -575,8 +575,12 @@ def conduct_chi_squared_test(
     w_pheno_w_kmer_expected, w_pheno_wo_kmer_expected,
     wo_pheno_w_kmer_expected, wo_pheno_wo_kmer_expected
     ) = get_expected_distribution(
-        w_pheno, wo_pheno, w_kmer, wo_kmer, total)  
-    test_results_file.write(" ".join([kmer, str(w_pheno_w_kmer), str(w_pheno_wo_kmer), str(wo_pheno_w_kmer), str(wo_pheno_wo_kmer), str(w_pheno_w_kmer_expected), str(w_pheno_wo_kmer_expected), str(wo_pheno_w_kmer_expected), str(wo_pheno_wo_kmer_expected), "\n"]))
+        w_pheno, wo_pheno, w_kmer, wo_kmer, total)
+    if kmer == "CCTCGGGTAGATC":
+        print(weights)
+        print(sample_names)
+        print(sample_phenotypes)
+        print(" ".join([kmer, str(w_pheno_w_kmer), str(w_pheno_wo_kmer), str(wo_pheno_w_kmer), str(wo_pheno_wo_kmer), str(w_pheno_w_kmer_expected), str(w_pheno_wo_kmer_expected), str(wo_pheno_w_kmer_expected), str(wo_pheno_wo_kmer_expected), "\n"]))
     chisquare_results = stats.chisquare(
         [
         w_pheno_w_kmer, w_pheno_wo_kmer,
