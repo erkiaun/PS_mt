@@ -365,7 +365,7 @@ def test_kmers_association_with_phenotype(
             )
         pvalues_all_phenotypes.append(list(chain(*pvalues_from_all_threads)))
         sys.stderr.write("\n")
-    return pvalues_all_phenotypes
+    return pvalues_all_phenotypes, vectors_as_multiple_input
 
 
 def get_params_for_kmers_testing(samples, num_threads, phenotypes_to_analyse):
@@ -2051,7 +2051,9 @@ def assembling(
         sys.stderr.write("Assembling the k-mers used in regression model of " 
             +  phenotypes[0] + " data...\n")
     else:
-        sys.stderr.write("Assembling the k-mers used in regression model...\n")
+        sys.stderr.write(
+            "Assembling the k-mers used in regression model...\n"
+            )
 
     for j, k in enumerate(phenotypes_to_analyze):
         if len(kmers_passed_all_phenotypes[j]) == 0:
@@ -2119,7 +2121,9 @@ def modeling(args):
     weights = []
     if args.weights == "+":
         weights = get_weights(samples, args.cutoff)
-    pvalues_all_phenotypes = test_kmers_association_with_phenotype(
+    (
+    pvalues_all_phenotypes, vectors_as_multiple_input
+    ) = test_kmers_association_with_phenotype(
         samples, args.num_threads, phenotypes_to_analyse, phenotype_scale,
         headerline, min_samples, max_samples, lock, weights, phenotypes, pool
         )
@@ -2128,8 +2132,9 @@ def modeling(args):
 
     
     kmers_passed_all_phenotypes = kmer_filtering_by_pvalue(
-        lock, args.pvalue, no_phenotypes, phenotype_scale, pvalues_all_phenotypes, 
-        phenotypes, args.n_kmers, phenotypes_to_analyse, args.FDR, args.Bonferroni, 
+        lock, args.pvalue, no_phenotypes, phenotype_scale, 
+        pvalues_all_phenotypes, phenotypes, args.n_kmers, 
+        phenotypes_to_analyse, args.FDR, args.Bonferroni, 
         headerline
         )
 
