@@ -484,7 +484,7 @@ def get_tests(
     check_progress(
         previousPercent.value, currentKmerNum.value, k_t_a, text2_4_stderr, text1_4_stderr
     )
-    f2.close()
+    test_results_file.close()
     return(pvalues)
 
 def conduct_t_testing(
