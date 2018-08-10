@@ -542,7 +542,7 @@ def get_t_tests(
         else:
             t_statistic, pvalue, mean_x, mean_y = t_test(x, y)
 
-        f2.write(
+        test_results_file.write(
             kmer + "\t" + str(round(t_statistic, 2)) + "\t" + \
             "%.2E" % pvalue + "\t" + str(round(mean_x, 2)) + "\t" + \
             str(round(mean_y,2)) + "\t" + str(len(samples_w_kmer)) + "\t| " + \
