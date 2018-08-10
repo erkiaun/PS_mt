@@ -340,7 +340,7 @@ def _newick_to_GSC_weights(newick_tree):
 
 def test_kmers_association_with_phenotype(
         samples, num_threads, phenotypes_to_analyse, phenotype_scale,
-        headerline, min_samples, max_samples, lock, weights, phenotypes
+        headerline, min_samples, max_samples, lock, weights, phenotypes, pool
         ):
     pvalues_all_phenotypes = []
     if phenotype_scale == "continuous":
@@ -2121,7 +2121,7 @@ def modeling(args):
         weights = get_weights(samples, args.cutoff)
     pvalues_all_phenotypes = test_kmers_association_with_phenotype(
         samples, args.num_threads, phenotypes_to_analyse, phenotype_scale,
-        headerline, min_samples, max_samples, lock, weights, phenotypes
+        headerline, min_samples, max_samples, lock, weights, phenotypes, pool
         )
 
     concatenate_test_files(no_phenotypes, args.num_threads, phenotype_scale, phenotypes, phenotypes_to_analyse, headerline)
