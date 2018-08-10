@@ -405,7 +405,7 @@ def get_samples_distribution_ttest(
                     x_weights.append(weights[sample_name])
                 samples_x.append(sample_name)
 
-def weighted_t_test(x, y, x_weighs, y_weights):
+def weighted_t_test(x, y, x_weights, y_weights):
     #Parametes for group containig the k-mer
     wtd_mean_y = np.average(y, weights=y_weights)
     sumofweightsy = sum(y_weights)
