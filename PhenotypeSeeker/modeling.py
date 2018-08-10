@@ -395,7 +395,7 @@ def get_samples_distribution_ttest(
     for i, item in enumerate(sample_phenotypes):
         sample_name = sample_names[i]
         if item != "NA":
-            if list1[j] == "0":
+            if list1[i] == "0":
                 y.append(float(item))
                 if weights:
                     y_weights.append(weights[sample_name])
