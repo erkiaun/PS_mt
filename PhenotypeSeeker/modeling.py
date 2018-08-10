@@ -342,7 +342,7 @@ def test_kmers_association_with_phenotype(
         samples, num_threads, phenotypes_to_analyse, phenotype_scale,
         headerline, min_samples, max_samples, lock, weights, phenotypes
         ):
-    pvalues_all_phenotypes
+    pvalues_all_phenotypes = []
     if phenotype_scale == "continuous":
         sys.stderr.write("\nConducting the k-mer specific Welch t-tests:\n")
     else:
