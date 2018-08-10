@@ -489,7 +489,7 @@ def get_tests(
     return(pvalues)
 
 def conduct_t_testing(
-    sample_phenotypes, sample_names, kmer_presence, samples_w_kmer, weights
+    sample_phenotypes, sample_names, kmer, kmer_presence, samples_w_kmer, weights
     ):
     '''
 def get_t_tests(
@@ -560,7 +560,7 @@ def get_t_tests(
     '''
 
 def conduct_chi_squared_testing(
-    sample_phenotypes, sample_names, kmer_presence, samples_w_kmer, weights
+    sample_phenotypes, sample_names, kmer, kmer_presence, samples_w_kmer, weights
     ):
     '''
 def get_chi_squared_tests(
