@@ -450,7 +450,7 @@ def get_tests(
     counter = 0
 
     multithreading_code = split_of_kmer_lists[0][-5:]
-    f2 = open(test_result_output(
+    test_results_file = open(test_result_output(
         headerline, phenotype_scale, phenotypes, k, multithreading_code
         ), "w")
     text1_4_stderr = get_text1_4_stderr(headerline, phenotypes, k)
@@ -471,12 +471,12 @@ def get_tests(
         if phenotype_scale == "binary":
             pvalue = conduct_chi_squared_testing(
                 sample_phenotypes, sample_names, kmer, kmer_presence,
-                samples_w_kmer, weights, min_freq, max_freq
+                samples_w_kmer, weights, min_freq, max_freq, test_results_file
                 )
         elif phenotype_scale == "continuous":
             pvalue = conduct_t_testing(
                 sample_phenotypes, sample_names, kmer, kmer_presence,
-                samples_w_kmer, weights, min_freq, max_freq
+                samples_w_kmer, weights, min_freq, max_freq, test_results_file
                 )
         pvalues.append(pvalue)
     l.acquire()
@@ -490,7 +490,7 @@ def get_tests(
 
 def conduct_t_testing(
     sample_phenotypes, sample_names, kmer, kmer_presence, 
-    samples_w_kmer, weights, min_freq, max_freq
+    samples_w_kmer, weights, min_freq, max_freq, test_results_file
     ):
     '''
 def get_t_tests(
@@ -562,7 +562,7 @@ def get_t_tests(
 
 def conduct_chi_squared_testing(
     sample_phenotypes, sample_names, kmer, kmer_presence,
-    samples_w_kmer, weights, min_freq, max_freq
+    samples_w_kmer, weights, min_freq, max_freq, test_results_file
     ):
     '''
 def get_chi_squared_tests(
@@ -623,7 +623,7 @@ def get_chi_squared_tests(
             ],
             1
             )
-        f2.write(
+        test_results_file.write(
             kmer + "\t%.2f\t%.2E\t" % chisquare_results 
             + str(w_kmer)  +"\t| " + " ".join(samples_x) + "\n"
             )
