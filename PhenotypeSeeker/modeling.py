@@ -434,7 +434,7 @@ def t_test(x, y):
     ttest = stats.ttest_ind(x, y, equal_var=False)
     t_statistic = ttest[0]
     p_value = ttest[1]
-    return t_statistic, p_value, mean_x, mean_y
+    return t_statistic, p_value, meanx, meany
 
 def get_t_tests(
         headerline, min_freq, max_freq, checkpoint, k, l, samples, weights,
