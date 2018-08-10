@@ -367,7 +367,7 @@ def test_kmers_association_with_phenotype(
         pvalues_all_phenotypes.append(list(chain(*pvalues_from_all_threads)))
         sys.stderr.write("\n")
     concatenate_test_files(
-        no_phenotypes, args.num_threads, phenotype_scale, phenotypes,
+        no_phenotypes, num_threads, phenotype_scale, phenotypes,
         phenotypes_to_analyse, headerline
         )
     return pvalues_all_phenotypes, vectors_as_multiple_input
