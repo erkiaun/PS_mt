@@ -590,7 +590,7 @@ def conduct_chi_squared_test(
         )
     test_results_file.write(
         kmer + "\t%.2f\t%.2E\t" % chisquare_results 
-        + str(w_kmer)  +"\t| " + " ".join(samples_w_kmer) + "\n"
+        + str(len(samples_w_kmer))  +"\t| " + " ".join(samples_w_kmer) + "\n"
         )
     pvalue = chisquare_results[1]
     return pvalue
@@ -638,7 +638,7 @@ def get_samples_distribution_chisquared(
 def get_totals_in_classes(
         w_pheno_w_kmer, w_pheno_wo_kmer, wo_pheno_w_kmer, wo_pheno_wo_kmer
         ):
-    w_pheno = (w_pheno_w_kmer + w_pheno_w_kmer)
+    w_pheno = (w_pheno_w_kmer + w_pheno_wo_kmer)
     wo_pheno = (
         wo_pheno_w_kmer + wo_pheno_wo_kmer
         )
@@ -663,23 +663,55 @@ def get_expected_distribution(w_pheno, wo_pheno, w_kmer, wo_kmer, total):
         wo_pheno_w_kmer_expected, wo_pheno_wo_kmer_expected
         )
 
-def concatenate_test_files(n_o_p, num_threads, phenotype_scale, phenotypes, phenotypes_2_analyse, headerline=False):
+def concatenate_test_files(
+        no_phenotypes, num_threads, phenotype_scale, phenotypes,
+        phenotypes_2_analyse, headerline=False
+        ):
     if phenotype_scale == "continuous":
-        test = "t-test"
+        beginning_text = "t-test_results_"
     else:
-        test = "chi-squared_test"
+        beginning_text = "chi-squared_test_results_"
     if headerline:
         for k in phenotypes_2_analyse:
-            call(["cat " + test + "_results_" + phenotypes[k-1] + "_* > " + test + "_results_" + phenotypes[k-1] + ".txt"], shell=True)
+            call(
+                [
+                "cat " + beginning_text + phenotypes[k-1] + "_* > " +
+                test + "_results_" + phenotypes[k-1] + ".txt"
+                ],
+                shell=True
+                )
             for l in range(num_threads):
-                call(["rm " + test + "_results_" + phenotypes[k-1] + "_%05d.txt" %l], shell=True)
-    elif n_o_p > 1:
+                call(
+                    [
+                    "rm " + beginning_text + phenotypes[k-1] +
+                    "_%05d.txt" % l
+                    ],
+                    shell=True
+                    )
+    elif no_phenotypes > 1:
         for k in phenotypes_2_analyse:
-            call(["cat " + test + "_results_" + str(k) + "_* > " + test + "_results_" + str(k) + ".txt"], shell=True)
+            call(
+                [
+                "cat " + beginning_text + str(k) + "_* > " + test +
+                "_results_" + str(k) + ".txt"
+                ],
+                shell=True
+                )
             for l in range(num_threads):
-                call(["rm " + test + "_results_" + str(k) + "_%05d.txt" %l], shell=True)     
+                call(
+                    [
+                    "rm " + beginning_text + str(k) + "_%05d.txt" %l
+                    ],
+                    shell=True
+                    )     
     else:
-        call(["cat " + test + "_results_* > " + test + "_results.txt && rm " + test +"_results_*"], shell=True)
+        call(
+            [
+            "cat " + beginning_text + "* > " + beginning_text[:-1] + 
+            ".txt && rm " + beginning_text + "*"
+            ],
+            shell=True
+            )
 
 def kmer_filtering_by_pvalue(l, pvalue, number_of_phenotypes, phenotype_scale, pvalues_all_phenotypes,
         phenotypes, kmer_limit, p_t_a, FDR=False, 
@@ -2133,7 +2165,6 @@ def modeling(args):
         headerline, min_samples, max_samples, lock, weights, phenotypes, 
         pool, no_phenotypes
         )
-    
     kmers_passed_all_phenotypes = kmer_filtering_by_pvalue(
         lock, args.pvalue, no_phenotypes, phenotype_scale, 
         pvalues_all_phenotypes, phenotypes, args.n_kmers, 
