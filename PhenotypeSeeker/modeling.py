@@ -394,7 +394,7 @@ def get_text1_4_stderr(headerline, phenotypes, k):
 
 def get_samples_distribution_ttest(
         x, y, x_weights, y_weights, weights, list1, 
-        samples_x, sample_phenotypes, sample_names
+        samples_w_kmer, sample_phenotypes, sample_names
         ):
     for i, item in enumerate(sample_phenotypes):
         sample_name = sample_names[i]
@@ -407,7 +407,7 @@ def get_samples_distribution_ttest(
                 x.append(float(item))
                 if weights:
                     x_weights.append(weights[sample_name])
-                samples_x.append(sample_name)
+                samples_w_kmer.append(sample_name)
 
 def weighted_t_test(x, y, x_weights, y_weights):
     #Parametes for group containig the k-mer
@@ -464,19 +464,18 @@ def get_tests(
             check_progress(
                 previousPercent.value, currentKmerNum.value, k_t_a, text2_4_stderr, text1_4_stderr
             )
-        samples_w_kmer = []
         kmer = line[0].split()[0]
         kmer_presence = [j.split()[1].strip() for j in line]
 
         if phenotype_scale == "binary":
             pvalue = conduct_chi_squared_testing(
                 sample_phenotypes, sample_names, kmer, kmer_presence,
-                samples_w_kmer, weights, min_freq, max_freq, test_results_file
+                weights, min_freq, max_freq, test_results_file
                 )
         elif phenotype_scale == "continuous":
             pvalue = conduct_t_testing(
                 sample_phenotypes, sample_names, kmer, kmer_presence,
-                samples_w_kmer, weights, min_freq, max_freq, test_results_file
+                weights, min_freq, max_freq, test_results_file
                 )
         pvalues.append(pvalue)
     l.acquire()
@@ -490,7 +489,7 @@ def get_tests(
 
 def conduct_t_testing(
     sample_phenotypes, sample_names, kmer, kmer_presence, 
-    samples_w_kmer, weights, min_freq, max_freq, test_results_file
+    weights, min_freq, max_freq, test_results_file
     ):
     '''
 def get_t_tests(
@@ -520,6 +519,7 @@ def get_t_tests(
         kmer_presence = [j.split()[1].strip() for j in line]
     '''
     if True:
+        samples_w_kmer = []
         x = []
         y = []
         x_weights = []
@@ -544,8 +544,8 @@ def get_t_tests(
         f2.write(
             kmer + "\t" + str(round(t_statistic, 2)) + "\t" + \
             "%.2E" % pvalue + "\t" + str(round(mean_x, 2)) + "\t" + \
-            str(round(mean_y,2)) + "\t" + str(len(samples_x)) + "\t| " + \
-            " ".join(samples_x) + "\n"
+            str(round(mean_y,2)) + "\t" + str(len(samples_w_kmer)) + "\t| " + \
+            " ".join(samples_w_kmer) + "\n"
             )
         return pvalue
     '''
@@ -562,7 +562,7 @@ def get_t_tests(
 
 def conduct_chi_squared_testing(
     sample_phenotypes, sample_names, kmer, kmer_presence,
-    samples_w_kmer, weights, min_freq, max_freq, test_results_file
+    weights, min_freq, max_freq, test_results_file
     ):
     '''
 def get_chi_squared_tests(
@@ -594,6 +594,7 @@ def get_chi_squared_tests(
         kmer_presence = [j.split()[1].strip() for j in line]
     '''
     if True:
+        samples_w_kmer = []
         (
         w_pheno_w_kmer, w_pheno_wo_kmer, wo_pheno_w_kmer, wo_pheno_wo_kmer
         ) = get_samples_distribution_chisquared(
@@ -625,7 +626,7 @@ def get_chi_squared_tests(
             )
         test_results_file.write(
             kmer + "\t%.2f\t%.2E\t" % chisquare_results 
-            + str(w_kmer)  +"\t| " + " ".join(samples_x) + "\n"
+            + str(w_kmer)  +"\t| " + " ".join(samples_w_kmer) + "\n"
             )
         pvalue = chisquare_results[1]
     return pvalue
@@ -641,7 +642,7 @@ def get_chi_squared_tests(
     return(pvalues)
     '''
 def get_samples_distribution_chisquared(
-        sample_phenotypes, sample_names, list1, samples_x,
+        sample_phenotypes, sample_names, list1, samples_w_kmer,
         weights
         ):
     with_pheno_with_kmer = 0
@@ -657,7 +658,7 @@ def get_samples_distribution_chisquared(
                         with_pheno_with_kmer += weights[sample_name]   
                     else:
                         with_pheno_with_kmer += 1
-                    samples_x.append(sample_name)
+                    samples_w_kmer.append(sample_name)
                 else:
                     if weights:
                         with_pheno_without_kmer += weights[sample_name]
@@ -669,7 +670,7 @@ def get_samples_distribution_chisquared(
                         without_pheno_with_kmer += weights[sample_name]
                     else:
                         without_pheno_with_kmer += 1
-                    samples_x.append(sample_names[i])
+                    samples_w_kmer.append(sample_names[i])
                 else:
                     if weights:
                         without_pheno_without_kmer += weights[sample_name]
