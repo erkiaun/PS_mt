@@ -485,6 +485,7 @@ def get_tests(
         previousPercent.value, currentKmerNum.value, k_t_a, text2_4_stderr, text1_4_stderr
     )
     test_results_file.close()
+    print(pvalues)
     return(pvalues)
 
 def conduct_t_testing(
