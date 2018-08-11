@@ -407,7 +407,6 @@ def get_kmers_tested(
         ):
     sample_names = samples.keys()
     sample_phenotypes = [sample_data[k] for sample_data in samples.values()]
-    no_samples = len(samples)
     pvalues = []
     counter = 0
 
@@ -433,7 +432,7 @@ def get_kmers_tested(
         if phenotype_scale == "binary":
             pvalue = conduct_chi_squared_test(
                 sample_phenotypes, sample_names, kmer, kmer_presence,
-                weights, min_freq, max_freq, test_results_file, no_samples
+                weights, min_freq, max_freq, test_results_file
                 )
         elif phenotype_scale == "continuous":
             pvalue = conduct_t_test(
@@ -557,7 +556,7 @@ def t_test(x, y):
 
 def conduct_chi_squared_test(
     sample_phenotypes, sample_names, kmer, kmer_presence,
-    weights, min_freq, max_freq, test_results_file, no_samples
+    weights, min_freq, max_freq, test_results_file
     ):
     samples_w_kmer = []
     (
@@ -591,7 +590,7 @@ def conduct_chi_squared_test(
         )
     test_results_file.write(
         kmer + "\t%.2f\t%.2E\t" % chisquare_results 
-        + str(no_samples_w_kmer))  +"\t| " + " ".join(samples_w_kmer) + "\n"
+        + str(no_samples_w_kmer)  +"\t| " + " ".join(samples_w_kmer) + "\n"
         )
     pvalue = chisquare_results[1]
     return pvalue
