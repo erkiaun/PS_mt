@@ -171,9 +171,11 @@ def _get_gammas(gammas, gamma_min, gamma_max, n_gammas):
 
 def _get_min_max(min_samples, max_samples, no_samples):
     # Set the min and max arguments to default values
-    if min_samples == "0":
+    min_samples = int(min_samples)
+    if min_samples == 0:
         min_samples = 2
-    if max_samples == "0":
+    max_samples = int(max_samples)
+    if max_samples == 0:
         max_samples= no_samples - 2
     return min_samples, max_samples
 
