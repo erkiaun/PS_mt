@@ -497,7 +497,6 @@ def conduct_t_test(
             )
     else:
         t_statistic, pvalue, mean_x, mean_y = t_test(x, y)
-    print(t_statistic, pvalue)
 
     test_results_file.write(
         kmer + "\t" + str(round(t_statistic, 2)) + "\t" + \
