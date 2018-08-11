@@ -833,7 +833,7 @@ def kmer_filtering_by_pvalue(l, pvalue, number_of_phenotypes, phenotype_scale, p
         l.release()
         print(nr_of_kmers_tested)
         print(currentKmerNum.value)
-        print(reviousPercent.value)
+        print(previousPercent.value)
         check_progress(
             previousPercent.value, currentKmerNum.value, nr_of_kmers_tested, "k-mers filtered.", phenotype
             )                
