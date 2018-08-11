@@ -884,7 +884,7 @@ def linear_regression(
                      + phenotypes[k-1] + ".txt", "w+")
             f2 = open("k-mers_and_coefficients_in_lin_reg_model_" 
                      + phenotypes[k-1] + ".txt", "w+")
-            model_filename = "lin_reg_model_" + phenotypes[k-1] + ".pkl"
+            model_filename = "lin_reg_model_" + str(k) + ".pkl"
             if len(phenotypes_to_analyze) > 1:
                 sys.stderr.write("\tregression analysis of " 
                     +  phenotypes[k-1] + " data...\n")
