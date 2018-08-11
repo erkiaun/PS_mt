@@ -468,7 +468,7 @@ def test_result_output(headerline, phenotype_scale, phenotypes, k, code):
 
 def get_text1_4_stderr(headerline, phenotypes, k):
     if headerline:
-        text2_4_stderr = phenotype + ": "
+        text2_4_stderr = phenotypes[k-1] + ": "
     elif len(phenotypes) > 1:
         text2_4_stderr = "phenotype " + str(k) + ": "
     else:
