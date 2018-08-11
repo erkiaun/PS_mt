@@ -694,8 +694,7 @@ def concatenate_test_files(
         for k in phenotypes_2_analyse:
             call(
                 [
-                "cat " + beginning_text + str(k) + "_* > " +
-                beginning_text + str(k) + ".txt"
+                "cat " + beginning_text + str(k) + "_* > " +beginning_text + str(k) + ".txt"
                 ],
                 shell=True
                 )
@@ -832,6 +831,9 @@ def kmer_filtering_by_pvalue(l, pvalue, number_of_phenotypes, phenotype_scale, p
         l.acquire()
         currentKmerNum.value += counter%checkpoint
         l.release()
+        print(nr_of_kmers_tested)
+        print(currentKmerNum.value)
+        print(reviousPercent.value)
         check_progress(
             previousPercent.value, currentKmerNum.value, nr_of_kmers_tested, "k-mers filtered.", phenotype
             )                
