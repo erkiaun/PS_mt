@@ -279,6 +279,7 @@ def _mash_caller(samples_info, freq):
     for line in iter(process.stderr.readline, ''):
         stderr_print(line.strip())
     stderr_print("")
+    print(mash_args)
     with open("mash_distances.mat", "w+") as f1:
         call(["mash", "dist", "reference.msh", "reference.msh"], stdout=f1)
 
@@ -576,11 +577,7 @@ def conduct_chi_squared_test(
     wo_pheno_w_kmer_expected, wo_pheno_wo_kmer_expected
     ) = get_expected_distribution(
         w_pheno, wo_pheno, w_kmer, wo_kmer, total)
-    if kmer == "CCTCGGGTAGATC":
-        print(weights)
-        print(sample_names)
-        print(sample_phenotypes)
-        print(" ".join([kmer, str(w_pheno_w_kmer), str(w_pheno_wo_kmer), str(wo_pheno_w_kmer), str(wo_pheno_wo_kmer), str(w_pheno_w_kmer_expected), str(w_pheno_wo_kmer_expected), str(wo_pheno_w_kmer_expected), str(wo_pheno_wo_kmer_expected), "\n"]))
+
     chisquare_results = stats.chisquare(
         [
         w_pheno_w_kmer, w_pheno_wo_kmer,
@@ -592,10 +589,10 @@ def conduct_chi_squared_test(
         ],
         1
         )
-    #test_results_file.write(
-    #    kmer + "\t%.2f\t%.2E\t" % chisquare_results 
-    #    + str(len(samples_w_kmer))  +"\t| " + " ".join(samples_w_kmer) + "\n"
-    #    )
+    test_results_file.write(
+        kmer + "\t%.2f\t%.2E\t" % chisquare_results 
+        + str(len(samples_w_kmer))  +"\t| " + " ".join(samples_w_kmer) + "\n"
+        )
     pvalue = chisquare_results[1]
     return pvalue
 
