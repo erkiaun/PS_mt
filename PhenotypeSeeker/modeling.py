@@ -405,8 +405,8 @@ def _splitted_vectors_to_multiple_input(samples, num_threads):
 
 def get_kmers_tested(
         headerline, min_freq, max_freq, checkpoint, k, l, samples, weights,
-        phenotypes, no_kmers_to_analyse, phenotype_scale, split_of_kmer_lists,
-        phenotypes_to_analyse
+        phenotypes, no_kmers_to_analyse, phenotype_scale, phenotypes_to_analyse,
+        split_of_kmer_lists
         ):
     sample_names = samples.keys()
     sample_phenotypes = [sample_data[k] for sample_data in samples.values()]
