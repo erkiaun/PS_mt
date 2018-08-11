@@ -1139,8 +1139,8 @@ def logistic_regression(
             model_filename = "log_reg_model.pkl"
         
         if len(kmers_passed_all_phenotypes[j]) == 0:
-            f1.write("No k-mers passed the step of k-mer selection for \
-                regression analysis.\n")
+            f1.write("No k-mers passed the step of k-mer selection for " \
+                "regression analysis.\n")
             continue
 
         # Generating a binary k-mer presence/absence matrix and a list
