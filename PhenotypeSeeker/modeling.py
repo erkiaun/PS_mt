@@ -487,10 +487,6 @@ def conduct_t_test(
         x, y, x_weights, y_weights, weights, kmer_presence, 
         samples_w_kmer, sample_phenotypes, sample_names
         )
-    print(x)
-    print(y)
-    print(x_weights)
-    print(y_weights)
 
     if len(x) < min_freq or len(y) < 2 or len(x) > max_freq:
         return
