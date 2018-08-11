@@ -362,7 +362,7 @@ def test_kmers_association_with_phenotype(
             partial(
                 get_kmers_tested, headerline, min_samples, max_samples,
                 progress_checkpoint, k, lock, samples, weights, phenotypes,
-                no_kmers_to_analyse, phenotype_scale, no_phenotypes_to_analyse
+                no_kmers_to_analyse, phenotype_scale, phenotypes_to_analyse
                 ), 
             vectors_as_multiple_input
             )
@@ -406,7 +406,7 @@ def _splitted_vectors_to_multiple_input(samples, num_threads):
 def get_kmers_tested(
         headerline, min_freq, max_freq, checkpoint, k, l, samples, weights,
         phenotypes, no_kmers_to_analyse, phenotype_scale, split_of_kmer_lists,
-        no_phenotypes_to_analyse
+        phenotypes_to_analyse
         ):
     sample_names = samples.keys()
     sample_phenotypes = [sample_data[k] for sample_data in samples.values()]
@@ -416,10 +416,10 @@ def get_kmers_tested(
     multithreading_code = split_of_kmer_lists[0][-5:]
     test_results_file = open(test_result_output(
         headerline, phenotype_scale, phenotypes,
-        k, multithreading_code, no_phenotypes_to_analyse
+        k, multithreading_code, phenotypes_to_analyse
         ), "w")
     text1_4_stderr = get_text1_4_stderr(
-        headerline, phenotypes, k, no_phenotypes_to_analyse)
+        headerline, phenotypes, k, phenotypes_to_analyse)
     text2_4_stderr = "tests conducted."
     for line in izip_longest(*[open(item) for item in split_of_kmer_lists], fillvalue = ''):
         counter += 1
@@ -457,7 +457,7 @@ def get_kmers_tested(
     return(pvalues)
 
 def test_result_output(
-        headerline, phenotype_scale, phenotypes, k, code, no_phenotypes_to_analyse
+        headerline, phenotype_scale, phenotypes, k, code, phenotypes_to_analyse
         ):
     if phenotype_scale == "continuous":
         beginning_text = "t-test_results_"
@@ -465,16 +465,16 @@ def test_result_output(
         beginning_text = "chi-squared_test_results_"
     if headerline:
         outputfile = beginning_text + phenotypes[k-1] + "_" + code + ".txt"
-    elif no_phenotypes_to_analyse > 1:
+    elif len(phenotypes_to_analyse) > 1:
         outputfile = beginning_text +  str(k) + "_" + code + ".txt"
     else:
         outputfile = beginning_text + code + ".txt"
     return outputfile
 
-def get_text1_4_stderr(headerline, phenotypes, k, no_phenotypes_to_analyse):
+def get_text1_4_stderr(headerline, phenotypes, k, phenotypes_to_analyse):
     if headerline:
         text2_4_stderr = phenotypes[k-1] + ": "
-    elif no_phenotypes_to_analyse > 1:
+    elif len(phenotypes_to_analyse) > 1:
         text2_4_stderr = "phenotype " + str(k) + ": "
     else:
         text2_4_stderr = ""
