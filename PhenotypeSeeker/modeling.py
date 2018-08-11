@@ -678,7 +678,7 @@ def concatenate_test_files(
             call(
                 [
                 "cat " + beginning_text + phenotypes[k-1] + "_* > " +
-                test + "_results_" + phenotypes[k-1] + ".txt"
+                beginning_text + phenotypes[k-1] + ".txt"
                 ],
                 shell=True
                 )
@@ -694,8 +694,8 @@ def concatenate_test_files(
         for k in phenotypes_2_analyse:
             call(
                 [
-                "cat " + beginning_text + str(k) + "_* > " + test +
-                "_results_" + str(k) + ".txt"
+                "cat " + beginning_text + str(k) + "_* > " +
+                beginning_text + str(k) + ".txt"
                 ],
                 shell=True
                 )
