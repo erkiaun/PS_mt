@@ -829,12 +829,12 @@ def kmer_filtering_by_pvalue(l, pvalue, number_of_phenotypes, phenotype_scale, p
         f1.close()
         f2.close()
         kmers_passed_all_phenotypes.append(kmers_passed)
-    l.acquire()
-    currentKmerNum.value += counter%checkpoint
-    l.release()
-    check_progress(
-        previousPercent.value, currentKmerNum.value, nr_of_kmers_tested, "k-mers filtered.", phenotype
-        )                
+        l.acquire()
+        currentKmerNum.value += counter%checkpoint
+        l.release()
+        check_progress(
+            previousPercent.value, currentKmerNum.value, nr_of_kmers_tested, "k-mers filtered.", phenotype
+            )                
     return(kmers_passed_all_phenotypes)
 
 def get_kmer_presence_matrix(kmers_passed, split_of_kmer_lists):
