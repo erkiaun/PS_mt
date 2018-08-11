@@ -279,7 +279,6 @@ def _mash_caller(samples_info, freq):
     for line in iter(process.stderr.readline, ''):
         stderr_print(line.strip())
     stderr_print("")
-    print(mash_args)
     with open("mash_distances.mat", "w+") as f1:
         call(["mash", "dist", "reference.msh", "reference.msh"], stdout=f1)
 
@@ -408,6 +407,7 @@ def get_kmers_tested(
         ):
     sample_names = samples.keys()
     sample_phenotypes = [sample_data[k] for sample_data in samples.values()]
+    no_samples = len(samples)
     pvalues = []
     counter = 0
 
@@ -433,7 +433,7 @@ def get_kmers_tested(
         if phenotype_scale == "binary":
             pvalue = conduct_chi_squared_test(
                 sample_phenotypes, sample_names, kmer, kmer_presence,
-                weights, min_freq, max_freq, test_results_file
+                weights, min_freq, max_freq, test_results_file, no_samples
                 )
         elif phenotype_scale == "continuous":
             pvalue = conduct_t_test(
@@ -557,7 +557,7 @@ def t_test(x, y):
 
 def conduct_chi_squared_test(
     sample_phenotypes, sample_names, kmer, kmer_presence,
-    weights, min_freq, max_freq, test_results_file
+    weights, min_freq, max_freq, test_results_file, no_samples
     ):
     samples_w_kmer = []
     (
@@ -568,8 +568,8 @@ def conduct_chi_squared_test(
     (w_pheno, wo_pheno, w_kmer, wo_kmer, total) = get_totals_in_classes(
         w_pheno_w_kmer, w_pheno_wo_kmer, wo_pheno_w_kmer, wo_pheno_wo_kmer
         )
-
-    if w_kmer < min_freq or wo_kmer < 2 or w_kmer > max_freq:
+    no_samples_w_kmer = len(samples_w_kmer)
+    if no_samples_w_kmer < min_freq or no_samples_w_kmer > max_freq:
         return
 
     (
@@ -591,7 +591,7 @@ def conduct_chi_squared_test(
         )
     test_results_file.write(
         kmer + "\t%.2f\t%.2E\t" % chisquare_results 
-        + str(len(samples_w_kmer))  +"\t| " + " ".join(samples_w_kmer) + "\n"
+        + str(no_samples_w_kmer))  +"\t| " + " ".join(samples_w_kmer) + "\n"
         )
     pvalue = chisquare_results[1]
     return pvalue
