@@ -2114,14 +2114,14 @@ def assembling(
 
     if len(phenotypes_to_analyze) > 1:
         sys.stderr.write(
-            "Assembling the k-mers used in regression model of:\n"
+            "Assembling the k-mers used in regression modelling of:\n"
             )
     elif headerline:
-        sys.stderr.write("Assembling the k-mers used in regression model of " 
+        sys.stderr.write("Assembling the k-mers used in modelling of " 
             +  phenotypes[0] + " data...\n")
     else:
         sys.stderr.write(
-            "Assembling the k-mers used in regression model...\n"
+            "Assembling the k-mers used in modelling...\n"
             )
 
     for j, k in enumerate(phenotypes_to_analyze):
