@@ -1440,7 +1440,7 @@ def support_vector_classifier(
     # presence/absence (0/1) in samples are used as independent
     # parameters, resistance value (0/1) is used as dependent 
     # parameter.
-    sampel_names = samples.keys()
+    sample_names = samples.keys()
     if len(phenotypes_to_analyse) > 1:
         sys.stderr.write("\nConducting the SVM classifier analysis:\n")
     elif headerline:
