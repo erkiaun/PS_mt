@@ -906,20 +906,21 @@ def linear_regression(
         # Generating a binary k-mer presence/absence matrix and a list
         # of k-mer names based on information in k-mer_matrix.txt 
         matrix_and_features = map(
-            pool.map(
-                partial(
-                    get_kmer_presence_matrix,
-                    set(kmers_passed_all_phenotypes[j])
-                    ), 
-                kmer_lists_splitted
-                ),
-            zip(*mat_and_feat_tuples)
+            list, zip(
+                *pool.map(
+                    partial(
+                        get_kmer_presence_matrix,
+                        set(kmers_passed_all_phenotypes[j])
+                        ),
+                    kmer_lists_splitted
+                    )
+                )
             )
         kmers_presence_matrix = [
-            item for sublist in mat_and_feat_lists[0] for item in sublist
+            item for sublist in matrix_and_features[0] for item in sublist
             ]
         features = [
-            item for sublist in mat_and_feat_lists[1] for item in sublist
+            item for sublist in matrix_and_features[1] for item in sublist
             ]
         Phenotypes = [samples[item][k] for item in samples.keys()]
 
@@ -1155,20 +1156,21 @@ def logistic_regression(
         # Generating a binary k-mer presence/absence matrix and a list
         # of k-mer names based on information in k-mer_matrix.txt
         matrix_and_features = map(
-            pool.map(
-                partial(
-                    get_kmer_presence_matrix,
-                    set(kmers_passed_all_phenotypes[j])
-                    ), 
-                kmer_lists_splitted
-                ),
-            zip(*mat_and_feat_tuples)
+            list, zip(
+                *pool.map(
+                    partial(
+                        get_kmer_presence_matrix,
+                        set(kmers_passed_all_phenotypes[j])
+                        ),
+                    kmer_lists_splitted
+                    )
+                )
             )
         kmers_presence_matrix = [
-            item for sublist in mat_and_feat_lists[0] for item in sublist
+            item for sublist in matrix_and_features[0] for item in sublist
             ]
         features = [
-            item for sublist in mat_and_feat_lists[1] for item in sublist
+            item for sublist in matrix_and_features[1] for item in sublist
             ]
         Phenotypes = [samples[item][k] for item in samples.keys()]
 
@@ -1478,20 +1480,21 @@ def support_vector_classifier(
         # Generating a binary k-mer presence/absence matrix and a list
         # of k-mer names based on information in k-mer_matrix.txt 
         matrix_and_features = map(
-            pool.map(
-                partial(
-                    get_kmer_presence_matrix,
-                    set(kmers_passed_all_phenotypes[j])
-                    ), 
-                kmer_lists_splitted
-                ),
-            zip(*mat_and_feat_tuples)
+            list, zip(
+                *pool.map(
+                    partial(
+                        get_kmer_presence_matrix,
+                        set(kmers_passed_all_phenotypes[j])
+                        ),
+                    kmer_lists_splitted
+                    )
+                )
             )
         kmers_presence_matrix = [
-            item for sublist in mat_and_feat_lists[0] for item in sublist
+            item for sublist in matrix_and_features[0] for item in sublist
             ]
         features = [
-            item for sublist in mat_and_feat_lists[1] for item in sublist
+            item for sublist in matrix_and_features[1] for item in sublist
             ]
         Phenotypes = [samples[item][k] for item in samples.keys()]
 
@@ -1784,21 +1787,24 @@ def random_forest(
                 random forest analysis.\n")
             continue
 
+        # Generating a binary k-mer presence/absence matrix and a list
+        # of k-mer names based on information in k-mer_matrix.txt
         matrix_and_features = map(
-            pool.map(
-                partial(
-                    get_kmer_presence_matrix,
-                    set(kmers_passed_all_phenotypes[j])
-                    ), 
-                kmer_lists_splitted
-                ),
-            zip(*mat_and_feat_tuples)
+            list, zip(
+                *pool.map(
+                    partial(
+                        get_kmer_presence_matrix,
+                        set(kmers_passed_all_phenotypes[j])
+                        ),
+                    kmer_lists_splitted
+                    )
+                )
             )
         kmers_presence_matrix = [
-            item for sublist in mat_and_feat_lists[0] for item in sublist
+            item for sublist in matrix_and_features[0] for item in sublist
             ]
         features = [
-            item for sublist in mat_and_feat_lists[1] for item in sublist
+            item for sublist in matrix_and_features[1] for item in sublist
             ]
         Phenotypes = [samples[item][k] for item in samples.keys()]
 
