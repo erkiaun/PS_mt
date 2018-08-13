@@ -875,7 +875,7 @@ def linear_regression(
     else:
         sys.stderr.write("\nConducting the linear regression analysis...\n")
 
-    for j, k in enumerate(phenotypes_to_analyze):
+    for j, k in enumerate(phenotypes_to_analyse):
         #Open files to write results of linear regression
         if headerline:
             f1 = open("summary_of_lin_reg_analysis" 
@@ -883,7 +883,7 @@ def linear_regression(
             f2 = open("k-mers_and_coefficients_in_lin_reg_model_" 
                      + phenotypes[k-1] + ".txt", "w+")
             model_filename = "lin_reg_model_" + phenotypes[k-1] + ".pkl"
-            if len(phenotypes_to_analyze) > 1:
+            if len(phenotypes_to_analyse) > 1:
                 sys.stderr.write("\tregression analysis of " 
                     +  phenotypes[k-1] + " data...\n")
         elif number_of_phenotypes > 1:
@@ -1107,7 +1107,7 @@ def linear_regression(
 def logistic_regression(
 	    pool, kmer_lists_splitted, samples, alphas, number_of_phenotypes, 
 	    kmers_passed_all_phenotypes, penalty, n_splits, weights, testset_size,
-	    phenotypes, use_of_weights, l1_ratio, phenotypes_to_analyze,
+	    phenotypes, use_of_weights, l1_ratio, phenotypes_to_analyse,
         headerline, max_iter, tol
 	    ):
     # Applies the logistic regression modelling on k-mers
@@ -1132,7 +1132,7 @@ def logistic_regression(
             f2 = open("k-mers_and_coefficients_in_log_reg_model_" 
                      + phenotypes[k-1] + ".txt", "w+")
             model_filename = "log_reg_model_" + phenotypes[k-1] + ".pkl"
-            if len(phenotypes_to_analyze) > 1:
+            if len(phenotypes_to_analyse) > 1:
                 sys.stderr.write("\tregression analysis of " 
                     +  phenotypes[k-1] + " data...\n")
         elif number_of_phenotypes > 1:
@@ -1428,7 +1428,7 @@ def support_vector_classifier(
         pool, kmer_lists_splitted, samples, alphas, number_of_phenotypes, 
         kmers_passed_all_phenotypes, penalty, n_splits, weights, testset_size,
         phenotypes, use_of_weights, kernel, gammas, n_iter,
-        phenotypes_to_analyze, headerline, max_iter, tol
+        phenotypes_to_analyse, headerline, max_iter, tol
         ):
     # Applies support vector machine modelling on k-mers
     # that passed the filtering by p-value of statistical test. K-mers
@@ -1453,7 +1453,7 @@ def support_vector_classifier(
                 f2 = open("k-mers_and_coefficients_in_SVM_model_" 
                          + phenotypes[k-1] + ".txt", "w+")
             model_filename = "SVM_model_" + phenotypes[k-1] + ".pkl"
-            if len(phenotypes_to_analyze) > 1:
+            if len(phenotypes_to_analyse) > 1:
                 sys.stderr.write("\tSVM analysis of " 
                     +  phenotypes[k-1] + " data...\n")
         elif number_of_phenotypes > 1:
@@ -1764,7 +1764,7 @@ def random_forest(
             f2 = open("k-mers_and_coefficients_in_RF_model_" 
                      + phenotypes[k-1] + ".txt", "w+")
             model_filename = "RF_model_" + phenotypes[k-1] + ".pkl"
-            if len(phenotypes_to_analyze) > 1:
+            if len(phenotypes_to_analyse) > 1:
                 sys.stderr.write("\trandom forest analysis of " 
                     +  phenotypes[k-1] + " data...\n")
         elif number_of_phenotypes > 1:
