@@ -2139,16 +2139,6 @@ def assembling(
             sys.stderr.write("\tphenotype " + str(k) + "...\n")
         else:
             f1 = open("assembled_kmers.fasta", "w+")
-
-    for j, k in enumerate(phenotypes_to_analyze):
-        if len(kmers_passed_all_phenotypes[j]) == 0:
-            f1.write("No k-mers passed the step of k-mer selection for \
-                assembling.\n")
-            continue
-        #Open files to write the results of k-mer assembling
-        f1 = open("assembled_kmers_" + phenotypes[k-1] + ".fasta", "w+")
-        if len(phenotypes_to_analyze) > 1:
-            sys.stderr.write("\t" + phenotypes[k-1] + "...\n")
         
         kmers_to_assemble = kmers_passed_all_phenotypes[j]
         assembled_kmers = sorted(
