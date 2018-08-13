@@ -862,6 +862,8 @@ def linear_regression(
 	    phenotypes, use_of_weights, l1_ratio, phenotypes_to_analyse,
         headerline, max_iter, tol
 	    ):
+
+    sample_names = samples.keys()
     # Applies linear regression with on k-mers
     # that passed the filtering by p-value of statistical test. K-mers
     # presence/absence (0/1) in samples are used as independent
@@ -922,16 +924,16 @@ def linear_regression(
         features = [
             item for sublist in matrix_and_features[1] for item in sublist
             ]
-        Phenotypes = [samples[item][k] for item in samples.keys()]
+        Phenotypes = [samples[item][k] for item in sample_names]
 
 
         # Converting data into Python array formats suitable to use in
-        # sklearn modelling. Also, deleting information associated with
+        # sklearn modeling. Also, deleting information associated with
         # stains missing the phenotype data
         features = np.array(features)
         Phenotypes = np.array(Phenotypes)
         kmers_presence_matrix = np.array(kmers_presence_matrix).transpose()
-        samples_in_analyze = np.array(samples.keys())
+        samples_in_analyze = np.array(sample_names)
         to_del = []
         for i, item in enumerate(Phenotypes):
             if item == "NA":
@@ -1111,11 +1113,12 @@ def logistic_regression(
 	    phenotypes, use_of_weights, l1_ratio, phenotypes_to_analyse,
         headerline, max_iter, tol
 	    ):
-    # Applies the logistic regression modelling on k-mers
+    # Applies the logistic regression modeling on k-mers
     # that passed the filtering by p-value of statistical test. K-mers
     # presence/absence (0/1) in samples are used as independent
     # parameters, resistance value (0/1) is used as dependent 
     # parameter.
+    sample_names = samples.keys()
     if len(phenotypes_to_analyse) > 1:
         sys.stderr.write("\nConducting the logistic regression analysis:\n")
     elif headerline:
@@ -1172,15 +1175,15 @@ def logistic_regression(
         features = [
             item for sublist in matrix_and_features[1] for item in sublist
             ]
-        Phenotypes = [samples[item][k] for item in samples.keys()]
+        Phenotypes = [samples[item][k] for item in sample_names]
 
         # Converting data into Python array formats suitable to use in
-        # sklearn modelling. Also, deleting information associated with
+        # sklearn modeling. Also, deleting information associated with
         # stains missing the phenotype data
         features = np.array(features)
         Phenotypes = np.array(Phenotypes)
         kmers_presence_matrix = np.array(kmers_presence_matrix).transpose()
-        samples_in_analyze = np.array(samples.keys())
+        samples_in_analyze = np.array(sample_names)
         to_del = []
         for i, item in enumerate(Phenotypes):
             if item == "NA":
@@ -1432,11 +1435,12 @@ def support_vector_classifier(
         phenotypes, use_of_weights, kernel, gammas, n_iter,
         phenotypes_to_analyse, headerline, max_iter, tol
         ):
-    # Applies support vector machine modelling on k-mers
+    # Applies support vector machine modeling on k-mers
     # that passed the filtering by p-value of statistical test. K-mers
     # presence/absence (0/1) in samples are used as independent
     # parameters, resistance value (0/1) is used as dependent 
     # parameter.
+    sampel_names = samples.keys()
     if len(phenotypes_to_analyse) > 1:
         sys.stderr.write("\nConducting the SVM classifier analysis:\n")
     elif headerline:
@@ -1496,15 +1500,15 @@ def support_vector_classifier(
         features = [
             item for sublist in matrix_and_features[1] for item in sublist
             ]
-        Phenotypes = [samples[item][k] for item in samples.keys()]
+        Phenotypes = [samples[item][k] for item in sample_names]
 
         # Converting data into Python array formats suitable to use in
-        # sklearn modelling. Also, deleting information associated with
+        # sklearn modeling. Also, deleting information associated with
         # stains missing the phenotype data
         features = np.array(features)
         Phenotypes = np.array(Phenotypes)
         kmers_presence_matrix = np.array(kmers_presence_matrix).transpose()
-        samples_in_analyze = np.array(samples_order)
+        samples_in_analyze = np.array(sample_names)
         to_del = []
         for i, item in enumerate(Phenotypes):
             if item == "NA":
@@ -1740,16 +1744,19 @@ def support_vector_classifier(
         f2.close()
 
 def random_forest(
-	    pool, kmer_lists_splitted, samples, samples_order, number_of_phenotypes, 
+	    pool, kmer_lists_splitted, samples, number_of_phenotypes, 
 	    kmers_passed_all_phenotypes, n_splits, weights, testset_size,
 	    phenotypes, use_of_weights, phenotypes_to_analyse, headerline
 	    ):
-    # Applies random forest modelling on k-mers
+
+    sample_names = samples.keys()
+    # Applies random forest modeling on k-mers
     # that passed the filtering by p-value of statistical test. K-mers
     # presence/absence (0/1) in samples are used as independent
     # parameters, resistance value (0/1) is used as dependent 
     # parameter.
     
+    sample_names = samples.keys()
     if len(phenotypes_to_analyse) > 1:
         sys.stderr.write("\nConducting the random forest analysis:\n")
     elif headerline:
@@ -1806,15 +1813,15 @@ def random_forest(
         features = [
             item for sublist in matrix_and_features[1] for item in sublist
             ]
-        Phenotypes = [samples[item][k] for item in samples.keys()]
+        Phenotypes = [samples[item][k] for item in sample_names]
 
         # Converting data into Python array formats suitable to use in
-        # sklearn modelling. Also, deleting information associated with
+        # sklearn modeling. Also, deleting information associated with
         # stains missing the phenotype data
         features = np.array(features)
         Phenotypes = np.array(Phenotypes)
         kmers_presence_matrix = np.array(kmers_presence_matrix).transpose()
-        samples_in_analyze = np.array(samples_order)
+        samples_in_analyze = np.array(sample_names)
         to_del = []
         for i, item in enumerate(Phenotypes):
             if item == "NA":
@@ -2114,14 +2121,14 @@ def assembling(
 
     if len(phenotypes_to_analyze) > 1:
         sys.stderr.write(
-            "Assembling the k-mers used in regression modelling of:\n"
+            "Assembling the k-mers used in regression modeling of:\n"
             )
     elif headerline:
-        sys.stderr.write("Assembling the k-mers used in modelling of " 
+        sys.stderr.write("Assembling the k-mers used in modeling of " 
             +  phenotypes[0] + " data...\n")
     else:
         sys.stderr.write(
-            "Assembling the k-mers used in modelling...\n"
+            "Assembling the k-mers used in modeling...\n"
             )
 
     for j, k in enumerate(phenotypes_to_analyze):
