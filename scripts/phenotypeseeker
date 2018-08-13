@@ -198,6 +198,15 @@ def Main():
     	and 1.0 (default 0.25). Train set size is complement of the test set \
         size'
     	)
+    regression_models.add_argument(
+        "--max_iter", metavar="", type=float, default=1000,
+        help='Hard limit on iterations within solver, or -1 for no limit \
+        (default = 1000).'
+        )
+    regression_models.add_argument(
+        "--tol", metavar="", type=float, default=1e-4,
+        help='Tolerance for stopping criterion (default = 1e-4).'
+        )
 
     other.add_argument(
     	'--mpheno', metavar='INT', type=int, nargs='+',

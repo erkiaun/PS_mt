@@ -699,7 +699,8 @@ def concatenate_test_files(
         for k in phenotypes_2_analyse:
             call(
                 [
-                "cat " + beginning_text + str(k) + "_* > " +beginning_text + str(k) + ".txt"
+                "cat " + beginning_text + str(k) + "_* > " +
+                beginning_text + str(k) + ".txt"
                 ],
                 shell=True
                 )
@@ -719,9 +720,10 @@ def concatenate_test_files(
             shell=True
             )
 
-def kmer_filtering_by_pvalue(l, pvalue, number_of_phenotypes, phenotype_scale, pvalues_all_phenotypes,
-        phenotypes, kmer_limit, p_t_a, FDR=False, 
-        B=False, headerline=False
+def kmer_filtering_by_pvalue(
+        l, pvalue, number_of_phenotypes, phenotype_scale, 
+        pvalues_all_phenotypes, phenotypes, kmer_limit,
+        p_t_a, FDR=False, B=False, headerline=False
         ):
     # Filters the k-mers by their p-value achieved in statistical 
     # testing.
@@ -857,19 +859,15 @@ def get_kmer_presence_matrix(kmers_passed, split_of_kmer_lists):
 def linear_regression(
 	    pool, kmer_lists_splitted, samples, alphas, number_of_phenotypes,
 	    kmers_passed_all_phenotypes, penalty, n_splits, weights, testset_size,
-	    phenotypes, use_of_weights, l1_ratio, phenotypes_to_analyze=False,
-        headerline=False
+	    phenotypes, use_of_weights, l1_ratio, phenotypes_to_analyse,
+        headerline, max_iter, tol
 	    ):
-    # Applies linear regression with Lasso regularization on k-mers
+    # Applies linear regression with on k-mers
     # that passed the filtering by p-value of statistical test. K-mers
     # presence/absence (0/1) in samples are used as independent
     # parameters, resistance value (continuous) is used as dependent
     # parameter.
-
-    if not phenotypes_to_analyze:
-        phenotypes_to_analyze = range(1,number_of_phenotypes+1)
-
-    if len(phenotypes_to_analyze) > 1:
+    if len(phenotypes_to_analyse) > 1:
         sys.stderr.write("\nConducting the linear regression analysis:\n")
     elif headerline:
         sys.stderr.write("\nConducting the linear regression analysis of " 
@@ -907,9 +905,16 @@ def linear_regression(
 
         # Generating a binary k-mer presence/absence matrix and a list
         # of k-mer names based on information in k-mer_matrix.txt 
-        mat_and_feat_tuples = pool.map(partial(get_kmer_presence_matrix,
-            set(kmers_passed_all_phenotypes[j])), kmer_lists_splitted)
-        mat_and_feat_lists = map(list, zip(*mat_and_feat_tuples))
+        matrix_and_features = map(
+            pool.map(
+                partial(
+                    get_kmer_presence_matrix,
+                    set(kmers_passed_all_phenotypes[j])
+                    ), 
+                kmer_lists_splitted
+                ),
+            zip(*mat_and_feat_tuples)
+            )
         kmers_presence_matrix = [
             item for sublist in mat_and_feat_lists[0] for item in sublist
             ]
@@ -953,7 +958,7 @@ def linear_regression(
         # Generate grid search classifier where parameters
         # (like regularization strength) are optimized by
         # cross-validated grid-search over a parameter grid.
-        parameters = {'alpha': alphas}
+        parameters = {'alpha': alphas, max_iter=max_iter, tol=tol}
         clf = GridSearchCV(lin_reg, parameters, cv=n_splits)
 
         # Fitting the linear regression model to dataset
@@ -1100,18 +1105,15 @@ def linear_regression(
 def logistic_regression(
 	    pool, kmer_lists_splitted, samples, alphas, number_of_phenotypes, 
 	    kmers_passed_all_phenotypes, penalty, n_splits, weights, testset_size,
-	    phenotypes, use_of_weights, l1_ratio, phenotypes_to_analyze=False,
-        headerline=False
+	    phenotypes, use_of_weights, l1_ratio, phenotypes_to_analyze,
+        headerline, max_iter, tol
 	    ):
-    # Applies logistic regression with Lasso regularization on k-mers
+    # Applies the logistic regression modelling on k-mers
     # that passed the filtering by p-value of statistical test. K-mers
     # presence/absence (0/1) in samples are used as independent
     # parameters, resistance value (0/1) is used as dependent 
     # parameter.
-    if not phenotypes_to_analyze:
-        phenotypes_to_analyze = range(1,number_of_phenotypes+1)
-    
-    if len(phenotypes_to_analyze) > 1:
+    if len(phenotypes_to_analyse) > 1:
         sys.stderr.write("\nConducting the logistic regression analysis:\n")
     elif headerline:
         sys.stderr.write("\nConducting the logistic regression analysis of " 
@@ -1119,7 +1121,7 @@ def logistic_regression(
     else:
         sys.stderr.write("\nConducting the logistic regression analysis...\n")
 
-    for j, k in enumerate(phenotypes_to_analyze):
+    for j, k in enumerate(phenotypes_to_analyse):
         #Open files to write results of logistic regression
         if headerline:
             f1 = open(
@@ -1150,11 +1152,22 @@ def logistic_regression(
 
         # Generating a binary k-mer presence/absence matrix and a list
         # of k-mer names based on information in k-mer_matrix.txt
-        mat_and_feat_tuples = pool.map(partial(get_kmer_presence_matrix,
-            set(kmers_passed_all_phenotypes[j])), kmer_lists_splitted)
-        mat_and_feat_lists = map(list, zip(*mat_and_feat_tuples))
-        kmers_presence_matrix = [item for sublist in mat_and_feat_lists[0] for item in sublist]
-        features = [item for sublist in mat_and_feat_lists[1] for item in sublist]
+        matrix_and_features = map(
+            pool.map(
+                partial(
+                    get_kmer_presence_matrix,
+                    set(kmers_passed_all_phenotypes[j])
+                    ), 
+                kmer_lists_splitted
+                ),
+            zip(*mat_and_feat_tuples)
+            )
+        kmers_presence_matrix = [
+            item for sublist in mat_and_feat_lists[0] for item in sublist
+            ]
+        features = [
+            item for sublist in mat_and_feat_lists[1] for item in sublist
+            ]
         Phenotypes = [samples[item][k] for item in samples.keys()]
 
         # Converting data into Python array formats suitable to use in
@@ -1184,15 +1197,17 @@ def logistic_regression(
         if penalty == "L1" or "l1":
             log_reg = LogisticRegression(
                 penalty='l1', solver='saga',
-                max_iter=100, tol=1e-4)        
+                max_iter=max_iter, tol=tol
+                )        
         elif penalty == "L2" or "l2":
             log_reg = LogisticRegression(
                 penalty='l2', solver='saga',
-                max_iter=100, tol=1e-4)
+                max_iter=max_iter, tol=tol
+                )
         elif penalty == "elasticnet" or "L1+L2":
             log_reg = SGDClassifier(
                 penalty='elasticnet', l1_ratio=l1_ratio,
-                max_iter=100, tol=1e-4, loss='log'
+                max_iter=max_iter, tol=tol, loss='log'
                 )
         
 
@@ -1408,20 +1423,17 @@ def logistic_regression(
         f2.close()
 
 def support_vector_classifier(
-        kmer_matrix, samples, samples_order, alphas, number_of_phenotypes, 
+        pool, kmer_lists_splitted, samples, alphas, number_of_phenotypes, 
         kmers_passed_all_phenotypes, penalty, n_splits, weights, testset_size,
         phenotypes, use_of_weights, kernel, gammas, n_iter,
-        phenotypes_to_analyze=False, headerline=False
+        phenotypes_to_analyze, headerline, max_iter, tol
         ):
-    # Applies logistic regression with Lasso regularization on k-mers
+    # Applies support vector machine modelling on k-mers
     # that passed the filtering by p-value of statistical test. K-mers
     # presence/absence (0/1) in samples are used as independent
     # parameters, resistance value (0/1) is used as dependent 
     # parameter.
-    if not phenotypes_to_analyze:
-        phenotypes_to_analyze = range(1,number_of_phenotypes+1)
-    
-    if len(phenotypes_to_analyze) > 1:
+    if len(phenotypes_to_analyse) > 1:
         sys.stderr.write("\nConducting the SVM classifier analysis:\n")
     elif headerline:
         sys.stderr.write("\nConducting the SVM classifier analysis of " 
@@ -1429,7 +1441,7 @@ def support_vector_classifier(
     else:
         sys.stderr.write("\nConducting the SVM classifier analysis...\n")
 
-    for j, k in enumerate(phenotypes_to_analyze):
+    for j, k in enumerate(phenotypes_to_analyse):
         #Open files to write results of logistic regression
         if headerline:
             f1 = open(
@@ -1463,18 +1475,23 @@ def support_vector_classifier(
 
         # Generating a binary k-mer presence/absence matrix and a list
         # of k-mer names based on information in k-mer_matrix.txt 
-        kmers_presence_matrix = []
-        features = []
-        Phenotypes = [samples[item][k] for item in samples_order]
-        with open(kmer_matrix) as f3:
-            for line in f3:
-                if line.split()[0] in kmers_passed_all_phenotypes[j]:
-                    features.append(line.split()[0])
-                    kmers_presence_matrix.append(map(
-                        lambda x: 0 if x == 0 else 1,
-                        map(int, line.split()[1:])
-                        ))
-        f3.close()
+        matrix_and_features = map(
+            pool.map(
+                partial(
+                    get_kmer_presence_matrix,
+                    set(kmers_passed_all_phenotypes[j])
+                    ), 
+                kmer_lists_splitted
+                ),
+            zip(*mat_and_feat_tuples)
+            )
+        kmers_presence_matrix = [
+            item for sublist in mat_and_feat_lists[0] for item in sublist
+            ]
+        features = [
+            item for sublist in mat_and_feat_lists[1] for item in sublist
+            ]
+        Phenotypes = [samples[item][k] for item in samples.keys()]
 
         # Converting data into Python array formats suitable to use in
         # sklearn modelling. Also, deleting information associated with
@@ -1500,7 +1517,7 @@ def support_vector_classifier(
         f1.write("Dataset:\n%s\n\n" % dataset)
 
         #Defining logistic regression parameters
-        svc = SVC(kernel=kernel, probability=True, max_iter=1000, tol=1e-4)        
+        svc = SVC(kernel=kernel, probability=True, max_iter=max_iter, tol=tol)        
         
 
         # Generate grid search classifier where parameters
@@ -1718,69 +1735,70 @@ def support_vector_classifier(
         f2.close()
 
 def random_forest(
-	    kmer_matrix, samples, samples_order, number_of_phenotypes, 
+	    pool, kmer_lists_splitted, samples, samples_order, number_of_phenotypes, 
 	    kmers_passed_all_phenotypes, n_splits, weights, testset_size,
-	    phenotypes, use_of_weights, phenotypes_to_analyze=False, headerline = False
+	    phenotypes, use_of_weights, phenotypes_to_analyse, headerline
 	    ):
-    # Applies logistic regression with Lasso regularization on k-mers
+    # Applies random forest modelling on k-mers
     # that passed the filtering by p-value of statistical test. K-mers
     # presence/absence (0/1) in samples are used as independent
     # parameters, resistance value (0/1) is used as dependent 
     # parameter.
-    if not phenotypes_to_analyze:
-        phenotypes_to_analyze = range(1,number_of_phenotypes+1)
     
-    if len(phenotypes_to_analyze) > 1:
-        sys.stderr.write("\nConducting the logistic regression analysis:\n")
+    if len(phenotypes_to_analyse) > 1:
+        sys.stderr.write("\nConducting the random forest analysis:\n")
     elif headerline:
-        sys.stderr.write("\nConducting the logistic regression analysis of " 
+        sys.stderr.write("\nConducting the random forest analysis of " 
             +  phenotypes[0] + " data...\n")
     else:
-        sys.stderr.write("\nConducting the logistic regression analysis...\n")
+        sys.stderr.write("\nConducting the random forest analysis...\n")
 
-    for j, k in enumerate(phenotypes_to_analyze):
+    for j, k in enumerate(phenotypes_to_analyse):
         #Open files to write results of logistic regression
         if headerline:
             f1 = open(
-                "summary_of_log_reg_analysis_" + phenotypes[k-1] + ".txt", "w+"
+                "summary_of_RF_analysis_" + phenotypes[k-1] + ".txt", "w+"
                 )
-            f2 = open("k-mers_and_coefficients_in_log_reg_model_" 
+            f2 = open("k-mers_and_coefficients_in_RF_model_" 
                      + phenotypes[k-1] + ".txt", "w+")
-            model_filename = "log_reg_model_" + phenotypes[k-1] + ".pkl"
+            model_filename = "RF_model_" + phenotypes[k-1] + ".pkl"
             if len(phenotypes_to_analyze) > 1:
-                sys.stderr.write("\tregression analysis of " 
+                sys.stderr.write("\trandom forest analysis of " 
                     +  phenotypes[k-1] + " data...\n")
         elif number_of_phenotypes > 1:
-            f1 = open("summary_of_log_reg_analysis_" + str(k) + ".txt", "w+")
-            f2 = open("k-mers_and_coefficients_in_log_reg_model_" 
+            f1 = open("summary_of_RF_analysis_" + str(k) + ".txt", "w+")
+            f2 = open("k-mers_and_coefficients_in_RF_model_" 
                      + str(k) + ".txt", "w+")
-            model_filename = "log_reg_model_" + str(k) + ".pkl"
-            sys.stderr.write("\tregression analysis of phenotype " 
+            model_filename = "RF_model_" + str(k) + ".pkl"
+            sys.stderr.write("\trandom forest analysis of phenotype " 
                 +  str(k) + " data...\n")
         else:
-            f1 = open("summary_of_log_reg_analysis.txt", "w+")
-            f2 = open("k-mers_and_coefficients_in_log_reg_model.txt", "w+")
-            model_filename = "log_reg_model.pkl"
+            f1 = open("summary_of_RF_analysis.txt", "w+")
+            f2 = open("k-mers_and_coefficients_in_RF_model.txt", "w+")
+            model_filename = "RF_model.pkl"
         
         if len(kmers_passed_all_phenotypes[j]) == 0:
             f1.write("No k-mers passed the step of k-mer selection for \
-                regression analysis.\n")
+                random forest analysis.\n")
             continue
 
-        # Generating a binary k-mer presence/absence matrix and a list
-        # of k-mer names based on information in k-mer_matrix.txt 
-        kmers_presence_matrix = []
-        features = []
-        Phenotypes = [samples[item][k] for item in samples_order]
-        with open(kmer_matrix) as f3:
-            for line in f3:
-                if line.split()[0] in kmers_passed_all_phenotypes[j]:
-                    features.append(line.split()[0])
-                    kmers_presence_matrix.append(map(
-                    	lambda x: 0 if x == 0 else 1,
-                    	map(int, line.split()[1:])
-                    	))
-        f3.close()
+        matrix_and_features = map(
+            pool.map(
+                partial(
+                    get_kmer_presence_matrix,
+                    set(kmers_passed_all_phenotypes[j])
+                    ), 
+                kmer_lists_splitted
+                ),
+            zip(*mat_and_feat_tuples)
+            )
+        kmers_presence_matrix = [
+            item for sublist in mat_and_feat_lists[0] for item in sublist
+            ]
+        features = [
+            item for sublist in mat_and_feat_lists[1] for item in sublist
+            ]
+        Phenotypes = [samples[item][k] for item in samples.keys()]
 
         # Converting data into Python array formats suitable to use in
         # sklearn modelling. Also, deleting information associated with
@@ -1809,7 +1827,7 @@ def random_forest(
         clf = RandomForestClassifier(n_estimators=100) 
 
 
-        # Fitting the logistic regression model to dataset 
+        # Fitting the random forest model to dataset 
         # (with or without considering the weights). Writing logistic
         # regression results into corresponding files.
         if testset_size != 0.0:
@@ -2183,7 +2201,8 @@ def modeling(args):
             pool, vectors_as_multiple_input, samples, alphas, no_phenotypes,
             kmers_passed_all_phenotypes, args.regularization, args.n_splits,
             weights, args.testset_size, phenotypes, args.weights,
-            args.l1_ratio, args.mpheno, headerline
+            args.l1_ratio, phenotypes_to_analyse, headerline, args.max_iter,
+            args.tol
             )
     elif phenotype_scale == "binary":
         if args.binary_classifier == "log":
@@ -2191,23 +2210,24 @@ def modeling(args):
                 pool, vectors_as_multiple_input, samples, alphas, no_phenotypes,
                 kmers_passed_all_phenotypes, args.regularization, args.n_splits,
                 weights, args.testset_size, phenotypes, args.weights,
-                args.l1_ratio, args.mpheno, headerline
+                args.l1_ratio, phenotypes_to_analyse, headerline, args.max_iter, 
+                args.tol
                 )
         elif args.binary_classifier == "SVM":
             support_vector_classifier(
-                "k-mer_matrix.txt", samples, alphas, no_phenotypes,
+                pool, vectors_as_multiple_input, samples, alphas, no_phenotypes,
                 kmers_passed_all_phenotypes, args.regularization, args.n_splits,
                 weights, args.testset_size, phenotypes, args.weights,
-                args.kernel, gammas, args.n_iter, args.mpheno, headerline
+                args.kernel, gammas, args.n_iter, phenotypes_to_analyse, headerline,
+                args.max_iter, args.tol
                 )
         elif args.binary_classifier == "RF":
         	random_forest(
-                "k-mer_matrix.txt", samples, no_phenotypes,
+                pool, vectors_as_multiple_input, samples, no_phenotypes,
                 kmers_passed_all_phenotypes, args.n_splits,
                 weights, args.testset_size, phenotypes, args.weights,
-                args.mpheno, headerline
+                phenotypes_to_analyse, headerline
                 )
-
 
     if args.assembly == "+":
         assembling(
