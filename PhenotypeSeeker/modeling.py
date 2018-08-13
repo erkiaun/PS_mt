@@ -860,7 +860,7 @@ def linear_regression(
 	    pool, kmer_lists_splitted, samples, alphas, number_of_phenotypes,
 	    kmers_passed_all_phenotypes, penalty, n_splits, weights, testset_size,
 	    phenotypes, use_of_weights, l1_ratio, phenotypes_to_analyse,
-        headerline, max_iter, tol
+        headerline, max_iterations, tolerance
 	    ):
     # Applies linear regression with on k-mers
     # that passed the filtering by p-value of statistical test. K-mers
@@ -958,7 +958,7 @@ def linear_regression(
         # Generate grid search classifier where parameters
         # (like regularization strength) are optimized by
         # cross-validated grid-search over a parameter grid.
-        parameters = {'alpha': alphas, max_iter=max_iter, tol=tol}
+        parameters = {'alpha': alphas, max_iter=max_iterations, tol=tolerance}
         clf = GridSearchCV(lin_reg, parameters, cv=n_splits)
 
         # Fitting the linear regression model to dataset
@@ -1106,7 +1106,7 @@ def logistic_regression(
 	    pool, kmer_lists_splitted, samples, alphas, number_of_phenotypes, 
 	    kmers_passed_all_phenotypes, penalty, n_splits, weights, testset_size,
 	    phenotypes, use_of_weights, l1_ratio, phenotypes_to_analyze,
-        headerline, max_iter, tol
+        headerline, max_iterations, tolerance
 	    ):
     # Applies the logistic regression modelling on k-mers
     # that passed the filtering by p-value of statistical test. K-mers
@@ -1197,17 +1197,17 @@ def logistic_regression(
         if penalty == "L1" or "l1":
             log_reg = LogisticRegression(
                 penalty='l1', solver='saga',
-                max_iter=max_iter, tol=tol
+                max_iter=max_iterations, tol=tolerance
                 )        
         elif penalty == "L2" or "l2":
             log_reg = LogisticRegression(
                 penalty='l2', solver='saga',
-                max_iter=max_iter, tol=tol
+                max_iter=max_iterations, tol=tolerance
                 )
         elif penalty == "elasticnet" or "L1+L2":
             log_reg = SGDClassifier(
                 penalty='elasticnet', l1_ratio=l1_ratio,
-                max_iter=max_iter, tol=tol, loss='log'
+                max_iter=max_iterations, tol=tolerance, loss='log'
                 )
         
 
@@ -1426,7 +1426,7 @@ def support_vector_classifier(
         pool, kmer_lists_splitted, samples, alphas, number_of_phenotypes, 
         kmers_passed_all_phenotypes, penalty, n_splits, weights, testset_size,
         phenotypes, use_of_weights, kernel, gammas, n_iter,
-        phenotypes_to_analyze, headerline, max_iter, tol
+        phenotypes_to_analyze, headerline, max_iterations, tolerance
         ):
     # Applies support vector machine modelling on k-mers
     # that passed the filtering by p-value of statistical test. K-mers
@@ -1517,7 +1517,10 @@ def support_vector_classifier(
         f1.write("Dataset:\n%s\n\n" % dataset)
 
         #Defining logistic regression parameters
-        svc = SVC(kernel=kernel, probability=True, max_iter=max_iter, tol=tol)        
+        svc = SVC(
+            kernel=kernel, probability=True,
+            max_iter=max_iterations, tol=tolerance
+            )        
         
 
         # Generate grid search classifier where parameters
