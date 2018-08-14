@@ -62,7 +62,6 @@ def check_progress(
         previousPercent.value = int(currentPercent)
 
 
-
 # ---------------------------------------------------------
 # Self-implemented performance measure functions
 
@@ -239,7 +238,7 @@ def get_kmer_lists(
         lock, samples_info, kmer_length, freq, input_samples
         ):
     # Makes "K-mer_lists" directory where all lists are stored.
-    # Generates k-mer lists for every sample in sample_names variable 
+    # Generates k-mer lists for every sample in names_of_samples variable 
     # (list or dict).
     call(["mkdir", "-p", "K-mer_lists"])
     for sample in input_samples:
@@ -320,11 +319,11 @@ def _mash_caller(samples_info, freq):
     with open("mash_distances.mat", "w+") as f1:
         call(["mash", "dist", "reference.msh", "reference.msh"], stdout=f1)
 
-def _mash_output_to_distance_matrix(sample_names, mash_distances):
+def _mash_output_to_distance_matrix(names_of_samples, mash_distances):
     with open(mash_distances) as f1:
         with open("distances.mat", "w+") as f2:
             counter = 0
-            f2.write(sample_names[counter])
+            f2.write(names_of_samples[counter])
             for line in f1:
                 distance = line.split()[2]
                 f2.write("\t" + distance)
@@ -332,7 +331,7 @@ def _mash_output_to_distance_matrix(sample_names, mash_distances):
                 if counter%Samples.no_samples == 0:
                     if counter != Samples.no_samples**2:
                         f2.write(
-                        	"\n" + sample_names[counter/Samples.no_samples]
+                        	"\n" + names_of_samples[counter/Samples.no_samples]
                         	)
 
 def _distance_matrix_modifier(distance_matrix):
@@ -398,17 +397,14 @@ def test_kmers_association_with_phenotype(
         pvalues_from_all_threads = pool.map(
             partial(
                 get_kmers_tested, min_samples, max_samples,
-                progress_checkpoint, k, lock, samples, weights, phenotypes,
+                progress_checkpoint, k, lock, samples, weights,
                 no_kmers_to_analyse, phenotypes_to_analyse
                 ), 
             vectors_as_multiple_input
             )
         pvalues_all_phenotypes.append(list(chain(*pvalues_from_all_threads)))
         sys.stderr.write("\n")
-    concatenate_test_files(
-        num_threads, phenotypes,
-        phenotypes_to_analyse
-        )
+    concatenate_test_files(num_threads, phenotypes, phenotypes_to_analyse)
     return pvalues_all_phenotypes, vectors_as_multiple_input
 
 
@@ -440,21 +436,19 @@ def _splitted_vectors_to_multiple_input(samples, num_threads):
 
 def get_kmers_tested(
         min_freq, max_freq, checkpoint, k, l, samples, weights,
-        phenotypes, no_kmers_to_analyse, phenotypes_to_analyse,
+        no_kmers_to_analyse, phenotypes_to_analyse,
         split_of_kmer_lists
         ):
-    sample_names = samples.keys()
-    sample_phenotypes = [sample_data.phenotypes[k] for sample_data in samples.values()]
+    names_of_samples = samples.keys()
+    phenotypes_of_samples = [sample_data.phenotypes[k] for sample_data in samples.values()]
     pvalues = []
     counter = 0
 
     multithreading_code = split_of_kmer_lists[0][-5:]
     test_results_file = open(test_result_output(
-        phenotypes,
         k, multithreading_code, phenotypes_to_analyse
         ), "w")
-    text1_4_stderr = get_text1_4_stderr(
-        phenotypes, k, phenotypes_to_analyse)
+    text1_4_stderr = get_text1_4_stderr(k, phenotypes_to_analyse)
     text2_4_stderr = "tests conducted."
     for line in izip_longest(*[open(item) for item in split_of_kmer_lists], fillvalue = ''):
         counter += 1
@@ -471,12 +465,12 @@ def get_kmers_tested(
 
         if Samples.phenotype_scale == "binary":
             pvalue = conduct_chi_squared_test(
-                sample_phenotypes, sample_names, kmer, kmer_presence,
+                phenotypes_of_samples, names_of_samples, kmer, kmer_presence,
                 weights, min_freq, max_freq, test_results_file
                 )
         elif Samples.phenotype_scale == "continuous":
             pvalue = conduct_t_test(
-                sample_phenotypes, sample_names, kmer, kmer_presence,
+                phenotypes_of_samples, names_of_samples, kmer, kmer_presence,
                 weights, min_freq, max_freq, test_results_file
                 )
         if pvalue:
@@ -491,32 +485,32 @@ def get_kmers_tested(
     test_results_file.close()
     return(pvalues)
 
-def test_result_output(
-        phenotypes, k, code, phenotypes_to_analyse
-        ):
+def test_result_output(k, code, phenotypes_to_analyse):
     if Samples.phenotype_scale == "continuous":
         beginning_text = "t-test_results_"
     else:
         beginning_text = "chi-squared_test_results_"
     if Samples.headerline:
-        outputfile = beginning_text + phenotypes[k] + "_" + code + ".txt"
+        outputfile = beginning_text +
+            Samples.phenotypes[k] + "_" + code + ".txt"
     elif len(phenotypes_to_analyse) > 1:
-        outputfile = beginning_text +  phenotypes[k] + "_" + code + ".txt"
+        outputfile = beginning_text +
+            Samples.phenotypes[k] + "_" + code + ".txt"
     else:
         outputfile = beginning_text + code + ".txt"
     return outputfile
 
-def get_text1_4_stderr(phenotypes, k, phenotypes_to_analyse):
+def get_text1_4_stderr(k, phenotypes_to_analyse):
     if Samples.headerline:
-        text2_4_stderr = phenotypes[k] + ": "
+        text2_4_stderr = Samples.phenotypes[k] + ": "
     elif len(phenotypes_to_analyse) > 1:
-        text2_4_stderr = "phenotype " + phenotypes[k] + ": "
+        text2_4_stderr = "phenotype " + Samples.phenotypes[k] + ": "
     else:
         text2_4_stderr = ""
     return text2_4_stderr
 
 def conduct_t_test(
-    sample_phenotypes, sample_names, kmer, kmer_presence, 
+    phenotypes_of_samples, names_of_samples, kmer, kmer_presence, 
     weights, min_freq, max_freq, test_results_file
     ):
     samples_w_kmer = []
@@ -525,9 +519,9 @@ def conduct_t_test(
     x_weights = []
     y_weights = []
     
-    get_samples_distribution_ttest(
+    get_samples_distribution_for_ttest(
         x, y, x_weights, y_weights, weights, kmer_presence, 
-        samples_w_kmer, sample_phenotypes, sample_names
+        samples_w_kmer, phenotypes_of_samples, names_of_samples
         )
 
     if len(x) < min_freq or len(y) < 2 or len(x) > max_freq:
@@ -548,12 +542,12 @@ def conduct_t_test(
         )
     return pvalue
 
-def get_samples_distribution_ttest(
+def get_samples_distribution_for_ttest(
         x, y, x_weights, y_weights, weights, list1, 
-        samples_w_kmer, sample_phenotypes, sample_names
+        samples_w_kmer, phenotypes_of_samples, names_of_samples
         ):
-    for i, item in enumerate(sample_phenotypes):
-        sample_name = sample_names[i]
+    for i, item in enumerate(phenotypes_of_samples):
+        sample_name = names_of_samples[i]
         if item != "NA":
             if list1[i] == "0":
                 y.append(float(item))
@@ -597,14 +591,14 @@ def t_test(x, y):
     return t_statistic, p_value, meanx, meany
 
 def conduct_chi_squared_test(
-    sample_phenotypes, sample_names, kmer, kmer_presence,
+    phenotypes_of_samples, names_of_samples, kmer, kmer_presence,
     weights, min_freq, max_freq, test_results_file
     ):
     samples_w_kmer = []
     (
     w_pheno_w_kmer, w_pheno_wo_kmer, wo_pheno_w_kmer, wo_pheno_wo_kmer
-    ) = get_samples_distribution_chisquared(
-        sample_phenotypes, sample_names, kmer_presence, samples_w_kmer, weights
+    ) = get_samples_distribution_for_chisquared(
+        phenotypes_of_samples, names_of_samples, kmer_presence, samples_w_kmer, weights
         )
     (w_pheno, wo_pheno, w_kmer, wo_kmer, total) = get_totals_in_classes(
         w_pheno_w_kmer, w_pheno_wo_kmer, wo_pheno_w_kmer, wo_pheno_wo_kmer
@@ -637,16 +631,16 @@ def conduct_chi_squared_test(
     pvalue = chisquare_results[1]
     return pvalue
 
-def get_samples_distribution_chisquared(
-        sample_phenotypes, sample_names, list1, samples_w_kmer,
+def get_samples_distribution_for_chisquared(
+        phenotypes_of_samples, names_of_samples, list1, samples_w_kmer,
         weights
         ):
     with_pheno_with_kmer = 0
     with_pheno_without_kmer = 0
     without_pheno_with_kmer = 0
     without_pheno_without_kmer = 0
-    for i, item in enumerate(sample_phenotypes):
-        sample_name = sample_names[i]
+    for i, item in enumerate(phenotypes_of_samples):
+        sample_name = names_of_samples[i]
         if item != "NA":
             if item == "1":
                 if (list1[i] != "0"):
@@ -666,7 +660,7 @@ def get_samples_distribution_chisquared(
                         without_pheno_with_kmer += weights[sample_name]
                     else:
                         without_pheno_with_kmer += 1
-                    samples_w_kmer.append(sample_names[i])
+                    samples_w_kmer.append(names_of_samples[i])
                 else:
                     if weights:
                         without_pheno_without_kmer += weights[sample_name]
@@ -898,7 +892,7 @@ def linear_regression(
         max_iter, tol
 	    ):
 
-    sample_names = samples.keys()
+    names_of_samples = samples.keys()
     # Applies linear regression with on k-mers
     # that passed the filtering by p-value of statistical test. K-mers
     # presence/absence (0/1) in samples are used as independent
@@ -959,7 +953,7 @@ def linear_regression(
         features = [
             item for sublist in matrix_and_features[1] for item in sublist
             ]
-        Phenotypes = [samples[item][k] for item in sample_names]
+        Phenotypes = [samples[item][k] for item in names_of_samples]
 
 
         # Converting data into Python array formats suitable to use in
@@ -968,7 +962,7 @@ def linear_regression(
         features = np.array(features)
         Phenotypes = np.array(Phenotypes)
         kmers_presence_matrix = np.array(kmers_presence_matrix).transpose()
-        samples_in_analyze = np.array(sample_names)
+        samples_in_analyze = np.array(names_of_samples)
         to_del = []
         for i, item in enumerate(Phenotypes):
             if item == "NA":
@@ -1153,7 +1147,7 @@ def logistic_regression(
     # presence/absence (0/1) in samples are used as independent
     # parameters, resistance value (0/1) is used as dependent 
     # parameter.
-    sample_names = samples.keys()
+    names_of_samples = samples.keys()
     if len(phenotypes_to_analyse) > 1:
         sys.stderr.write("\nConducting the logistic regression analysis:\n")
     elif Samples.headerline:
@@ -1210,7 +1204,7 @@ def logistic_regression(
         features = [
             item for sublist in matrix_and_features[1] for item in sublist
             ]
-        Phenotypes = [samples[item][k] for item in sample_names]
+        Phenotypes = [samples[item][k] for item in names_of_samples]
 
         # Converting data into Python array formats suitable to use in
         # sklearn modeling. Also, deleting information associated with
@@ -1218,7 +1212,7 @@ def logistic_regression(
         features = np.array(features)
         Phenotypes = np.array(Phenotypes)
         kmers_presence_matrix = np.array(kmers_presence_matrix).transpose()
-        samples_in_analyze = np.array(sample_names)
+        samples_in_analyze = np.array(names_of_samples)
         to_del = []
         for i, item in enumerate(Phenotypes):
             if item == "NA":
@@ -1475,7 +1469,7 @@ def support_vector_classifier(
     # presence/absence (0/1) in samples are used as independent
     # parameters, resistance value (0/1) is used as dependent 
     # parameter.
-    sample_names = samples.keys()
+    names_of_samples = samples.keys()
     if len(phenotypes_to_analyse) > 1:
         sys.stderr.write("\nConducting the SVM classifier analysis:\n")
     elif headerline:
@@ -1535,7 +1529,7 @@ def support_vector_classifier(
         features = [
             item for sublist in matrix_and_features[1] for item in sublist
             ]
-        Phenotypes = [samples[item][k] for item in sample_names]
+        Phenotypes = [samples[item][k] for item in names_of_samples]
 
         # Converting data into Python array formats suitable to use in
         # sklearn modeling. Also, deleting information associated with
@@ -1543,7 +1537,7 @@ def support_vector_classifier(
         features = np.array(features)
         Phenotypes = np.array(Phenotypes)
         kmers_presence_matrix = np.array(kmers_presence_matrix).transpose()
-        samples_in_analyze = np.array(sample_names)
+        samples_in_analyze = np.array(names_of_samples)
         to_del = []
         for i, item in enumerate(Phenotypes):
             if item == "NA":
@@ -1784,14 +1778,14 @@ def random_forest(
 	    phenotypes, use_of_weights, phenotypes_to_analyse, headerline
 	    ):
 
-    sample_names = samples.keys()
+    names_of_samples = samples.keys()
     # Applies random forest modeling on k-mers
     # that passed the filtering by p-value of statistical test. K-mers
     # presence/absence (0/1) in samples are used as independent
     # parameters, resistance value (0/1) is used as dependent 
     # parameter.
     
-    sample_names = samples.keys()
+    names_of_samples = samples.keys()
     if len(phenotypes_to_analyse) > 1:
         sys.stderr.write("\nConducting the random forest analysis:\n")
     elif headerline:
@@ -1848,7 +1842,7 @@ def random_forest(
         features = [
             item for sublist in matrix_and_features[1] for item in sublist
             ]
-        Phenotypes = [samples[item][k] for item in sample_names]
+        Phenotypes = [samples[item][k] for item in names_of_samples]
 
         # Converting data into Python array formats suitable to use in
         # sklearn modeling. Also, deleting information associated with
@@ -1856,7 +1850,7 @@ def random_forest(
         features = np.array(features)
         Phenotypes = np.array(Phenotypes)
         kmers_presence_matrix = np.array(kmers_presence_matrix).transpose()
-        samples_in_analyze = np.array(sample_names)
+        samples_in_analyze = np.array(names_of_samples)
         to_del = []
         for i, item in enumerate(Phenotypes):
             if item == "NA":
