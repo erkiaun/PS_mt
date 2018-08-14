@@ -227,6 +227,7 @@ def get_multithreading_parameters(num_threads, samples, no_samples):
     # Splitting samples for multithreading
     mt_split = []
     for i in range(num_threads):
+        print(no_samples)
         print(samples.keys())
         mt_split.append(
             [samples.keys()[j] for j in xrange(i, no_samples, num_threads)]
