@@ -175,12 +175,8 @@ def process_input_args(
         ):
     alphas = _get_alphas(alphas, alpha_min, alpha_max, n_alphas)
     gammas = _get_gammas(gammas, gamma_min, gamma_max, n_gammas)
-    min_samples, max_samples = _get_min_max(
-        min_samples, max_samples, Samples.no_samples
-        )
-    phenotypes_to_analyse = _get_phenotypes_to_analyse(
-        mpheno, Samples.no_phenotypes
-        )
+    min_samples, max_samples = _get_min_max(min_samples, max_samples)
+    phenotypes_to_analyse = _get_phenotypes_to_analyse(mpheno)
     return alphas, gammas, min_samples, max_samples, phenotypes_to_analyse
 
 def _get_alphas(alphas, alpha_min, alpha_max, n_alphas):       
@@ -212,25 +208,27 @@ def _get_min_max(min_samples, max_samples, no_samples):
         min_samples = 2
     max_samples = int(max_samples)
     if max_samples == 0:
-        max_samples= no_samples - 2
+        max_samples = Samples.no_samples - 2
     return min_samples, max_samples
 
-def _get_phenotypes_to_analyse(mpheno, no_phenotypes):
+def _get_phenotypes_to_analyse(mpheno):
     if not mpheno:
-        phenotypes_to_analyse = range(1, no_phenotypes+1)
+        phenotypes_to_analyse = range(1, Samples.no_phenotypes+1)
     else: 
         phenotypes_to_analyse = mpheno
     return phenotypes_to_analyse
 
 # ---------------------------------------------------------
 # Set parameters for multithreading
-def get_multithreading_parameters(num_threads, samples, no_samples):
+def get_multithreading_parameters(num_threads, samples):
     lock = Manager().Lock()
     # Splitting samples for multithreading
     mt_split = []
     for i in range(num_threads):
         mt_split.append(
-            [samples.keys()[j] for j in xrange(i, no_samples, num_threads)]
+            [samples.keys()[j] for j in xrange(
+                i, Samples.no_samples, num_threads
+                )]
             )
     pool = Pool(num_threads)
     return lock, pool, mt_split
@@ -268,7 +266,7 @@ def get_feature_vector(length, min_freq, samples):
     call(glistmaker_args)
 
 def map_samples(
-        lock, samples, kmer_length, no_samples, samples_splitted
+        lock, samples, kmer_length, samples_splitted
         ):
     #Takes k-mers, which passed frequency filtering as feature space and maps samples k-mer lists
     #to that feature space. A vector of k-mers frequency information is created for every sample.
@@ -286,7 +284,7 @@ def map_samples(
         currentSampleNum.value += 1
         lock.release()
         output = "\t%d of %d samples mapped." % (
-            currentSampleNum.value, no_samples
+            currentSampleNum.value, Samples.no_samples
             )
         stderr_print(output)
 
@@ -2202,7 +2200,7 @@ def modeling(args):
             args.min, args.max, args.mpheno 
             )
     lock, pool, mt_split = get_multithreading_parameters(
-        args.num_threads, samples, Samples.no_samples
+        args.num_threads, samples
         )
     sys.stderr.write("Generating the k-mer lists for input samples:\n")
     pool.map(partial(
@@ -2214,8 +2212,7 @@ def modeling(args):
     sys.stderr.write("Mapping samples to the feature vector space:\n")
     currentSampleNum.value = 0
     pool.map(partial(
-        map_samples, lock, samples, args.length, Samples.no_samples
-        ), mt_split)
+        map_samples, lock, samples, args.length), mt_split)
     #call(["rm -r K-mer_lists/"], shell = True)
     weights = []
     if args.weights == "+":
