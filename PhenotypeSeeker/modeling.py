@@ -267,16 +267,17 @@ def get_feature_vector(length, min_freq, samples):
     call(glistmaker_args)
 
 def map_samples(
-        lock, samples_info, kmer_length, no_samples, sample_names
+        lock, samples, kmer_length, no_samples, samples_splitted
         ):
     #Takes k-mers, which passed frequency filtering as feature space and maps samples k-mer lists
     #to that feature space. A vector of k-mers frequency information is created for every sample.
-    for sample in sample_names:
-        outputfile = "K-mer_lists/"+ sample + "_mapped.txt"
+    for sample in samples_splitted:
+        sample_name = samples[sample].name
+        outputfile = "K-mer_lists/" + samples_name + "_mapped.txt"
         with open(outputfile, "w+") as outputfile:
             call(
                 [
-                "glistquery", "K-mer_lists/" + sample + "_" + kmer_length +
+                "glistquery", "K-mer_lists/" + sample_name + "_" + kmer_length +
                 ".list", "-l", "K-mer_lists/feature_vector_" + kmer_length +
                 ".list"
                 ]
@@ -2212,12 +2213,12 @@ def modeling(args):
         ), mt_split)
     sys.stderr.write("\nGenerating the k-mer feature vector.\n")
     get_feature_vector(args.length, min_samples, samples)
-    '''
     sys.stderr.write("Mapping samples to the feature vector space:\n")
     currentSampleNum.value = 0
     pool.map(partial(
         map_samples, lock, samples, args.length, no_samples
-        ), mt_split)    
+        ), mt_split)
+    '''
     #call(["rm -r K-mer_lists/"], shell = True)
     weights = []
     if args.weights == "+":
