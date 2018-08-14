@@ -391,7 +391,7 @@ def test_kmers_association_with_phenotype(
     ) = get_params_for_kmers_testing(
         samples, num_threads, phenotypes_to_analyse
         )
-    
+
     # for j, k in enumerate(phenotypes_to_analyse):
     #     currentKmerNum.value = 0
     #     previousPercent.value = 0
@@ -2220,6 +2220,7 @@ def modeling(args):
     weights = []
     if args.weights == "+":
         get_weights(samples, args.cutoff)
+    print(samples)
     (
     pvalues_all_phenotypes, vectors_as_multiple_input
     ) = test_kmers_association_with_phenotype(
