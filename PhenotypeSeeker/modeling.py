@@ -123,7 +123,7 @@ class Samples():
 
 # -------------------------------------------------------------------
 # Read the data from inputfile into "samples" directory
-def get_input_data(inputfilename, take_logs):
+def get_input_data():
     samples = OrderedDict()
     Samples.take_logs = args.take_logs
     for i, line in enumerate(open(args.inputfile)):
