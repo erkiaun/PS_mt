@@ -445,7 +445,7 @@ def get_kmers_tested(
         split_of_kmer_lists
         ):
     sample_names = samples.keys()
-    sample_phenotypes = [sample_data[k] for sample_data in samples.values()]
+    sample_phenotypes = [sample_data.phenotypes[k-1] for sample_data in samples.values()]
     pvalues = []
     counter = 0
 
