@@ -135,8 +135,8 @@ def get_input_data(inputfilename, take_logs):
                     Samples.phenotypes = firstline[2:]
                     continue
                 else:
-                    for i in xrange(1, Samples.no_phenotypes + 1):
-                        Samples.phenotypes.append("phenotype%s" %i)
+                    for j in xrange(1, Samples.no_phenotypes + 1):
+                        Samples.phenotypes.append("phenotype%s" %j)
             samples["Sample%s" % i] = (
                 Samples.from_inputfile(line)
                 )
