@@ -101,6 +101,7 @@ class Samples():
     no_samples = 0
     no_phenoypes = 0
     phenotypes = []
+    take_logs = None
 
     def __init__(self, name, address, phenotypes, weight=None):
         self.name = name
@@ -124,6 +125,7 @@ class Samples():
 # Read the data from inputfile into "samples" directory
 def get_input_data(inputfilename, take_logs):
     samples = OrderedDict()
+    Samples.take_logs = take_logs
     with open(inputfilename) as inputfile:
         for i, line in enumerate(inputfile):
             if i == 0:
