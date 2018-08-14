@@ -137,7 +137,8 @@ def get_input_data(inputfilename, take_logs):
                 else:
                     for j in xrange(1, Samples.no_phenotypes + 1):
                         Samples.phenotypes.append("phenotype%s" %j)
-            samples["Sample%s" % i] = (
+            sample_name = line.split()[0]
+            samples[sample_name] = (
                 Samples.from_inputfile(line)
                 )
     return samples
@@ -242,10 +243,9 @@ def get_kmer_lists(
     call(["mkdir", "-p", "K-mer_lists"])
     for sample in input_samples:
         genomefail_address = samples_info[sample].address
-        sample_name = samples_info[sample].name
         call(
-        	["glistmaker " + str(genomefail_address) + " -o K-mer_lists/" 
-        	+ sample_name + " -w " + kmer_length + " -c " + freq], 
+        	["glistmaker " + genomefail_address + " -o K-mer_lists/" 
+        	+ sample + " -w " + kmer_length + " -c " + freq], 
         	shell=True
         	)
         lock.acquire()
@@ -259,8 +259,8 @@ def get_kmer_lists(
 def get_feature_vector(length, min_freq, samples):
     call(["mkdir", "-p", "K-mer_lists"])
     glistmaker_args = ["glistmaker"]
-    for sample in samples.values():
-        glistmaker_args.append(sample.address)
+    for sample_data in samples.values():
+        glistmaker_args.append(sample_data.address)
     glistmaker_args += [
         '-c', str(min_freq), '-w', length, '-o', 'K-mer_lists/feature_vector'
         ]
@@ -272,12 +272,11 @@ def map_samples(
     #Takes k-mers, which passed frequency filtering as feature space and maps samples k-mer lists
     #to that feature space. A vector of k-mers frequency information is created for every sample.
     for sample in samples_splitted:
-        sample_name = samples[sample].name
-        outputfile = "K-mer_lists/" + sample_name + "_mapped.txt"
+        outputfile = "K-mer_lists/" + sample + "_mapped.txt"
         with open(outputfile, "w+") as outputfile:
             call(
                 [
-                "glistquery", "K-mer_lists/" + sample_name + "_" + kmer_length +
+                "glistquery", "K-mer_lists/" + sample + "_" + kmer_length +
                 ".list", "-l", "K-mer_lists/feature_vector_" + kmer_length +
                 ".list"
                 ]
