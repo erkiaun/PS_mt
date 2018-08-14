@@ -2185,6 +2185,7 @@ def assembling(
     f1.close()
 
 def modeling(args):
+    global args
     # The main function of "phenotypeseeker modeling"
     samples = get_input_data()
     (
