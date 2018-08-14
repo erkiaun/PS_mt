@@ -388,8 +388,7 @@ def test_kmers_association_with_phenotype(
         sys.stderr.write("\nConducting the k-mer specific chi-square tests:\n")
     (
     vectors_as_multiple_input, progress_checkpoint, no_kmers_to_analyse
-    ) = get_params_for_kmers_testing(
-        samples, num_threads, phenotypes_to_analyse
+    ) = get_params_for_kmers_testing(samples, num_threads, phenotypes_to_analyse
         )
 
     # for j, k in enumerate(phenotypes_to_analyse):
@@ -414,9 +413,9 @@ def test_kmers_association_with_phenotype(
 
 def get_params_for_kmers_testing(samples, num_threads, phenotypes_to_analyse):
     _split_sample_vectors_for_multithreading(samples, num_threads)
-    # vectors_as_multiple_input = _splitted_vectors_to_multiple_input(
-    #     samples, num_threads
-    #     )
+    vectors_as_multiple_input = _splitted_vectors_to_multiple_input(
+         samples, num_threads
+         )
     # kmers_to_analyse = float(
     #     check_output(
     #         ['wc', '-l', "K-mer_lists/" + samples.keys()[0] + "_mapped.txt"]
