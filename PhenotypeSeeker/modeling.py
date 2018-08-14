@@ -310,8 +310,7 @@ def _mash_caller(samples_info, freq):
     sys.stderr.write("\nEstimating the Mash distances between samples...\n")
     mash_args = ["mash", "sketch", "-o", "reference", "-m", freq]
     for sample_data in samples_info.values():
-        genome_file_address = sample_data[0]
-        mash_args.append(genome_file_address)
+        mash_args.append(sample_data.address)
     process = Popen(mash_args, stderr=PIPE)
     for line in iter(process.stderr.readline, ''):
         stderr_print(line.strip())
@@ -319,19 +318,19 @@ def _mash_caller(samples_info, freq):
     with open("mash_distances.mat", "w+") as f1:
         call(["mash", "dist", "reference.msh", "reference.msh"], stdout=f1)
 
-def _mash_output_to_distance_matrix(samples_order, mash_distances):
+def _mash_output_to_distance_matrix(sample_names, mash_distances):
     with open(mash_distances) as f1:
         with open("distances.mat", "w+") as f2:
             counter = 0
-            f2.write(samples_order[counter])
+            f2.write(sample_names[counter])
             for line in f1:
                 distance = line.split()[2]
                 f2.write("\t" + distance)
                 counter += 1
-                if counter%len(samples_order) == 0:
-                    if counter != len(samples_order)**2:
+                if counter%Samples.no_samples == 0:
+                    if counter != Samples.no_samples**2:
                         f2.write(
-                        	"\n" + samples_order[counter/len(samples_order)]
+                        	"\n" + sample_names[counter/Samples.no_samples]
                         	)
 
 def _distance_matrix_modifier(distance_matrix):
@@ -2217,11 +2216,11 @@ def modeling(args):
     pool.map(partial(
         map_samples, lock, samples, args.length, Samples.no_samples
         ), mt_split)
-    '''
     #call(["rm -r K-mer_lists/"], shell = True)
     weights = []
     if args.weights == "+":
         weights = get_weights(samples, args.cutoff)
+    '''
     (
     pvalues_all_phenotypes, vectors_as_multiple_input
     ) = test_kmers_association_with_phenotype(
