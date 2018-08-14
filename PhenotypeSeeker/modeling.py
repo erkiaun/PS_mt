@@ -126,20 +126,20 @@ class Samples():
 def get_input_data(inputfilename, take_logs):
     samples = OrderedDict()
     Samples.take_logs = args.take_logs
-        for i, line in enumerate(open(args.inputfile)):
-            if i == 0:
-                firstline = line.split()
-                Samples.no_phenotypes = len(firstline)-2
-                if firstline[0] == "SampleID":
-                    Samples.phenotypes = firstline[2:]
-                    continue
-                else:
-                    for j in xrange(1, Samples.no_phenotypes + 1):
-                        Samples.phenotypes.append("phenotype%s" %j)
-            sample_name = line.split()[0]
-            samples[sample_name] = (
-                Samples.from_inputfile(line)
-                )
+    for i, line in enumerate(open(args.inputfile)):
+        if i == 0:
+            firstline = line.split()
+            Samples.no_phenotypes = len(firstline)-2
+            if firstline[0] == "SampleID":
+                Samples.phenotypes = firstline[2:]
+                continue
+            else:
+                for j in xrange(1, Samples.no_phenotypes + 1):
+                    Samples.phenotypes.append("phenotype%s" %j)
+        sample_name = line.split()[0]
+        samples[sample_name] = (
+            Samples.from_inputfile(line)
+            )
     return samples
 
 # -------------------------------------------------------------------
