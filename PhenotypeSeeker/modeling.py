@@ -765,9 +765,9 @@ def kmer_filtering_by_pvalue(
         counter = 0
         kmers_passed = []
         phenotype = Samples.phenotypes[k]
-        if phenotype_scale == "continuous":
+        if Samples.phenotype_scale == "continuous":
             test = "t-test"
-        elif phenotype_scale == "binary":
+        elif Samples.phenotype_scale == "binary":
             test = "chi-squared_test"
         if Samples.headerline:
             f1 = open(test + "_results_" + phenotype + ".txt")
@@ -789,7 +789,7 @@ def kmer_filtering_by_pvalue(
                 \t-_group_mean\tNo._of_samples_with_k-mer\
                 \tSamples_with_k-mer\n"
                 )
-        else:
+        elif Samples.phenotype_scale == "binary":
             f2.write(
                 "K-mer\tChi-square_statistic\tp-value\
                 \tNo._of_samples_with_k-mer\tSamples_with_k-mer\n"
