@@ -2223,7 +2223,7 @@ def modeling(args):
     pvalues_all_phenotypes, vectors_as_multiple_input
     ) = test_kmers_association_with_phenotype(
         samples, args.num_threads, phenotypes_to_analyse,
-        headerline, min_samples, max_samples, lock, weights, phenotypes, 
+        min_samples, max_samples, lock, weights, phenotypes, 
         pool
         )
     '''
