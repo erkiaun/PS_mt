@@ -886,9 +886,9 @@ def get_kmer_presence_matrix(kmers_passed, split_of_kmer_lists):
     return(kmers_presence_matrix, features)
 
 def linear_regression(
-	    pool, kmer_lists_splitted, samples, alphas, number_of_phenotypes,
+	    pool, kmer_lists_splitted, samples, alphas,
 	    kmers_passed_all_phenotypes, penalty, n_splits, weights, testset_size,
-	    phenotypes, use_of_weights, l1_ratio, phenotypes_to_analyse,
+	    use_of_weights, l1_ratio, phenotypes_to_analyse,
         max_iter, tol
 	    ):
 
@@ -902,28 +902,29 @@ def linear_regression(
         sys.stderr.write("\nConducting the linear regression analysis:\n")
     elif Samples.headerline:
         sys.stderr.write("\nConducting the linear regression analysis of " 
-            +  phenotypes[0] + " data...\n")
+            +  Samples.phenotypes[0] + " data...\n")
     else:
         sys.stderr.write("\nConducting the linear regression analysis...\n")
 
     for j, k in enumerate(phenotypes_to_analyse):
         #Open files to write results of linear regression
+        phenotype = Samples.phenotypes[k]
         if Samples.headerline:
             f1 = open("summary_of_lin_reg_analysis" 
-                     + phenotypes[k] + ".txt", "w+")
+                     + phenotype + ".txt", "w+")
             f2 = open("k-mers_and_coefficients_in_lin_reg_model_" 
-                     + phenotypes[k] + ".txt", "w+")
-            model_filename = "lin_reg_model_" + phenotypes[k] + ".pkl"
+                     + phenotype + ".txt", "w+")
+            model_filename = "lin_reg_model_" + phenotype + ".pkl"
             if len(phenotypes_to_analyse) > 1:
                 sys.stderr.write("\tregression analysis of " 
-                    +  phenotypes[k] + " data...\n")
-        elif number_of_phenotypes > 1:
-            f1 = open("summary_of_lin_reg_analysis" + phenotypes[k] + ".txt", "w+")
+                    +  phenotype + " data...\n")
+        elif Samples.number_of_phenotypes > 1:
+            f1 = open("summary_of_lin_reg_analysis" + phenotype + ".txt", "w+")
             f2 = open("k-mers_and_coefficients_in_lin_reg_model_" 
-                     + phenotypes[k] + ".txt", "w+")
-            model_filename = "lin_reg_model_" + phenotypes[k] + ".pkl"
+                     + phenotype + ".txt", "w+")
+            model_filename = "lin_reg_model_" + phenotype + ".pkl"
             sys.stderr.write("\tregression analysis of phenotype " 
-                +  phenotypes[k] + " data...\n")
+                +  phenotype + " data...\n")
         else:
             f1 = open("summary_of_lin_reg_analysis.txt", "w+")
             f2 = open("k-mers_and_coefficients_in_lin_reg_model.txt", "w+")
@@ -1137,9 +1138,9 @@ def linear_regression(
         f2.close()
 
 def logistic_regression(
-	    pool, kmer_lists_splitted, samples, alphas, number_of_phenotypes, 
+	    pool, kmer_lists_splitted, samples, alphas,
 	    kmers_passed_all_phenotypes, penalty, n_splits, weights, testset_size,
-	    phenotypes, use_of_weights, l1_ratio, phenotypes_to_analyse,
+	    use_of_weights, l1_ratio, phenotypes_to_analyse,
         max_iter, tol
 	    ):
     # Applies the logistic regression modeling on k-mers
@@ -1152,29 +1153,30 @@ def logistic_regression(
         sys.stderr.write("\nConducting the logistic regression analysis:\n")
     elif Samples.headerline:
         sys.stderr.write("\nConducting the logistic regression analysis of " 
-            +  phenotypes[0] + " data...\n")
+            +  Sample.phenotypes[0] + " data...\n")
     else:
         sys.stderr.write("\nConducting the logistic regression analysis...\n")
 
     for j, k in enumerate(phenotypes_to_analyse):
         #Open files to write results of logistic regression
+        phenotype = Samples.phenotypes[k]
         if Samples.headerline:
             f1 = open(
-                "summary_of_log_reg_analysis_" + phenotypes[k] + ".txt", "w+"
+                "summary_of_log_reg_analysis_" + phenotype + ".txt", "w+"
                 )
             f2 = open("k-mers_and_coefficients_in_log_reg_model_" 
-                     + phenotypes[k] + ".txt", "w+")
-            model_filename = "log_reg_model_" + phenotypes[k] + ".pkl"
+                     + phenotype + ".txt", "w+")
+            model_filename = "log_reg_model_" + phenotype + ".pkl"
             if len(phenotypes_to_analyse) > 1:
                 sys.stderr.write("\tregression analysis of " 
-                    +  phenotypes[k] + " data...\n")
-        elif number_of_phenotypes > 1:
-            f1 = open("summary_of_log_reg_analysis_" + phenotypes[k] + ".txt", "w+")
+                    +  phenotype + " data...\n")
+        elif Samples.number_of_phenotypes > 1:
+            f1 = open("summary_of_log_reg_analysis_" + phenotype + ".txt", "w+")
             f2 = open("k-mers_and_coefficients_in_log_reg_model_" 
-                     + phenotypes[k] + ".txt", "w+")
-            model_filename = "log_reg_model_" + phenotypes[k] + ".pkl"
+                     + phenotype + ".txt", "w+")
+            model_filename = "log_reg_model_" + phenotype + ".pkl"
             sys.stderr.write("\tregression analysis of phenotype " 
-                +  phenotypes[k] + " data...\n")
+                +  phenotype + " data...\n")
         else:
             f1 = open("summary_of_log_reg_analysis.txt", "w+")
             f2 = open("k-mers_and_coefficients_in_log_reg_model.txt", "w+")
@@ -1459,9 +1461,9 @@ def logistic_regression(
         f2.close()
 
 def support_vector_classifier(
-        pool, kmer_lists_splitted, samples, alphas, number_of_phenotypes, 
+        pool, kmer_lists_splitted, samples, alphas,
         kmers_passed_all_phenotypes, penalty, n_splits, weights, testset_size,
-        phenotypes, use_of_weights, kernel, gammas, n_iter,
+        use_of_weights, kernel, gammas, n_iter,
         phenotypes_to_analyse, headerline, max_iter, tol
         ):
     # Applies support vector machine modeling on k-mers
@@ -1479,26 +1481,27 @@ def support_vector_classifier(
         sys.stderr.write("\nConducting the SVM classifier analysis...\n")
 
     for j, k in enumerate(phenotypes_to_analyse):
+        phenotype = Samples.phenotypes[k]
         #Open files to write results of logistic regression
         if headerline:
             f1 = open(
-                "summary_of_SVM_analysis_" + phenotypes[k] + ".txt", "w+"
+                "summary_of_SVM_analysis_" + phenotype + ".txt", "w+"
                 )
             if kernel == "linear":
                 f2 = open("k-mers_and_coefficients_in_SVM_model_" 
-                         + phenotypes[k] + ".txt", "w+")
-            model_filename = "SVM_model_" + phenotypes[k] + ".pkl"
+                         + phenotype + ".txt", "w+")
+            model_filename = "SVM_model_" + phenotype + ".pkl"
             if len(phenotypes_to_analyse) > 1:
                 sys.stderr.write("\tSVM analysis of " 
-                    +  phenotypes[k] + " data...\n")
-        elif number_of_phenotypes > 1:
-            f1 = open("summary_of_SVM_analysis_" + phenotypes[k] + ".txt", "w+")
+                    +  phenotype + " data...\n")
+        elif Samples.number_of_phenotypes > 1:
+            f1 = open("summary_of_SVM_analysis_" + phenotype + ".txt", "w+")
             if kernel == "linear":
                 f2 = open("k-mers_and_coefficients_in_SVM_model_" 
-                         + phenotypes[k] + ".txt", "w+")
-            model_filename = "SVM_model_" + phenotypes[k] + ".pkl"
+                         + phenotype + ".txt", "w+")
+            model_filename = "SVM_model_" + phenotype + ".pkl"
             sys.stderr.write("\tSVM analysis of phenotype " 
-                +  phenotypes[k] + " data...\n")
+                +  phenotype + " data...\n")
         else:
             f1 = open("summary_of_SVM_analysis.txt", "w+")
             if kernel == "linear":
@@ -1773,9 +1776,9 @@ def support_vector_classifier(
         f2.close()
 
 def random_forest(
-	    pool, kmer_lists_splitted, samples, number_of_phenotypes, 
+	    pool, kmer_lists_splitted, samples,
 	    kmers_passed_all_phenotypes, n_splits, weights, testset_size,
-	    phenotypes, use_of_weights, phenotypes_to_analyse, headerline
+	    use_of_weights, phenotypes_to_analyse, headerline
 	    ):
 
     names_of_samples = samples.keys()
@@ -1796,23 +1799,24 @@ def random_forest(
 
     for j, k in enumerate(phenotypes_to_analyse):
         #Open files to write results of logistic regression
+        phenotype = Samples.phenotypes[k]
         if headerline:
             f1 = open(
-                "summary_of_RF_analysis_" + phenotypes[k] + ".txt", "w+"
+                "summary_of_RF_analysis_" + phenotype + ".txt", "w+"
                 )
             f2 = open("k-mers_and_coefficients_in_RF_model_" 
-                     + phenotypes[k] + ".txt", "w+")
-            model_filename = "RF_model_" + phenotypes[k] + ".pkl"
+                     + phenotype + ".txt", "w+")
+            model_filename = "RF_model_" + phenotype + ".pkl"
             if len(phenotypes_to_analyse) > 1:
                 sys.stderr.write("\trandom forest analysis of " 
-                    +  phenotypes[k] + " data...\n")
-        elif number_of_phenotypes > 1:
-            f1 = open("summary_of_RF_analysis_" + phenotypes[k] + ".txt", "w+")
+                    +  phenotype + " data...\n")
+        elif Samples.number_of_phenotypes > 1:
+            f1 = open("summary_of_RF_analysis_" + phenotype + ".txt", "w+")
             f2 = open("k-mers_and_coefficients_in_RF_model_" 
-                     + phenotypes[k] + ".txt", "w+")
-            model_filename = "RF_model_" + phenotypes[k] + ".pkl"
+                     + phenotype + ".txt", "w+")
+            model_filename = "RF_model_" + phenotype + ".pkl"
             sys.stderr.write("\trandom forest analysis of phenotype " 
-                +  phenotypes[k] + " data...\n")
+                +  phenotype + " data...\n")
         else:
             f1 = open("summary_of_RF_analysis.txt", "w+")
             f2 = open("k-mers_and_coefficients_in_RF_model.txt", "w+")
@@ -2139,7 +2143,7 @@ def kmer_assembler(kmer_list, min_olap=None):
     return(assembled_kmers)
 
 def assembling(
-        kmers_passed_all_phenotypes, phenotypes, number_of_phenotypes, 
+        kmers_passed_all_phenotypes, 
         phenotypes_to_analyze=False, headerline = False
         ):
     # Assembles the input k-mers and writes assembled sequences
@@ -2154,25 +2158,26 @@ def assembling(
             )
     elif headerline:
         sys.stderr.write("Assembling the k-mers used in modeling of " 
-            +  phenotypes[0] + " data...\n")
+            +  Samples.phenotypes[0] + " data...\n")
     else:
         sys.stderr.write(
             "Assembling the k-mers used in modeling...\n"
             )
 
     for j, k in enumerate(phenotypes_to_analyze):
+        phenotype = Samples.phenotypes[k]
         if len(kmers_passed_all_phenotypes[j]) == 0:
             f1.write("No k-mers passed the step of k-mer selection for \
                 assembling.\n")
             continue
         #Open files to write the results of k-mer assembling
         if headerline:
-            f1 = open("assembled_kmers_" + phenotypes[k] + ".fasta", "w+")
+            f1 = open("assembled_kmers_" + phenotype + ".fasta", "w+")
             if len(phenotypes_to_analyze) > 1:
-                sys.stderr.write("\t" + phenotypes[k] + "...\n")
-        elif number_of_phenotypes > 1:
-            f1 = open("assembled_kmers_" + phenotypes[k] + ".fasta", "w+")
-            sys.stderr.write("\tphenotype " + phenotypes[k] + "...\n")
+                sys.stderr.write("\t" + phenotype + "...\n")
+        elif Samples.number_of_phenotypes > 1:
+            f1 = open("assembled_kmers_" + phenotype + ".fasta", "w+")
+            sys.stderr.write("\tphenotype " + phenotype + "...\n")
         else:
             f1 = open("assembled_kmers.fasta", "w+")
         
@@ -2225,7 +2230,7 @@ def modeling(args):
         phenotypes_to_analyse, args.FDR, args.Bonferroni
         )
 
-    if phenotype_scale == "continuous":
+    if Samples.phenotype_scale == "continuous":
         linear_regression(
             pool, vectors_as_multiple_input, samples, alphas, no_phenotypes,
             kmers_passed_all_phenotypes, args.regularization, args.n_splits,
