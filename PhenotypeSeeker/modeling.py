@@ -302,7 +302,8 @@ def get_weights(samples, cutoff):
     sys.stderr.write("Calculating the Gerstein Sonnhammer Coathia " \
         "weights from mash distance matrix...")
     weights = _newick_to_GSC_weights("tree_newick.txt")
-    return weights
+    for key, value in weights.iteritems():
+        samples[key].weight = value
 
 def _mash_caller(samples_info, freq):
     #Estimating phylogenetic distances between samples using mash
@@ -2215,7 +2216,9 @@ def modeling(args):
     #call(["rm -r K-mer_lists/"], shell = True)
     weights = []
     if args.weights == "+":
-        weights = get_weights(samples, args.cutoff)
+        get_weights(samples, args.cutoff)
+    for item in samples.values():
+        print(item.weight)
     '''
     (
     pvalues_all_phenotypes, vectors_as_multiple_input
