@@ -2193,7 +2193,6 @@ def assembling(
 def modeling(args):
     # The main function of "phenotypeseeker modeling"
     samples = get_input_data(args.inputfile, args.take_logs)
-    (
     for item in samples.values():
         print item.name
     '''
