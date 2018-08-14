@@ -426,6 +426,7 @@ def get_params_for_kmers_testing(samples, num_threads, phenotypes_to_analyse):
     # return(vectors_as_multiple_input, progress_checkpoint, kmers_to_analyse)
 
 def _split_sample_vectors_for_multithreading(samples, num_threads):
+    print(samples)
     for sample in samples:
         call(
             [
