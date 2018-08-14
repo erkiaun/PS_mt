@@ -393,19 +393,19 @@ def test_kmers_association_with_phenotype(
         samples, num_threads, phenotypes_to_analyse
         )
 
-    # for j, k in enumerate(phenotypes_to_analyse):
-    #     currentKmerNum.value = 0
-    #     previousPercent.value = 0
-    #     pvalues_from_all_threads = pool.map(
-    #         partial(
-    #             get_kmers_tested, min_samples, max_samples,
-    #             progress_checkpoint, k, lock, samples, weights, phenotypes,
-    #             no_kmers_to_analyse, phenotypes_to_analyse
-    #             ), 
-    #         vectors_as_multiple_input
-    #         )
-    #     pvalues_all_phenotypes.append(list(chain(*pvalues_from_all_threads)))
-    #     sys.stderr.write("\n")
+    for j, k in enumerate(phenotypes_to_analyse):
+        currentKmerNum.value = 0
+        previousPercent.value = 0
+        pvalues_from_all_threads = pool.map(
+            partial(
+                get_kmers_tested, min_samples, max_samples,
+                progress_checkpoint, k, lock, samples, weights, phenotypes,
+                no_kmers_to_analyse, phenotypes_to_analyse
+                ), 
+            vectors_as_multiple_input
+            )
+        pvalues_all_phenotypes.append(list(chain(*pvalues_from_all_threads)))
+        sys.stderr.write("\n")
     # concatenate_test_files(
     #     num_threads, phenotypes,
     #     phenotypes_to_analyse
