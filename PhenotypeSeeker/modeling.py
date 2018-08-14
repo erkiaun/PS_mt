@@ -418,13 +418,13 @@ def get_params_for_kmers_testing(samples, num_threads, phenotypes_to_analyse):
     vectors_as_multiple_input = _splitted_vectors_to_multiple_input(
          samples, num_threads
          )
-    # kmers_to_analyse = float(
-    #     check_output(
-    #         ['wc', '-l', "K-mer_lists/" + samples.keys()[0] + "_mapped.txt"]
-    #         ).split()[0]
-    #     )
-    # progress_checkpoint = int(math.ceil(kmers_to_analyse/(100*num_threads)))
-    # return(vectors_as_multiple_input, progress_checkpoint, kmers_to_analyse)
+    kmers_to_analyse = float(
+        check_output(
+            ['wc', '-l', "K-mer_lists/" + samples.keys()[0] + "_mapped.txt"]
+            ).split()[0]
+        )
+    progress_checkpoint = int(math.ceil(kmers_to_analyse/(100*num_threads)))
+    return(vectors_as_multiple_input, progress_checkpoint, kmers_to_analyse)
 
 def _split_sample_vectors_for_multithreading(samples, num_threads):
     for sample in samples:
