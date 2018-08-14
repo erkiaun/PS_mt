@@ -918,7 +918,7 @@ def linear_regression(
             if len(phenotypes_to_analyse) > 1:
                 sys.stderr.write("\tregression analysis of " 
                     +  phenotype + " data...\n")
-        elif Samples.number_of_phenotypes > 1:
+        elif Samples.no_phenotypes > 1:
             f1 = open("summary_of_lin_reg_analysis" + phenotype + ".txt", "w+")
             f2 = open("k-mers_and_coefficients_in_lin_reg_model_" 
                      + phenotype + ".txt", "w+")
@@ -1170,7 +1170,7 @@ def logistic_regression(
             if len(phenotypes_to_analyse) > 1:
                 sys.stderr.write("\tregression analysis of " 
                     +  phenotype + " data...\n")
-        elif Samples.number_of_phenotypes > 1:
+        elif Samples.no_phenotypes > 1:
             f1 = open("summary_of_log_reg_analysis_" + phenotype + ".txt", "w+")
             f2 = open("k-mers_and_coefficients_in_log_reg_model_" 
                      + phenotype + ".txt", "w+")
@@ -1494,7 +1494,7 @@ def support_vector_classifier(
             if len(phenotypes_to_analyse) > 1:
                 sys.stderr.write("\tSVM analysis of " 
                     +  phenotype + " data...\n")
-        elif Samples.number_of_phenotypes > 1:
+        elif Samples.no_phenotypes > 1:
             f1 = open("summary_of_SVM_analysis_" + phenotype + ".txt", "w+")
             if kernel == "linear":
                 f2 = open("k-mers_and_coefficients_in_SVM_model_" 
@@ -1810,7 +1810,7 @@ def random_forest(
             if len(phenotypes_to_analyse) > 1:
                 sys.stderr.write("\trandom forest analysis of " 
                     +  phenotype + " data...\n")
-        elif Samples.number_of_phenotypes > 1:
+        elif Samples.no_phenotypes > 1:
             f1 = open("summary_of_RF_analysis_" + phenotype + ".txt", "w+")
             f2 = open("k-mers_and_coefficients_in_RF_model_" 
                      + phenotype + ".txt", "w+")
@@ -2144,13 +2144,10 @@ def kmer_assembler(kmer_list, min_olap=None):
 
 def assembling(
         kmers_passed_all_phenotypes, 
-        phenotypes_to_analyze=False, headerline = False
+        phenotypes_to_analyze, headerline = False
         ):
     # Assembles the input k-mers and writes assembled sequences
     # into "assembled_kmers.txt" file in FastA format.
-    
-    if not phenotypes_to_analyze:
-        phenotypes_to_analyze = range(1,number_of_phenotypes+1)
 
     if len(phenotypes_to_analyze) > 1:
         sys.stderr.write(
@@ -2175,7 +2172,7 @@ def assembling(
             f1 = open("assembled_kmers_" + phenotype + ".fasta", "w+")
             if len(phenotypes_to_analyze) > 1:
                 sys.stderr.write("\t" + phenotype + "...\n")
-        elif Samples.number_of_phenotypes > 1:
+        elif Samples.no_phenotypes > 1:
             f1 = open("assembled_kmers_" + phenotype + ".fasta", "w+")
             sys.stderr.write("\tphenotype " + phenotype + "...\n")
         else:
@@ -2232,13 +2229,13 @@ def modeling(args):
 
     if Samples.phenotype_scale == "continuous":
         linear_regression(
-            pool, vectors_as_multiple_input, samples, alphas, no_phenotypes,
+            pool, vectors_as_multiple_input, samples, alphas,
             kmers_passed_all_phenotypes, args.regularization, args.n_splits,
             weights, args.testset_size, phenotypes, args.weights,
             args.l1_ratio, phenotypes_to_analyse, headerline, args.max_iter,
             args.tol
             )
-    elif phenotype_scale == "binary":
+    elif Samples.phenotype_scale == "binary":
         if args.binary_classifier == "log":
             logistic_regression(
                 pool, vectors_as_multiple_input, samples, alphas, no_phenotypes,
@@ -2249,7 +2246,7 @@ def modeling(args):
                 )
         elif args.binary_classifier == "SVM":
             support_vector_classifier(
-                pool, vectors_as_multiple_input, samples, alphas, no_phenotypes,
+                pool, vectors_as_multiple_input, samples, alphas,
                 kmers_passed_all_phenotypes, args.regularization, args.n_splits,
                 weights, args.testset_size, phenotypes, args.weights,
                 args.kernel, gammas, args.n_iter, phenotypes_to_analyse, headerline,
@@ -2257,7 +2254,7 @@ def modeling(args):
                 )
         elif args.binary_classifier == "RF":
         	random_forest(
-                pool, vectors_as_multiple_input, samples, no_phenotypes,
+                pool, vectors_as_multiple_input, samples,
                 kmers_passed_all_phenotypes, args.n_splits,
                 weights, args.testset_size, phenotypes, args.weights,
                 phenotypes_to_analyse, headerline
