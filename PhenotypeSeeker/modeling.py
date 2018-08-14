@@ -491,10 +491,10 @@ def test_result_output(k, code, phenotypes_to_analyse):
     else:
         beginning_text = "chi-squared_test_results_"
     if Samples.headerline:
-        outputfile = beginning_text +
+        outputfile = beginning_text + \
             Samples.phenotypes[k] + "_" + code + ".txt"
     elif len(phenotypes_to_analyse) > 1:
-        outputfile = beginning_text +
+        outputfile = beginning_text + \
             Samples.phenotypes[k] + "_" + code + ".txt"
     else:
         outputfile = beginning_text + code + ".txt"
