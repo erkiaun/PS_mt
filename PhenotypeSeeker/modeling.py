@@ -2222,9 +2222,10 @@ def modeling(args):
     if args.weights == "+":
         get_weights(samples, args.cutoff)
     print(samples)
-    (
-    pvalues_all_phenotypes, vectors_as_multiple_input
-    ) = test_kmers_association_with_phenotype(
+    # (
+    # pvalues_all_phenotypes, vectors_as_multiple_input
+    # ) = 
+    test_kmers_association_with_phenotype(
         samples, args.num_threads, phenotypes_to_analyse,
         min_samples, max_samples, lock, weights, Samples.phenotypes, 
         pool
