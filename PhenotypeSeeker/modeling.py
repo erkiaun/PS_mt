@@ -375,9 +375,9 @@ def _newick_to_GSC_weights(newick_tree):
 # Functions for calculating the association test results for kmers.
 
 def test_kmers_association_with_phenotype(
-        samples, num_threads, phenotypes_to_analyse, phenotype_scale,
+        samples, num_threads, phenotypes_to_analyse, 
         headerline, min_samples, max_samples, lock, weights, phenotypes,
-        no_phenotypes, pool
+        pool
         ):
     pvalues_all_phenotypes = []
     if phenotype_scale == "continuous":
@@ -396,14 +396,14 @@ def test_kmers_association_with_phenotype(
             partial(
                 get_kmers_tested, headerline, min_samples, max_samples,
                 progress_checkpoint, k, lock, samples, weights, phenotypes,
-                no_kmers_to_analyse, phenotype_scale, phenotypes_to_analyse
+                no_kmers_to_analyse, phenotypes_to_analyse
                 ), 
             vectors_as_multiple_input
             )
         pvalues_all_phenotypes.append(list(chain(*pvalues_from_all_threads)))
         sys.stderr.write("\n")
     concatenate_test_files(
-        no_phenotypes, num_threads, phenotype_scale, phenotypes,
+        num_threads, phenotypes,
         phenotypes_to_analyse, headerline
         )
     return pvalues_all_phenotypes, vectors_as_multiple_input
@@ -468,12 +468,12 @@ def get_kmers_tested(
         kmer = line[0].split()[0]
         kmer_presence = [j.split()[1].strip() for j in line]
 
-        if phenotype_scale == "binary":
+        if Samples.phenotype_scale == "binary":
             pvalue = conduct_chi_squared_test(
                 sample_phenotypes, sample_names, kmer, kmer_presence,
                 weights, min_freq, max_freq, test_results_file
                 )
-        elif phenotype_scale == "continuous":
+        elif Samples.phenotype_scale == "continuous":
             pvalue = conduct_t_test(
                 sample_phenotypes, sample_names, kmer, kmer_presence,
                 weights, min_freq, max_freq, test_results_file
@@ -705,10 +705,10 @@ def get_expected_distribution(w_pheno, wo_pheno, w_kmer, wo_kmer, total):
         )
 
 def concatenate_test_files(
-        no_phenotypes, num_threads, phenotype_scale, phenotypes,
+        num_threads, phenotypes,
         phenotypes_2_analyse, headerline=False
         ):
-    if phenotype_scale == "continuous":
+    if Samples.phenotype_scale == "continuous":
         beginning_text = "t-test_results_"
     else:
         beginning_text = "chi-squared_test_results_"
@@ -729,7 +729,7 @@ def concatenate_test_files(
                     ],
                     shell=True
                     )
-    elif no_phenotypes > 1:
+    elif Samples.no_phenotypes > 1:
         for k in phenotypes_2_analyse:
             call(
                 [
@@ -2217,15 +2217,12 @@ def modeling(args):
     weights = []
     if args.weights == "+":
         get_weights(samples, args.cutoff)
-    for item in samples.values():
-        print(item.weight)
-    '''
     (
     pvalues_all_phenotypes, vectors_as_multiple_input
     ) = test_kmers_association_with_phenotype(
-        samples, args.num_threads, phenotypes_to_analyse, phenotype_scale,
+        samples, args.num_threads, phenotypes_to_analyse,
         headerline, min_samples, max_samples, lock, weights, phenotypes, 
-        no_phenotypes, pool
+        pool
         )
     kmers_passed_all_phenotypes = kmer_filtering_by_pvalue(
         lock, args.pvalue, no_phenotypes, phenotype_scale, 
