@@ -259,8 +259,8 @@ def get_kmer_lists(
 def get_feature_vector(length, min_freq, samples):
     call(["mkdir", "-p", "K-mer_lists"])
     glistmaker_args = ["glistmaker"]
-    for sample_data in samples.values():
-        glistmaker_args.append(sample_data[0])
+    for sample in samples.values():
+        glistmaker_args.append(sample.address)
     glistmaker_args += [
         '-c', str(min_freq), '-w', length, '-o', 'K-mer_lists/feature_vector'
         ]
@@ -2210,9 +2210,9 @@ def modeling(args):
         get_kmer_lists, lock, samples, args.length,
         Samples.no_samples, args.cutoff
         ), mt_split)
-    '''
     sys.stderr.write("\nGenerating the k-mer feature vector.\n")
-    get_feature_vector(args.length, min_samples, samples)   
+    get_feature_vector(args.length, min_samples, samples)
+    '''
     sys.stderr.write("Mapping samples to the feature vector space:\n")
     currentSampleNum.value = 0
     pool.map(partial(
