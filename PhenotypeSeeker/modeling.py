@@ -428,10 +428,10 @@ def get_params_for_kmers_testing(samples, num_threads, phenotypes_to_analyse):
 def _split_sample_vectors_for_multithreading(samples, num_threads):
     for sample in samples:
         print(sample)
-        call([
-            "split -a 5 -d -n r/" + str(num_threads) + " K-mer_lists/" +
-            sample + "_mapped.txt " + "K-mer_lists/" + sample + "_mapped_"
-            ], shell=True)
+        # call([
+        #     "split -a 5 -d -n r/" + str(num_threads) + " K-mer_lists/" +
+        #     sample + "_mapped.txt " + "K-mer_lists/" + sample + "_mapped_"
+        #     ], shell=True)
 
 def _splitted_vectors_to_multiple_input(samples, num_threads):
     vectors_as_multiple_input = []
