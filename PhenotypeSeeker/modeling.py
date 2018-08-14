@@ -2204,8 +2204,7 @@ def modeling(args):
         )
     sys.stderr.write("Generating the k-mer lists for input samples:\n")
     pool.map(partial(
-        get_kmer_lists, lock, samples, args.length,
-        Samples.no_samples, args.cutoff
+        get_kmer_lists, lock, samples, args.length, args.cutoff
         ), mt_split)
     sys.stderr.write("\nGenerating the k-mer feature vector.\n")
     get_feature_vector(args.length, min_samples, samples)
