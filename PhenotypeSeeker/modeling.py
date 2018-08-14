@@ -2198,11 +2198,11 @@ def modeling(args):
         ) = process_input_args(
             args.alphas, args.alpha_min, args.alpha_max, args.n_alphas,
             args.gammas, args.gamma_min, args.gamma_max, args.n_gammas,
-            args.min, args.max, samples.no_samples, args.mpheno,
-            samples.no_phenotypes 
+            args.min, args.max, Samples.no_samples, args.mpheno,
+            Samples.no_phenotypes 
             )
     lock, pool, mt_split = get_multithreading_parameters(
-        args.num_threads, samples, samples.no_samples
+        args.num_threads, samples, Samples.no_samples
         )
     '''
     sys.stderr.write("Generating the k-mer lists for input samples:\n")
