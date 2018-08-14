@@ -386,6 +386,9 @@ def test_kmers_association_with_phenotype(
         sys.stderr.write("\nConducting the k-mer specific Welch t-tests:\n")
     else:
         sys.stderr.write("\nConducting the k-mer specific chi-square tests:\n")
+    # (
+    # vectors_as_multiple_input, progress_checkpoint, no_kmers_to_analyse
+    # ) = 
     get_params_for_kmers_testing(
         samples, num_threads, phenotypes_to_analyse
         )
