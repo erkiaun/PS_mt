@@ -144,28 +144,6 @@ def get_input_data(inputfilename, take_logs):
                 )
     return samples
 
-# -------------------------------------------------------------------
-# Process the input data and get the main parameters
-# def process_input_data(samples, take_logs):
-#     headerline = False
-#     phenotypes = []    
-#     phenotype_scale = "binary"
-#     if samples.keys()[0] == "SampleID":
-#         headerline = True
-#         phenotypes = samples.values()[0][1:]
-#         del samples["SampleID"]
-#     for sample, sample_data in samples.iteritems():
-#         if not all(x == "0" or x == "1" or x == "NA" for x in sample_data[1:]):
-#             phenotype_scale = "continuous"
-#     if take_logs:
-#         for phenotype_values in samples.values():
-#             phenotype_values = map(lambda x: math.log(x, 2), phenotype_values)
-#     no_samples = len(samples)
-#     no_phenotypes = len(samples.values()[0][1:])
-#     return no_samples, no_phenotypes, headerline, phenotypes, phenotype_scale
-
-
-
 # ---------------------------------------------------------
 # Functions for processing the command line input arguments
 
@@ -1464,7 +1442,7 @@ def support_vector_classifier(
         pool, kmer_lists_splitted, samples, alphas,
         kmers_passed_all_phenotypes, penalty, n_splits, weights, testset_size,
         use_of_weights, kernel, gammas, n_iter,
-        phenotypes_to_analyse, headerline, max_iter, tol
+        phenotypes_to_analyse, max_iter, tol
         ):
     # Applies support vector machine modeling on k-mers
     # that passed the filtering by p-value of statistical test. K-mers
@@ -1474,7 +1452,7 @@ def support_vector_classifier(
     names_of_samples = samples.keys()
     if len(phenotypes_to_analyse) > 1:
         sys.stderr.write("\nConducting the SVM classifier analysis:\n")
-    elif headerline:
+    elif Samples.headerline:
         sys.stderr.write("\nConducting the SVM classifier analysis of " 
             +  Samples.phenotypes[0] + " data...\n")
     else:
@@ -1483,7 +1461,7 @@ def support_vector_classifier(
     for j, k in enumerate(phenotypes_to_analyse):
         phenotype = Samples.phenotypes[k]
         #Open files to write results of logistic regression
-        if headerline:
+        if Samples.headerline:
             f1 = open(
                 "summary_of_SVM_analysis_" + phenotype + ".txt", "w+"
                 )
@@ -1778,7 +1756,7 @@ def support_vector_classifier(
 def random_forest(
 	    pool, kmer_lists_splitted, samples,
 	    kmers_passed_all_phenotypes, n_splits, weights, testset_size,
-	    use_of_weights, phenotypes_to_analyse, headerline
+	    use_of_weights, phenotypes_to_analyse
 	    ):
 
     names_of_samples = samples.keys()
@@ -1791,7 +1769,7 @@ def random_forest(
     names_of_samples = samples.keys()
     if len(phenotypes_to_analyse) > 1:
         sys.stderr.write("\nConducting the random forest analysis:\n")
-    elif headerline:
+    elif Samples.headerline:
         sys.stderr.write("\nConducting the random forest analysis of " 
             +  Samples.phenotypes[0] + " data...\n")
     else:
@@ -1800,7 +1778,7 @@ def random_forest(
     for j, k in enumerate(phenotypes_to_analyse):
         #Open files to write results of logistic regression
         phenotype = Samples.phenotypes[k]
-        if headerline:
+        if Samples.headerline:
             f1 = open(
                 "summary_of_RF_analysis_" + phenotype + ".txt", "w+"
                 )
@@ -2165,7 +2143,7 @@ def assembling(kmers_passed_all_phenotypes, phenotypes_to_analyze):
                 assembling.\n")
             continue
         #Open files to write the results of k-mer assembling
-        if headerline:
+        if Samples.headerline:
             f1 = open("assembled_kmers_" + phenotype + ".fasta", "w+")
             if len(phenotypes_to_analyze) > 1:
                 sys.stderr.write("\t" + phenotype + "...\n")
@@ -2229,7 +2207,7 @@ def modeling(args):
             pool, vectors_as_multiple_input, samples, alphas,
             kmers_passed_all_phenotypes, args.regularization, args.n_splits,
             weights, args.testset_size, args.weights,
-            args.l1_ratio, phenotypes_to_analyse, headerline, args.max_iter,
+            args.l1_ratio, phenotypes_to_analyse, args.max_iter,
             args.tol
             )
     elif Samples.phenotype_scale == "binary":
@@ -2238,7 +2216,7 @@ def modeling(args):
                 pool, vectors_as_multiple_input, samples, alphas,
                 kmers_passed_all_phenotypes, args.regularization, args.n_splits,
                 weights, args.testset_size, args.weights,
-                args.l1_ratio, phenotypes_to_analyse, headerline, args.max_iter, 
+                args.l1_ratio, phenotypes_to_analyse, args.max_iter, 
                 args.tol
                 )
         elif args.binary_classifier == "SVM":
@@ -2246,7 +2224,7 @@ def modeling(args):
                 pool, vectors_as_multiple_input, samples, alphas,
                 kmers_passed_all_phenotypes, args.regularization, args.n_splits,
                 weights, args.testset_size, args.weights,
-                args.kernel, gammas, args.n_iter, phenotypes_to_analyse, headerline,
+                args.kernel, gammas, args.n_iter, phenotypes_to_analyse,
                 args.max_iter, args.tol
                 )
         elif args.binary_classifier == "RF":
@@ -2254,11 +2232,8 @@ def modeling(args):
                 pool, vectors_as_multiple_input, samples,
                 kmers_passed_all_phenotypes, args.n_splits,
                 weights, args.testset_size, args.weights,
-                phenotypes_to_analyse, headerline
+                phenotypes_to_analyse,
                 )
 
     if args.assembly == "+":
-        assembling(
-            kmers_passed_all_phenotypes, args.mpheno,
-            headerline 
-            )
+        assembling(kmers_passed_all_phenotypes, args.mpheno)
