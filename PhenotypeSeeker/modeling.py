@@ -405,11 +405,11 @@ def test_kmers_association_with_phenotype(
             )
         pvalues_all_phenotypes.append(list(chain(*pvalues_from_all_threads)))
         sys.stderr.write("\n")
-    # concatenate_test_files(
-    #     num_threads, phenotypes,
-    #     phenotypes_to_analyse
-    #     )
-    # return pvalues_all_phenotypes, vectors_as_multiple_input
+    concatenate_test_files(
+        num_threads, phenotypes,
+        phenotypes_to_analyse
+        )
+    return pvalues_all_phenotypes, vectors_as_multiple_input
 
 
 def get_params_for_kmers_testing(samples, num_threads, phenotypes_to_analyse):
@@ -2218,10 +2218,9 @@ def modeling(args):
     weights = []
     if args.weights == "+":
         get_weights(samples, args.cutoff)
-    # (
-    # pvalues_all_phenotypes, vectors_as_multiple_input
-    # ) = 
-    test_kmers_association_with_phenotype(
+    (
+    pvalues_all_phenotypes, vectors_as_multiple_input
+    ) = test_kmers_association_with_phenotype(
         samples, args.num_threads, phenotypes_to_analyse,
         min_samples, max_samples, lock, weights, Samples.phenotypes, 
         pool
