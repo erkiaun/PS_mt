@@ -2216,7 +2216,7 @@ def modeling(args):
     sys.stderr.write("Mapping samples to the feature vector space:\n")
     currentSampleNum.value = 0
     pool.map(partial(
-        map_samples, lock, samples, args.length, no_samples
+        map_samples, lock, samples, args.length, Samples.no_samples
         ), mt_split)
     '''
     #call(["rm -r K-mer_lists/"], shell = True)
