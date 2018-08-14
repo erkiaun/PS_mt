@@ -125,7 +125,7 @@ class Samples():
 def get_input_data(inputfilename, take_logs):
     samples = OrderedDict()
     with open(inputfilename) as inputfile:
-        for line in inputfile:
+        for i, line in enumerate(inputfile):
             if i == 0:
                 firstline = line.split()
                 Samples.no_phenotypes = len(firstline)-2
