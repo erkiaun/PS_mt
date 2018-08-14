@@ -123,23 +123,24 @@ class Samples():
 
 # -------------------------------------------------------------------
 # Read the data from inputfile into "samples" directory
-def get_input_data():
+def get_input_data(inputfilename, take_logs):
     samples = OrderedDict()
-    Samples.take_logs = args.take_logs
-    for i, line in enumerate(open(args.inputfile)):
-        if i == 0:
-            firstline = line.split()
-            Samples.no_phenotypes = len(firstline)-2
-            if firstline[0] == "SampleID":
-                Samples.phenotypes = firstline[2:]
-                continue
-            else:
-                for j in xrange(1, Samples.no_phenotypes + 1):
-                    Samples.phenotypes.append("phenotype%s" %j)
-        sample_name = line.split()[0]
-        samples[sample_name] = (
-            Samples.from_inputfile(line)
-            )
+    Samples.take_logs = take_logs
+    with open(inputfilename) as inputfile:
+        for i, line in enumerate(inputfile):
+            if i == 0:
+                firstline = line.split()
+                Samples.no_phenotypes = len(firstline)-2
+                if firstline[0] == "SampleID":
+                    Samples.phenotypes = firstline[2:]
+                    continue
+                else:
+                    for j in xrange(1, Samples.no_phenotypes + 1):
+                        Samples.phenotypes.append("phenotype%s" %j)
+            sample_name = line.split()[0]
+            samples[sample_name] = (
+                Samples.from_inputfile(line)
+                )
     return samples
 
 # -------------------------------------------------------------------
@@ -167,50 +168,54 @@ def get_input_data():
 # ---------------------------------------------------------
 # Functions for processing the command line input arguments
 
-def process_input_args():
-    alphas = _get_alphas()
-    gammas = _get_gammas()
-    min_samples, max_samples = _get_min_max()
-    phenotypes_to_analyse = _get_phenotypes_to_analyse()
+def process_input_args(
+        alphas, alpha_min, alpha_max, n_alphas,
+        gammas, gamma_min, gamma_max, n_gammas, 
+        min_samples, max_samples, mpheno,
+        ):
+    alphas = _get_alphas(alphas, alpha_min, alpha_max, n_alphas)
+    gammas = _get_gammas(gammas, gamma_min, gamma_max, n_gammas)
+    min_samples, max_samples = _get_min_max(min_samples, max_samples)
+    phenotypes_to_analyse = _get_phenotypes_to_analyse(mpheno)
     return alphas, gammas, min_samples, max_samples, phenotypes_to_analyse
 
-def _get_alphas():       
+def _get_alphas(alphas, alpha_min, alpha_max, n_alphas):       
     # Generating the vector of alphas (hyperparameters in regression analysis)
     # based on the given command line arguments.
-    if args.alphas == None:
+    if alphas == None:
         alphas = np.logspace(
-            math.log10(args.alpha_min),
-            math.log10(args.alpha_max), num=args.n_alphas)
+            math.log10(alpha_min),
+            math.log10(alpha_max), num=n_alphas)
     else: 
-        alphas = np.array(args.alphas)
+        alphas = np.array(alphas)
     return alphas
 
-def _get_gammas():
+def _get_gammas(gammas, gamma_min, gamma_max, n_gammas):
     # Generating the vector of alphas (hyperparameters in regression analysis)
     # based on the given command line arguments.
-    if args.gammas == None:
+    if gammas == None:
         gammas = np.logspace(
-            math.log10(args.gamma_min),
-            math.log10(args.gamma_max), num=args.n_gammas)
+            math.log10(gamma_min),
+            math.log10(gamma_max), num=n_gammas)
     else: 
-        gammas = np.array(args.gammas)
+        gammas = np.array(gammas)
     return gammas
 
-def _get_min_max():
+def _get_min_max(min_samples, max_samples):
     # Set the min and max arguments to default values
-    min_samples = int(args.min_samples)
+    min_samples = int(min_samples)
     if min_samples == 0:
         min_samples = 2
-    max_samples = int(args.max_samples)
+    max_samples = int(max_samples)
     if max_samples == 0:
         max_samples = Samples.no_samples - 2
     return min_samples, max_samples
 
-def _get_phenotypes_to_analyse():
-    if not args.mpheno:
+def _get_phenotypes_to_analyse(mpheno):
+    if not mpheno:
         phenotypes_to_analyse = range(1, Samples.no_phenotypes+1)
     else: 
-        phenotypes_to_analyse = args.mpheno
+        phenotypes_to_analyse = mpheno
     return phenotypes_to_analyse
 
 # ---------------------------------------------------------
@@ -2185,12 +2190,15 @@ def assembling(
     f1.close()
 
 def modeling(args):
-    global args
     # The main function of "phenotypeseeker modeling"
-    samples = get_input_data()
+    samples = get_input_data(args.inputfile, args.take_logs)
     (
     alphas, gammas, min_samples, max_samples, phenotypes_to_analyse
-        ) = process_input_args()
+        ) = process_input_args(
+            args.alphas, args.alpha_min, args.alpha_max, args.n_alphas,
+            args.gammas, args.gamma_min, args.gamma_max, args.n_gammas,
+            args.min, args.max, args.mpheno 
+            )
     lock, pool, mt_split = get_multithreading_parameters(
         args.num_threads, samples
         )
