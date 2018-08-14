@@ -382,7 +382,7 @@ def test_kmers_association_with_phenotype(
         pool
         ):
     pvalues_all_phenotypes = []
-    if phenotype_scale == "continuous":
+    if Samples.phenotype_scale == "continuous":
         sys.stderr.write("\nConducting the k-mer specific Welch t-tests:\n")
     else:
         sys.stderr.write("\nConducting the k-mer specific chi-square tests:\n")
@@ -441,7 +441,7 @@ def _splitted_vectors_to_multiple_input(samples, num_threads):
 
 def get_kmers_tested(
         min_freq, max_freq, checkpoint, k, l, samples, weights,
-        phenotypes, no_kmers_to_analyse, phenotype_scale, phenotypes_to_analyse,
+        phenotypes, no_kmers_to_analyse, phenotypes_to_analyse,
         split_of_kmer_lists
         ):
     sample_names = samples.keys()
@@ -451,7 +451,7 @@ def get_kmers_tested(
 
     multithreading_code = split_of_kmer_lists[0][-5:]
     test_results_file = open(test_result_output(
-        phenotype_scale, phenotypes,
+        phenotypes,
         k, multithreading_code, phenotypes_to_analyse
         ), "w")
     text1_4_stderr = get_text1_4_stderr(
@@ -493,11 +493,11 @@ def get_kmers_tested(
     return(pvalues)
 
 def test_result_output(
-        phenotype_scale, phenotypes, k, code, phenotypes_to_analyse
+        phenotypes, k, code, phenotypes_to_analyse
         ):
-    if phenotype_scale == "continuous":
+    if Samples.phenotype_scale == "continuous":
         beginning_text = "t-test_results_"
-    elif phenotype_scale == "binary":
+    else:
         beginning_text = "chi-squared_test_results_"
     if Samples.headerline:
         outputfile = beginning_text + phenotypes[k-1] + "_" + code + ".txt"
