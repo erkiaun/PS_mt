@@ -750,8 +750,7 @@ def concatenate_test_files(
             )
 
 def kmer_filtering_by_pvalue(
-        l, pvalue, number_of_phenotypes, phenotype_scale, 
-        pvalues_all_phenotypes, phenotypes, kmer_limit,
+        l, pvalue, pvalues_all_phenotypes, kmer_limit,
         p_t_a, FDR=False, B=False
         ):
     # Filters the k-mers by their p-value achieved in statistical 
@@ -765,25 +764,26 @@ def kmer_filtering_by_pvalue(
         checkpoint = int(math.ceil(nr_of_kmers_tested/100))
         counter = 0
         kmers_passed = []
+        phenotype = Samples.phenotypes[k]
         if phenotype_scale == "continuous":
             test = "t-test"
         elif phenotype_scale == "binary":
             test = "chi-squared_test"
         if Samples.headerline:
-            f1 = open(test + "_results_" + phenotypes[k] + ".txt")
+            f1 = open(test + "_results_" + phenotype + ".txt")
             f2 = open(
-                "k-mers_filtered_by_pvalue_" + phenotypes[k] + ".txt", "w+")
-            phenotype = phenotypes[k] + ": "
-        elif number_of_phenotypes > 1:
-            f1 = open(test + "_results_" + phenotypes[k] + ".txt")
-            f2 = open("k-mers_filtered_by_pvalue_" + phenotypes[k] + ".txt", "w+")
-            phenotype = "phenotype " + phenotypes[k] + ": "
+                "k-mers_filtered_by_pvalue_" + phenotype + ".txt", "w+")
+            phenotype = phenotype + ": "
+        elif Samples.no_phenotypes > 1:
+            f1 = open(test + "_results_" + phenotype + ".txt")
+            f2 = open("k-mers_filtered_by_pvalue_" + phenotype + ".txt", "w+")
+            phenotype = "phenotype " + phenotype + ": "
         else:
             f1 = open(test + "_results.txt")
             f2 = open("k-mers_filtered_by_pvalue.txt", "w+")
             phenotype = ""
 
-        if phenotype_scale == "continuous":
+        if Samples.phenotype_scale == "continuous":
             f2.write(
                 "K-mer\tWelch's_t-statistic\tp-value\t+_group_mean\
                 \t-_group_mean\tNo._of_samples_with_k-mer\
@@ -2219,12 +2219,10 @@ def modeling(args):
         min_samples, max_samples, lock, weights, Samples.phenotypes, 
         pool
         )
-    '''
     kmers_passed_all_phenotypes = kmer_filtering_by_pvalue(
-        lock, args.pvalue, no_phenotypes, phenotype_scale, 
-        pvalues_all_phenotypes, phenotypes, args.n_kmers, 
-        phenotypes_to_analyse, args.FDR, args.Bonferroni, 
-        headerline
+        lock, args.pvalue, 
+        pvalues_all_phenotypes, args.n_kmers, 
+        phenotypes_to_analyse, args.FDR, args.Bonferroni
         )
 
     if phenotype_scale == "continuous":
