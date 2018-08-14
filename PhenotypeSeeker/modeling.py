@@ -171,15 +171,16 @@ def get_input_data(inputfilename, take_logs):
 def process_input_args(
         alphas, alpha_min, alpha_max, n_alphas,
         gammas, gamma_min, gamma_max, n_gammas, 
-        min_samples, max_samples, no_samples,
-        mpheno, no_phenotypes
+        min_samples, max_samples, mpheno,
         ):
     alphas = _get_alphas(alphas, alpha_min, alpha_max, n_alphas)
     gammas = _get_gammas(gammas, gamma_min, gamma_max, n_gammas)
     min_samples, max_samples = _get_min_max(
-        min_samples, max_samples, no_samples
+        min_samples, max_samples, Samples.no_samples
         )
-    phenotypes_to_analyse = _get_phenotypes_to_analyse(mpheno, no_phenotypes)
+    phenotypes_to_analyse = _get_phenotypes_to_analyse(
+        mpheno, Samples.no_phenotypes
+        )
     return alphas, gammas, min_samples, max_samples, phenotypes_to_analyse
 
 def _get_alphas(alphas, alpha_min, alpha_max, n_alphas):       
@@ -2198,8 +2199,7 @@ def modeling(args):
         ) = process_input_args(
             args.alphas, args.alpha_min, args.alpha_max, args.n_alphas,
             args.gammas, args.gamma_min, args.gamma_max, args.n_gammas,
-            args.min, args.max, Samples.no_samples, args.mpheno,
-            Samples.no_phenotypes 
+            args.min, args.max, args.mpheno 
             )
     lock, pool, mt_split = get_multithreading_parameters(
         args.num_threads, samples, Samples.no_samples
