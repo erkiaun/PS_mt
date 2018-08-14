@@ -273,7 +273,7 @@ def map_samples(
     #to that feature space. A vector of k-mers frequency information is created for every sample.
     for sample in samples_splitted:
         sample_name = samples[sample].name
-        outputfile = "K-mer_lists/" + samples_name + "_mapped.txt"
+        outputfile = "K-mer_lists/" + sample_name + "_mapped.txt"
         with open(outputfile, "w+") as outputfile:
             call(
                 [
