@@ -201,7 +201,7 @@ def _get_gammas(gammas, gamma_min, gamma_max, n_gammas):
         gammas = np.array(gammas)
     return gammas
 
-def _get_min_max(min_samples, max_samples, no_samples):
+def _get_min_max(min_samples, max_samples):
     # Set the min and max arguments to default values
     min_samples = int(min_samples)
     if min_samples == 0:
@@ -234,7 +234,7 @@ def get_multithreading_parameters(num_threads, samples):
     return lock, pool, mt_split
 
 def get_kmer_lists(
-        lock, samples_info, kmer_length, no_samples, freq, input_samples
+        lock, samples_info, kmer_length, freq, input_samples
         ):
     # Makes "K-mer_lists" directory where all lists are stored.
     # Generates k-mer lists for every sample in sample_names variable 
