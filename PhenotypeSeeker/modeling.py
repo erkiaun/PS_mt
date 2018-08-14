@@ -111,9 +111,9 @@ class Samples():
         Samples.no_samples += 1
 
     @classmethod
-    def from_inputfile(cls, sample_line):
+    def from_inputfile(cls, line):
         name, address, phenotypes = \
-            sample_line.split()[0], line.split()[1], line.split()[2:]
+            line.split()[0], line.split()[1], line.split()[2:]
         if not all(x == "0" or x == "1" or x == "NA" for x in phenotypes):
             Samples.phenotype_scale = "continuous"
         if take_logs:
