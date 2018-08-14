@@ -2193,17 +2193,12 @@ def assembling(
 def modeling(args):
     # The main function of "phenotypeseeker modeling"
     samples = get_input_data(args.inputfile, args.take_logs)
-    for item in samples.values():
-        print item.name
-    '''
-    no_samples, no_phenotypes, headerline, phenotypes, phenotype_scale
-        ) = process_input_data(samples, args.take_logs)
-    (
     alphas, gammas, min_samples, max_samples, phenotypes_to_analyse
         ) = process_input_args(
             args.alphas, args.alpha_min, args.alpha_max, args.n_alphas,
             args.gammas, args.gamma_min, args.gamma_max, args.n_gammas,
-            args.min, args.max, no_samples, args.mpheno, no_phenotypes 
+            args.min, args.max, samples.no_samples, args.mpheno,
+            samples.no_phenotypes 
             )
     lock, pool, mt_split = get_multithreading_parameters(
         args.num_threads, samples, no_samples
