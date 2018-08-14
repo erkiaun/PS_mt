@@ -2193,6 +2193,7 @@ def assembling(
 def modeling(args):
     # The main function of "phenotypeseeker modeling"
     samples = get_input_data(args.inputfile, args.take_logs)
+    (
     alphas, gammas, min_samples, max_samples, phenotypes_to_analyse
         ) = process_input_args(
             args.alphas, args.alpha_min, args.alpha_max, args.n_alphas,
