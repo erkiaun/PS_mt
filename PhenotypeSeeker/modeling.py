@@ -167,54 +167,50 @@ def get_input_data(inputfilename, take_logs):
 # ---------------------------------------------------------
 # Functions for processing the command line input arguments
 
-def process_input_args(
-        alphas, alpha_min, alpha_max, n_alphas,
-        gammas, gamma_min, gamma_max, n_gammas, 
-        min_samples, max_samples, mpheno,
-        ):
-    alphas = _get_alphas(alphas, alpha_min, alpha_max, n_alphas)
-    gammas = _get_gammas(gammas, gamma_min, gamma_max, n_gammas)
-    min_samples, max_samples = _get_min_max(min_samples, max_samples)
-    phenotypes_to_analyse = _get_phenotypes_to_analyse(mpheno)
+def process_input_args():
+    alphas = _get_alphas()
+    gammas = _get_gammas()
+    min_samples, max_samples = _get_min_max()
+    phenotypes_to_analyse = _get_phenotypes_to_analyse()
     return alphas, gammas, min_samples, max_samples, phenotypes_to_analyse
 
-def _get_alphas(alphas, alpha_min, alpha_max, n_alphas):       
+def _get_alphas():       
     # Generating the vector of alphas (hyperparameters in regression analysis)
     # based on the given command line arguments.
-    if alphas == None:
+    if args.alphas == None:
         alphas = np.logspace(
-            math.log10(alpha_min),
-            math.log10(alpha_max), num=n_alphas)
+            math.log10(args.alpha_min),
+            math.log10(args.alpha_max), num=args.n_alphas)
     else: 
-        alphas = np.array(alphas)
+        alphas = np.array(args.alphas)
     return alphas
 
-def _get_gammas(gammas, gamma_min, gamma_max, n_gammas):
+def _get_gammas():
     # Generating the vector of alphas (hyperparameters in regression analysis)
     # based on the given command line arguments.
-    if gammas == None:
+    if args.gammas == None:
         gammas = np.logspace(
-            math.log10(gamma_min),
-            math.log10(gamma_max), num=n_gammas)
+            math.log10(args.gamma_min),
+            math.log10(args.gamma_max), num=args.n_gammas)
     else: 
-        gammas = np.array(gammas)
+        gammas = np.array(args.gammas)
     return gammas
 
-def _get_min_max(min_samples, max_samples):
+def _get_min_max():
     # Set the min and max arguments to default values
-    min_samples = int(min_samples)
+    min_samples = int(args.min_samples)
     if min_samples == 0:
         min_samples = 2
-    max_samples = int(max_samples)
+    max_samples = int(args.max_samples)
     if max_samples == 0:
         max_samples = Samples.no_samples - 2
     return min_samples, max_samples
 
-def _get_phenotypes_to_analyse(mpheno):
-    if not mpheno:
+def _get_phenotypes_to_analyse():
+    if not args.mpheno:
         phenotypes_to_analyse = range(1, Samples.no_phenotypes+1)
     else: 
-        phenotypes_to_analyse = mpheno
+        phenotypes_to_analyse = args.mpheno
     return phenotypes_to_analyse
 
 # ---------------------------------------------------------
@@ -2193,11 +2189,7 @@ def modeling(args):
     samples = get_input_data()
     (
     alphas, gammas, min_samples, max_samples, phenotypes_to_analyse
-        ) = process_input_args(
-            args.alphas, args.alpha_min, args.alpha_max, args.n_alphas,
-            args.gammas, args.gamma_min, args.gamma_max, args.n_gammas,
-            args.min, args.max, args.mpheno 
-            )
+        ) = process_input_args()
     lock, pool, mt_split = get_multithreading_parameters(
         args.num_threads, samples
         )
