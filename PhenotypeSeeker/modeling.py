@@ -2202,8 +2202,9 @@ def modeling(args):
             samples.no_phenotypes 
             )
     lock, pool, mt_split = get_multithreading_parameters(
-        args.num_threads, samples, no_samples
+        args.num_threads, samples, samples.no_samples
         )
+    '''
     sys.stderr.write("Generating the k-mer lists for input samples:\n")
     pool.map(partial(
         get_kmer_lists, lock, samples, args.length, no_samples, args.cutoff
