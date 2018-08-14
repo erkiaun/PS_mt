@@ -117,7 +117,7 @@ class Samples():
             line.split()[0], line.split()[1], line.split()[2:]
         if not all(x == "0" or x == "1" or x == "NA" for x in phenotypes):
             Samples.phenotype_scale = "continuous"
-        if take_logs:
+        if Samples.take_logs:
             phenotypes = map(lambda x: math.log(x, 2), phenotypes)
         return cls(name, address, phenotypes)
 
