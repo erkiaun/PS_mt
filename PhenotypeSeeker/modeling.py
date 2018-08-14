@@ -94,39 +94,71 @@ def within_1_tier_accuracy(targets, predictions):
     accuracy = float(within_1_tier)/len(targets)
     return accuracy
 
+# -------------------------------------------------------------------
+class Samples():
 
+    phenotype_scale = "binary"
+    no_samples = 0
+    no_phenoypes = 0
+    phenotypes = []
+
+    def __init__(self, name, address, phenotypes, weight=None):
+        self.name = name
+        self.address = address
+        self.phenotypes = phenotypes
+        self.weight = weight
+
+        Samples.no_samples += 1
+
+    @classmethod
+    def from_inputfile(cls, sample_line):
+        name, address, phenotypes = \
+            sample_line.split()[0], line.split()[1], line.split()[2:]
+        if not all(x == "0" or x == "1" or x == "NA" for x in phenotypes):
+            Samples.phenotype_scale = "continuous"
+        if take_logs:
+            phenotypes = map(lambda x: math.log(x, 2), phenotypes)
+        return cls(name, address, phenotypes)
 
 # -------------------------------------------------------------------
 # Read the data from inputfile into "samples" directory
-def get_input_data(inputfilename):
+def get_input_data(inputfilename, take_logs):
     samples = OrderedDict()
-    no_samples = 0
-    headerline = False
-    phenotypes = []
     with open(inputfilename) as inputfile:
         for line in inputfile:
-            samples[line.split()[0]] = line.strip().split()[1:]
+            if i == 0:
+                firstline = line.split()
+                Samples.no_phenotypes = len(firstline)-2
+                if firstline[0] == "SampleID":
+                    Samples.phenotypes = firstline[2:]
+                    continue
+                else:
+                    for i in xrange(1, Samples.no_phenotypes + 1):
+                        Samples.phenotypes.append("phenotype%s" %i)
+            samples["Sample%s" % i] = (
+                Samples.from_inputfile(line)
+                )
     return samples
 
 # -------------------------------------------------------------------
 # Process the input data and get the main parameters
-def process_input_data(samples, take_logs):
-    headerline = False
-    phenotypes = []    
-    phenotype_scale = "binary"
-    if samples.keys()[0] == "SampleID":
-        headerline = True
-        phenotypes = samples.values()[0][1:]
-        del samples["SampleID"]
-    for sample, sample_data in samples.iteritems():
-        if not all(x == "0" or x == "1" or x == "NA" for x in sample_data[1:]):
-            phenotype_scale = "continuous"
-    if take_logs:
-        for phenotype_values in samples.values():
-            phenotype_values = map(lambda x: math.log(x, 2), phenotype_values)
-    no_samples = len(samples)
-    no_phenotypes = len(samples.values()[0][1:])
-    return no_samples, no_phenotypes, headerline, phenotypes, phenotype_scale
+# def process_input_data(samples, take_logs):
+#     headerline = False
+#     phenotypes = []    
+#     phenotype_scale = "binary"
+#     if samples.keys()[0] == "SampleID":
+#         headerline = True
+#         phenotypes = samples.values()[0][1:]
+#         del samples["SampleID"]
+#     for sample, sample_data in samples.iteritems():
+#         if not all(x == "0" or x == "1" or x == "NA" for x in sample_data[1:]):
+#             phenotype_scale = "continuous"
+#     if take_logs:
+#         for phenotype_values in samples.values():
+#             phenotype_values = map(lambda x: math.log(x, 2), phenotype_values)
+#     no_samples = len(samples)
+#     no_phenotypes = len(samples.values()[0][1:])
+#     return no_samples, no_phenotypes, headerline, phenotypes, phenotype_scale
 
 
 
