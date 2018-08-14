@@ -1153,7 +1153,7 @@ def logistic_regression(
         sys.stderr.write("\nConducting the logistic regression analysis:\n")
     elif Samples.headerline:
         sys.stderr.write("\nConducting the logistic regression analysis of " 
-            +  Sample.phenotypes[0] + " data...\n")
+            +  Samples.phenotypes[0] + " data...\n")
     else:
         sys.stderr.write("\nConducting the logistic regression analysis...\n")
 
@@ -1476,7 +1476,7 @@ def support_vector_classifier(
         sys.stderr.write("\nConducting the SVM classifier analysis:\n")
     elif headerline:
         sys.stderr.write("\nConducting the SVM classifier analysis of " 
-            +  phenotypes[0] + " data...\n")
+            +  Samples.phenotypes[0] + " data...\n")
     else:
         sys.stderr.write("\nConducting the SVM classifier analysis...\n")
 
@@ -1793,7 +1793,7 @@ def random_forest(
         sys.stderr.write("\nConducting the random forest analysis:\n")
     elif headerline:
         sys.stderr.write("\nConducting the random forest analysis of " 
-            +  phenotypes[0] + " data...\n")
+            +  Samples.phenotypes[0] + " data...\n")
     else:
         sys.stderr.write("\nConducting the random forest analysis...\n")
 
@@ -2142,10 +2142,7 @@ def kmer_assembler(kmer_list, min_olap=None):
             assembled_kmers.append(item)
     return(assembled_kmers)
 
-def assembling(
-        kmers_passed_all_phenotypes, 
-        phenotypes_to_analyze, headerline = False
-        ):
+def assembling(kmers_passed_all_phenotypes, phenotypes_to_analyze):
     # Assembles the input k-mers and writes assembled sequences
     # into "assembled_kmers.txt" file in FastA format.
 
@@ -2153,7 +2150,7 @@ def assembling(
         sys.stderr.write(
             "Assembling the k-mers used in regression modeling of:\n"
             )
-    elif headerline:
+    elif Samples.headerline:
         sys.stderr.write("Assembling the k-mers used in modeling of " 
             +  Samples.phenotypes[0] + " data...\n")
     else:
@@ -2231,16 +2228,16 @@ def modeling(args):
         linear_regression(
             pool, vectors_as_multiple_input, samples, alphas,
             kmers_passed_all_phenotypes, args.regularization, args.n_splits,
-            weights, args.testset_size, phenotypes, args.weights,
+            weights, args.testset_size, args.weights,
             args.l1_ratio, phenotypes_to_analyse, headerline, args.max_iter,
             args.tol
             )
     elif Samples.phenotype_scale == "binary":
         if args.binary_classifier == "log":
             logistic_regression(
-                pool, vectors_as_multiple_input, samples, alphas, no_phenotypes,
+                pool, vectors_as_multiple_input, samples, alphas,
                 kmers_passed_all_phenotypes, args.regularization, args.n_splits,
-                weights, args.testset_size, phenotypes, args.weights,
+                weights, args.testset_size, args.weights,
                 args.l1_ratio, phenotypes_to_analyse, headerline, args.max_iter, 
                 args.tol
                 )
@@ -2248,7 +2245,7 @@ def modeling(args):
             support_vector_classifier(
                 pool, vectors_as_multiple_input, samples, alphas,
                 kmers_passed_all_phenotypes, args.regularization, args.n_splits,
-                weights, args.testset_size, phenotypes, args.weights,
+                weights, args.testset_size, args.weights,
                 args.kernel, gammas, args.n_iter, phenotypes_to_analyse, headerline,
                 args.max_iter, args.tol
                 )
@@ -2256,12 +2253,12 @@ def modeling(args):
         	random_forest(
                 pool, vectors_as_multiple_input, samples,
                 kmers_passed_all_phenotypes, args.n_splits,
-                weights, args.testset_size, phenotypes, args.weights,
+                weights, args.testset_size, args.weights,
                 phenotypes_to_analyse, headerline
                 )
 
     if args.assembly == "+":
         assembling(
-            kmers_passed_all_phenotypes, phenotypes, no_phenotypes, args.mpheno,
+            kmers_passed_all_phenotypes, args.mpheno,
             headerline 
             )
