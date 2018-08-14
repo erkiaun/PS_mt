@@ -125,9 +125,8 @@ class Samples():
 # Read the data from inputfile into "samples" directory
 def get_input_data(inputfilename, take_logs):
     samples = OrderedDict()
-    Samples.take_logs = take_logs
-    with open(inputfilename) as inputfile:
-        for i, line in enumerate(inputfile):
+    Samples.take_logs = args.take_logs
+        for i, line in enumerate(open(args.inputfile)):
             if i == 0:
                 firstline = line.split()
                 Samples.no_phenotypes = len(firstline)-2
@@ -2191,7 +2190,7 @@ def assembling(
 
 def modeling(args):
     # The main function of "phenotypeseeker modeling"
-    samples = get_input_data(args.inputfile, args.take_logs)
+    samples = get_input_data()
     (
     alphas, gammas, min_samples, max_samples, phenotypes_to_analyse
         ) = process_input_args(
