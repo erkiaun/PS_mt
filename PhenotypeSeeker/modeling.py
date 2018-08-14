@@ -2224,6 +2224,7 @@ def modeling(args):
         headerline, min_samples, max_samples, lock, weights, phenotypes, 
         pool
         )
+    '''
     kmers_passed_all_phenotypes = kmer_filtering_by_pvalue(
         lock, args.pvalue, no_phenotypes, phenotype_scale, 
         pvalues_all_phenotypes, phenotypes, args.n_kmers, 
