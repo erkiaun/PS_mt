@@ -241,7 +241,7 @@ def get_kmer_lists(
     # (list or dict).
     call(["mkdir", "-p", "K-mer_lists"])
     for sample in input_samples:
-        genomefail_address = samples_info[sample][0]
+        genomefail_address = samples_info[sample].address
         call(
         	["glistmaker " + str(genomefail_address) + " -o K-mer_lists/" 
         	+ sample + " -w " + kmer_length + " -c " + freq], 
@@ -251,7 +251,7 @@ def get_kmer_lists(
         currentSampleNum.value += 1
         lock.release()
         output = "\t%d of %d lists generated." % (
-            currentSampleNum.value, no_samples
+            currentSampleNum.value, Samples.no_samples
             )
         stderr_print(output)
 
@@ -2204,11 +2204,12 @@ def modeling(args):
     lock, pool, mt_split = get_multithreading_parameters(
         args.num_threads, samples, Samples.no_samples
         )
-    '''
     sys.stderr.write("Generating the k-mer lists for input samples:\n")
     pool.map(partial(
-        get_kmer_lists, lock, samples, args.length, no_samples, args.cutoff
+        get_kmer_lists, lock, samples, args.length,
+        Samples.no_samples, args.cutoff
         ), mt_split)
+    '''
     sys.stderr.write("\nGenerating the k-mer feature vector.\n")
     get_feature_vector(args.length, min_samples, samples)   
     sys.stderr.write("Mapping samples to the feature vector space:\n")
