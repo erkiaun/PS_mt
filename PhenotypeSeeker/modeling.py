@@ -242,9 +242,10 @@ def get_kmer_lists(
     call(["mkdir", "-p", "K-mer_lists"])
     for sample in input_samples:
         genomefail_address = samples_info[sample].address
+        sample_name = samples_info[sample].name
         call(
         	["glistmaker " + str(genomefail_address) + " -o K-mer_lists/" 
-        	+ sample + " -w " + kmer_length + " -c " + freq], 
+        	+ sample_name + " -w " + kmer_length + " -c " + freq], 
         	shell=True
         	)
         lock.acquire()
