@@ -102,7 +102,6 @@ class Samples():
     phenotypes = []
     take_logs = None
     headerline = None
-    weights = None
 
     def __init__(self, name, address, phenotypes, weight=None):
         self.name = name
@@ -374,7 +373,7 @@ def test_kmers_association_with_phenotype(
         previousPercent.value = 0
         pvalues_from_all_threads = pool.map(
             partial(
-                get_kmers_tested, Samples.weights, min_samples, max_samples,
+                get_kmers_tested, min_samples, max_samples,
                 progress_checkpoint, k, lock, samples,
                 no_kmers_to_analyse, phenotypes_to_analyse
                 ), 
@@ -417,7 +416,6 @@ def get_kmers_tested(samweight,
         no_kmers_to_analyse, phenotypes_to_analyse,
         split_of_kmer_lists
         ):
-    print(samples.values()[0].weight)
     names_of_samples = samples.keys()
     phenotypes_of_samples = [sample_data.phenotypes[k] for sample_data in samples.values()]
     pvalues = []
@@ -505,7 +503,7 @@ def conduct_t_test(
 
     if len(x) < min_freq or len(y) < 2 or len(x) > max_freq:
         return
-    if Samples.weights:
+    if samples.values()[0].weight:
         t_statistic, pvalue, mean_x, mean_y = weighted_t_test(
             x, y, x_weights, y_weights
             )
@@ -529,11 +527,11 @@ def get_samples_distribution_for_ttest(
         if item != "NA":
             if list1[i] == "0":
                 y.append(float(item))
-                if Samples.weights:
+                if samples[sample_name].weight:
                     y_weights.append(samples[sample_name].weight)
             else:
                 x.append(float(item))
-                if Samples.weights:
+                if samples[sample_name].weight:
                     x_weights.append(samples[sample_name].weight)
                 samples_w_kmer.append(sample_name)
 
@@ -621,25 +619,25 @@ def get_samples_distribution_for_chisquared(
         if item != "NA":
             if item == "1":
                 if (list1[i] != "0"):
-                    if Samples.weights:
+                    if samples[sample_name].weight:
                         with_pheno_with_kmer += samples[sample_name].weight   
                     else:
                         with_pheno_with_kmer += 1
                     samples_w_kmer.append(sample_name)
                 else:
-                    if Samples.weights:
+                    if samples[sample_name].weight:
                         with_pheno_without_kmer += samples[sample_name].weight
                     else: 
                         with_pheno_without_kmer += 1
             else:
                 if (list1[i] != "0"):
-                    if Samples.weights:
+                    if samples[sample_name].weight:
                         without_pheno_with_kmer += samples[sample_name].weight
                     else:
                         without_pheno_with_kmer += 1
                     samples_w_kmer.append(names_of_samples[i])
                 else:
-                    if Samples.weights:
+                    if samples[sample_name].weight:
                         without_pheno_without_kmer += samples[sample_name].weight
                     else:
                         without_pheno_without_kmer += 1
@@ -978,7 +976,7 @@ def linear_regression(
         # (with or without considering the weights). Writing results
         # into corresponding files.
         if testset_size != 0.0:
-            if penalty == 'L2' and Samples.weights:
+            if penalty == 'L2' and samples.values()[0].weight:
                 array_weights = np.array(
                 	[samples[item].weight for item in samples_in_analyze]
                 	)
@@ -1058,7 +1056,7 @@ def linear_regression(
                     )
                 )
         else:
-            if penalty == 'L2' and Samples.weights:
+            if penalty == 'L2' and samples.values()[0].weight:
                 array_weights = np.array(
                 	[samples[item].weight for item in samples_in_analyze]
                 	)
@@ -1243,7 +1241,7 @@ def logistic_regression(
         # (with or without considering the weights). Writing logistic
         # regression results into corresponding files.
         if testset_size != 0.0:
-            if Samples.weights:
+            if samples.values()[0].weight:
                 array_weights = np.array(
                 	[samples[item].weight for item in samples_in_analyze]
                 	)
@@ -1362,7 +1360,7 @@ def logistic_regression(
             f1.write("0\t\t%s\t%s\n" % tuple(cm[0]))
             f1.write("1\t\t%s\t%s\n\n" % tuple(cm[1])) 
         else:
-            if Samples.weights:
+            if samples.values()[0].weight:
                 array_weights = np.array(
                 	[samples[item].weight for item in samples_in_analyze])
                 model = clf.fit(
@@ -1557,7 +1555,7 @@ def support_vector_classifier(
         # (with or without considering the weights). Writing logistic
         # regression results into corresponding files.
         if testset_size != 0.0:
-            if Samples.weights:
+            if samples.values()[0].weight:
                 array_weights = np.array(
                     [samples[item].weight for item in samples_in_analyze]
                     )
@@ -1676,7 +1674,7 @@ def support_vector_classifier(
             f1.write("0\t\t%s\t%s\n" % tuple(cm[0]))
             f1.write("1\t\t%s\t%s\n\n" % tuple(cm[1])) 
         else:
-            if Samples.weights:
+            if samples.values()[0].weight:
                 array_weights = np.array(
                     [samples[item].weight for item in samples_in_analyze])
                 model = clf.fit(
@@ -1857,7 +1855,7 @@ def random_forest(
         # (with or without considering the weights). Writing logistic
         # regression results into corresponding files.
         if testset_size != 0.0:
-            if Samples.weights:
+            if samples.values()[0].weight:
                 array_weights = np.array(
                 	[samples[item].weight for item in samples_in_analyze]
                 	)
@@ -1963,7 +1961,7 @@ def random_forest(
             f1.write("0\t\t%s\t%s\n" % tuple(cm[0]))
             f1.write("1\t\t%s\t%s\n\n" % tuple(cm[1])) 
         else:
-            if Samples.weights:
+            if samples.values()[0].weight:
                 array_weights = np.array(
                 	[samples[item].weight for item in samples_in_analyze])
                 model = clf.fit(
@@ -2186,11 +2184,9 @@ def modeling(args):
     pool.map(partial(
         map_samples, lock, samples, args.length), mt_split)
     #call(["rm -r K-mer_lists/"], shell = True)
-    print(Samples.weights)
     if args.weights == "+":
         Samples.weights = True
         get_weights(samples, args.cutoff)
-    print(Samples.weights)
     Samples.testvariaable = True
     (
     pvalues_all_phenotypes, vectors_as_multiple_input
