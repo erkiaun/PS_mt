@@ -2188,9 +2188,11 @@ def modeling(args):
     pool.map(partial(
         map_samples, lock, samples, args.length), mt_split)
     #call(["rm -r K-mer_lists/"], shell = True)
+    print(Samples.weights)
     if args.weights == "+":
         Samples.weights = True
         get_weights(samples, args.cutoff)
+    print(Samples.weights)
     (
     pvalues_all_phenotypes, vectors_as_multiple_input
     ) = test_kmers_association_with_phenotype(
