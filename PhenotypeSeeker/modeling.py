@@ -538,6 +538,7 @@ def get_samples_distribution_for_ttest(
 def weighted_t_test(x, y, x_weights, y_weights):
     #Parametes for group containig the k-mer
     wtd_mean_y = np.average(y, weights=y_weights)
+    print(wtd_mean_y)
     sumofweightsy = sum(y_weights)
     sumofweightsy2 = sum(i**2 for i in y_weights)
     vary = (sumofweightsy / (sumofweightsy**2 - sumofweightsy2)) * sum(y_weights * (y - wtd_mean_y)**2)
@@ -551,7 +552,6 @@ def weighted_t_test(x, y, x_weights, y_weights):
     #Calculating the weighted Welch's t-test results
     dif = wtd_mean_x-wtd_mean_y
     sxy = math.sqrt((varx/sumofweightsx)+(vary/sumofweightsy))
-    print(sxy)
     df = (((varx/sumofweightsx)+(vary/sumofweightsy))**2)/((((varx/sumofweightsx)**2)/(sumofweightsx-1))+((vary/sumofweightsy)**2/(sumofweightsy-1)))
     t= dif/sxy
     pvalue = stats.t.sf(abs(t), df)*2
@@ -575,7 +575,7 @@ def conduct_chi_squared_test(
     (
     w_pheno_w_kmer, w_pheno_wo_kmer, wo_pheno_w_kmer, wo_pheno_wo_kmer
     ) = get_samples_distribution_for_chisquared(
-        phenotypes_of_samples, names_of_samples, kmer_presence, samples_w_kmer
+        samples, phenotypes_of_samples, names_of_samples, kmer_presence, samples_w_kmer
         )
     (w_pheno, wo_pheno, w_kmer, wo_kmer, total) = get_totals_in_classes(
         w_pheno_w_kmer, w_pheno_wo_kmer, wo_pheno_w_kmer, wo_pheno_wo_kmer
@@ -609,7 +609,7 @@ def conduct_chi_squared_test(
     return pvalue
 
 def get_samples_distribution_for_chisquared(
-        phenotypes_of_samples, names_of_samples, list1, samples_w_kmer
+        samples, phenotypes_of_samples, names_of_samples, list1, samples_w_kmer
         ):
     with_pheno_with_kmer = 0
     with_pheno_without_kmer = 0
