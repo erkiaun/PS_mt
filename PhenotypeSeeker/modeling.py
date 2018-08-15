@@ -97,7 +97,6 @@ def within_1_tier_accuracy(targets, predictions):
 class Samples():
 
     phenotype_scale = "binary"
-    testvariaabel = False
     no_samples = 0
     no_phenoypes = 0
     phenotypes = []
@@ -360,7 +359,6 @@ def test_kmers_association_with_phenotype(
         min_samples, max_samples, lock, phenotypes,
         pool
         ):
-    print(Samples.weights)
     pvalues_all_phenotypes = []
     if Samples.phenotype_scale == "continuous":
         sys.stderr.write("\nConducting the k-mer specific Welch t-tests:\n")
@@ -371,7 +369,6 @@ def test_kmers_association_with_phenotype(
     ) = get_params_for_kmers_testing(
         samples, num_threads, phenotypes_to_analyse
         )
-    print("oluline", Samples.weights)
     for j, k in enumerate(phenotypes_to_analyse):
         currentKmerNum.value = 0
         previousPercent.value = 0
@@ -420,7 +417,7 @@ def get_kmers_tested(samweight,
         no_kmers_to_analyse, phenotypes_to_analyse,
         split_of_kmer_lists
         ):
-    print("->", Samples.testvariaabel)
+    print(samples.values()[0].weight)
     names_of_samples = samples.keys()
     phenotypes_of_samples = [sample_data.phenotypes[k] for sample_data in samples.values()]
     pvalues = []
