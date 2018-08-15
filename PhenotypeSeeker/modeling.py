@@ -102,6 +102,7 @@ class Samples():
     phenotypes = []
     take_logs = None
     headerline = None
+    weights = False
 
     def __init__(self, name, address, phenotypes, weight=None):
         self.name = name
@@ -355,7 +356,7 @@ def _newick_to_GSC_weights(newick_tree):
 
 def test_kmers_association_with_phenotype(
         samples, num_threads, phenotypes_to_analyse, 
-        min_samples, max_samples, lock, weights, phenotypes,
+        min_samples, max_samples, lock, phenotypes,
         pool
         ):
     pvalues_all_phenotypes = []
@@ -375,7 +376,7 @@ def test_kmers_association_with_phenotype(
         pvalues_from_all_threads = pool.map(
             partial(
                 get_kmers_tested, min_samples, max_samples,
-                progress_checkpoint, k, lock, samples, weights,
+                progress_checkpoint, k, lock, samples,
                 no_kmers_to_analyse, phenotypes_to_analyse
                 ), 
             vectors_as_multiple_input
@@ -413,7 +414,7 @@ def _splitted_vectors_to_multiple_input(samples, num_threads):
     return vectors_as_multiple_input
 
 def get_kmers_tested(
-        min_freq, max_freq, checkpoint, k, l, samples, weights,
+        min_freq, max_freq, checkpoint, k, l, samples,
         no_kmers_to_analyse, phenotypes_to_analyse,
         split_of_kmer_lists
         ):
@@ -444,12 +445,12 @@ def get_kmers_tested(
         if Samples.phenotype_scale == "binary":
             pvalue = conduct_chi_squared_test(
                 phenotypes_of_samples, names_of_samples, kmer, kmer_presence,
-                weights, min_freq, max_freq, test_results_file
+                min_freq, max_freq, test_results_file, samples
                 )
         elif Samples.phenotype_scale == "continuous":
             pvalue = conduct_t_test(
                 phenotypes_of_samples, names_of_samples, kmer, kmer_presence,
-                weights, min_freq, max_freq, test_results_file
+                min_freq, max_freq, test_results_file, samples
                 )
         if pvalue:
             pvalues.append(pvalue)
@@ -489,7 +490,7 @@ def get_text1_4_stderr(k, phenotypes_to_analyse):
 
 def conduct_t_test(
     phenotypes_of_samples, names_of_samples, kmer, kmer_presence, 
-    weights, min_freq, max_freq, test_results_file
+    min_freq, max_freq, test_results_file, samples
     ):
     samples_w_kmer = []
     x = []
@@ -498,14 +499,14 @@ def conduct_t_test(
     y_weights = []
     
     get_samples_distribution_for_ttest(
-        x, y, x_weights, y_weights, weights, kmer_presence, 
+        x, y, x_weights, y_weights, kmer_presence, samples
         samples_w_kmer, phenotypes_of_samples, names_of_samples
         )
 
     if len(x) < min_freq or len(y) < 2 or len(x) > max_freq:
         return
 
-    if weights:
+    if Samples.weights:
         t_statistic, pvalue, mean_x, mean_y = weighted_t_test(
             x, y, x_weights, y_weights
             )
@@ -521,7 +522,7 @@ def conduct_t_test(
     return pvalue
 
 def get_samples_distribution_for_ttest(
-        x, y, x_weights, y_weights, weights, list1, 
+        x, y, x_weights, y_weights, list1, samples,
         samples_w_kmer, phenotypes_of_samples, names_of_samples
         ):
     for i, item in enumerate(phenotypes_of_samples):
@@ -529,12 +530,12 @@ def get_samples_distribution_for_ttest(
         if item != "NA":
             if list1[i] == "0":
                 y.append(float(item))
-                if weights:
-                    y_weights.append(weights[sample_name])
+                if Samples.weights:
+                    y_weights.append(samples[sample_name].weight)
             else:
                 x.append(float(item))
-                if weights:
-                    x_weights.append(weights[sample_name])
+                if Samples.weights:
+                    x_weights.append(samples[sample_name].weight)
                 samples_w_kmer.append(sample_name)
 
 def weighted_t_test(x, y, x_weights, y_weights):
@@ -570,13 +571,13 @@ def t_test(x, y):
 
 def conduct_chi_squared_test(
     phenotypes_of_samples, names_of_samples, kmer, kmer_presence,
-    weights, min_freq, max_freq, test_results_file
+    min_freq, max_freq, test_results_file, samples
     ):
     samples_w_kmer = []
     (
     w_pheno_w_kmer, w_pheno_wo_kmer, wo_pheno_w_kmer, wo_pheno_wo_kmer
     ) = get_samples_distribution_for_chisquared(
-        phenotypes_of_samples, names_of_samples, kmer_presence, samples_w_kmer, weights
+        phenotypes_of_samples, names_of_samples, kmer_presence, samples_w_kmer
         )
     (w_pheno, wo_pheno, w_kmer, wo_kmer, total) = get_totals_in_classes(
         w_pheno_w_kmer, w_pheno_wo_kmer, wo_pheno_w_kmer, wo_pheno_wo_kmer
@@ -610,8 +611,7 @@ def conduct_chi_squared_test(
     return pvalue
 
 def get_samples_distribution_for_chisquared(
-        phenotypes_of_samples, names_of_samples, list1, samples_w_kmer,
-        weights
+        phenotypes_of_samples, names_of_samples, list1, samples_w_kmer
         ):
     with_pheno_with_kmer = 0
     with_pheno_without_kmer = 0
@@ -622,26 +622,26 @@ def get_samples_distribution_for_chisquared(
         if item != "NA":
             if item == "1":
                 if (list1[i] != "0"):
-                    if weights:
-                        with_pheno_with_kmer += weights[sample_name]   
+                    if Samples.weights:
+                        with_pheno_with_kmer += samples[sample_name].weight   
                     else:
                         with_pheno_with_kmer += 1
                     samples_w_kmer.append(sample_name)
                 else:
-                    if weights:
-                        with_pheno_without_kmer += weights[sample_name]
+                    if Samples.weights:
+                        with_pheno_without_kmer += samples[sample_name].weight
                     else: 
                         with_pheno_without_kmer += 1
             else:
                 if (list1[i] != "0"):
-                    if weights:
-                        without_pheno_with_kmer += weights[sample_name]
+                    if Samples.weights:
+                        without_pheno_with_kmer += samples[sample_name].weight
                     else:
                         without_pheno_with_kmer += 1
                     samples_w_kmer.append(names_of_samples[i])
                 else:
-                    if weights:
-                        without_pheno_without_kmer += weights[sample_name]
+                    if Samples.weights:
+                        without_pheno_without_kmer += samples[sample_name].weight
                     else:
                         without_pheno_without_kmer += 1
     return(
@@ -865,12 +865,13 @@ def get_kmer_presence_matrix(kmers_passed, split_of_kmer_lists):
 
 def linear_regression(
 	    pool, kmer_lists_splitted, samples, alphas,
-	    kmers_passed_all_phenotypes, penalty, n_splits, weights, testset_size,
-	    use_of_weights, l1_ratio, phenotypes_to_analyse,
+	    kmers_passed_all_phenotypes, penalty, n_splits, testset_size,
+	    l1_ratio, phenotypes_to_analyse,
         max_iter, tol
 	    ):
 
     names_of_samples = samples.keys()
+
     # Applies linear regression with on k-mers
     # that passed the filtering by p-value of statistical test. K-mers
     # presence/absence (0/1) in samples are used as independent
@@ -932,7 +933,7 @@ def linear_regression(
         features = [
             item for sublist in matrix_and_features[1] for item in sublist
             ]
-        Phenotypes = [samples[item][k] for item in names_of_samples]
+        Phenotypes = [item.phenotypes[k] for item in samples.values()]
 
 
         # Converting data into Python array formats suitable to use in
@@ -978,9 +979,9 @@ def linear_regression(
         # (with or without considering the weights). Writing results
         # into corresponding files.
         if testset_size != 0.0:
-            if penalty == 'L2' and use_of_weights == "+":
+            if penalty == 'L2' and Samples.weights:
                 array_weights = np.array(
-                	[weights[item] for item in samples_in_analyze]
+                	[samples[item].weight for item in samples_in_analyze]
                 	)
                 (
                 X_train, X_test, sample_weights_train, sample_weights_test,
@@ -1058,9 +1059,9 @@ def linear_regression(
                     )
                 )
         else:
-            if penalty == 'L2' and use_of_weights == "+":
+            if penalty == 'L2' and Samples.weights:
                 array_weights = np.array(
-                	[weights[item] for item in samples_in_analyze]
+                	[samples[item].weight for item in samples_in_analyze]
                 	)
                 model = clf.fit(
                 	dataset.data, dataset.target, sample_weight=array_weights
@@ -1117,8 +1118,8 @@ def linear_regression(
 
 def logistic_regression(
 	    pool, kmer_lists_splitted, samples, alphas,
-	    kmers_passed_all_phenotypes, penalty, n_splits, weights, testset_size,
-	    use_of_weights, l1_ratio, phenotypes_to_analyse,
+	    kmers_passed_all_phenotypes, penalty, n_splits, testset_size,
+	    l1_ratio, phenotypes_to_analyse,
         max_iter, tol
 	    ):
     # Applies the logistic regression modeling on k-mers
@@ -1184,7 +1185,7 @@ def logistic_regression(
         features = [
             item for sublist in matrix_and_features[1] for item in sublist
             ]
-        Phenotypes = [samples[item][k] for item in names_of_samples]
+        Phenotypes = [item.phenotypes[k] for item in samples.values()]
 
         # Converting data into Python array formats suitable to use in
         # sklearn modeling. Also, deleting information associated with
@@ -1243,9 +1244,9 @@ def logistic_regression(
         # (with or without considering the weights). Writing logistic
         # regression results into corresponding files.
         if testset_size != 0.0:
-            if use_of_weights == "+":
+            if Samples.weights:
                 array_weights = np.array(
-                	[weights[item] for item in samples_in_analyze]
+                	[samples[item].weight for item in samples_in_analyze]
                 	)
                 (
                     X_train, X_test, sample_weights_train, sample_weights_test,
@@ -1362,9 +1363,9 @@ def logistic_regression(
             f1.write("0\t\t%s\t%s\n" % tuple(cm[0]))
             f1.write("1\t\t%s\t%s\n\n" % tuple(cm[1])) 
         else:
-            if use_of_weights == "+":
+            if Samples.weights:
                 array_weights = np.array(
-                	[weights[item] for item in samples_in_analyze])
+                	[samples[item].weight for item in samples_in_analyze])
                 model = clf.fit(
                 	dataset.data, dataset.target, 
                 	fit_params={'sample_weight': array_weights}
@@ -1440,8 +1441,8 @@ def logistic_regression(
 
 def support_vector_classifier(
         pool, kmer_lists_splitted, samples, alphas,
-        kmers_passed_all_phenotypes, penalty, n_splits, weights, testset_size,
-        use_of_weights, kernel, gammas, n_iter,
+        kmers_passed_all_phenotypes, penalty, n_splits, testset_size,
+        kernel, gammas, n_iter,
         phenotypes_to_analyse, max_iter, tol
         ):
     # Applies support vector machine modeling on k-mers
@@ -1510,7 +1511,7 @@ def support_vector_classifier(
         features = [
             item for sublist in matrix_and_features[1] for item in sublist
             ]
-        Phenotypes = [samples[item][k] for item in names_of_samples]
+        Phenotypes = [item.phenotypes[k] for item in samples.values()]
 
         # Converting data into Python array formats suitable to use in
         # sklearn modeling. Also, deleting information associated with
@@ -1557,9 +1558,9 @@ def support_vector_classifier(
         # (with or without considering the weights). Writing logistic
         # regression results into corresponding files.
         if testset_size != 0.0:
-            if use_of_weights == "+":
+            if Samples.weights:
                 array_weights = np.array(
-                    [weights[item] for item in samples_in_analyze]
+                    [samples[item].weight for item in samples_in_analyze]
                     )
                 (
                     X_train, X_test, sample_weights_train, sample_weights_test,
@@ -1676,9 +1677,9 @@ def support_vector_classifier(
             f1.write("0\t\t%s\t%s\n" % tuple(cm[0]))
             f1.write("1\t\t%s\t%s\n\n" % tuple(cm[1])) 
         else:
-            if use_of_weights == "+":
+            if Samples.weights:
                 array_weights = np.array(
-                    [weights[item] for item in samples_in_analyze])
+                    [samples[item].weight for item in samples_in_analyze])
                 model = clf.fit(
                     dataset.data, dataset.target, 
                     fit_params={'sample_weight': array_weights}
@@ -1755,8 +1756,8 @@ def support_vector_classifier(
 
 def random_forest(
 	    pool, kmer_lists_splitted, samples,
-	    kmers_passed_all_phenotypes, n_splits, weights, testset_size,
-	    use_of_weights, phenotypes_to_analyse
+	    kmers_passed_all_phenotypes, n_splits, testset_size,
+	    phenotypes_to_analyse
 	    ):
 
     names_of_samples = samples.keys()
@@ -1824,7 +1825,7 @@ def random_forest(
         features = [
             item for sublist in matrix_and_features[1] for item in sublist
             ]
-        Phenotypes = [samples[item][k] for item in names_of_samples]
+        Phenotypes = [item.phenotypes[k] for item in samples.values()]
 
         # Converting data into Python array formats suitable to use in
         # sklearn modeling. Also, deleting information associated with
@@ -1857,9 +1858,9 @@ def random_forest(
         # (with or without considering the weights). Writing logistic
         # regression results into corresponding files.
         if testset_size != 0.0:
-            if use_of_weights == "+":
+            if Samples.weights:
                 array_weights = np.array(
-                	[weights[item] for item in samples_in_analyze]
+                	[samples[item].weight for item in samples_in_analyze]
                 	)
                 (
                     X_train, X_test, sample_weights_train, sample_weights_test,
@@ -1963,9 +1964,9 @@ def random_forest(
             f1.write("0\t\t%s\t%s\n" % tuple(cm[0]))
             f1.write("1\t\t%s\t%s\n\n" % tuple(cm[1])) 
         else:
-            if use_of_weights == "+":
+            if Samples.weights:
                 array_weights = np.array(
-                	[weights[item] for item in samples_in_analyze])
+                	[samples[item].weight for item in samples_in_analyze])
                 model = clf.fit(
                 	dataset.data, dataset.target, 
                 	fit_params={'sample_weight': array_weights}
@@ -2186,8 +2187,9 @@ def modeling(args):
     pool.map(partial(
         map_samples, lock, samples, args.length), mt_split)
     #call(["rm -r K-mer_lists/"], shell = True)
-    weights = []
+    weights = {}
     if args.weights == "+":
+        Samples.weights = True
         get_weights(samples, args.cutoff)
     (
     pvalues_all_phenotypes, vectors_as_multiple_input
