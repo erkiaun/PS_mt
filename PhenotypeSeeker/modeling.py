@@ -381,7 +381,7 @@ def test_kmers_association_with_phenotype(
             )
         pvalues_all_phenotypes.append(list(chain(*pvalues_from_all_threads)))
         sys.stderr.write("\n")
-    concatenate_test_files(num_threads, phenotypes, phenotypes_to_analyse)
+    concatenate_test_files(num_threads, phenotypes_to_analyse)
     return pvalues_all_phenotypes, vectors_as_multiple_input
 
 
@@ -675,7 +675,7 @@ def get_expected_distribution(w_pheno, wo_pheno, w_kmer, wo_kmer, total):
         )
 
 def concatenate_test_files(
-        num_threads, phenotypes,
+        num_threads,
         phenotypes_2_analyse
         ):
     if Samples.phenotype_scale == "continuous":
@@ -686,15 +686,15 @@ def concatenate_test_files(
         for k in phenotypes_2_analyse:
             call(
                 [
-                "cat " + beginning_text + phenotypes[k] + "_* > " +
-                beginning_text + phenotypes[k] + ".txt"
+                "cat " + beginning_text + Samples.phenotypes[k] + "_* > " +
+                beginning_text + Samples.phenotypes[k] + ".txt"
                 ],
                 shell=True
                 )
             for l in range(num_threads):
                 call(
                     [
-                    "rm " + beginning_text + phenotypes[k] +
+                    "rm " + beginning_text + Samples.phenotypes[k] +
                     "_%05d.txt" % l
                     ],
                     shell=True
@@ -703,15 +703,15 @@ def concatenate_test_files(
         for k in phenotypes_2_analyse:
             call(
                 [
-                "cat " + beginning_text + phenotypes[k] + "_* > " +
-                beginning_text + phenotypes[k] + ".txt"
+                "cat " + beginning_text + Samples.phenotypes[k] + "_* > " +
+                beginning_text + Samples.phenotypes[k] + ".txt"
                 ],
                 shell=True
                 )
             for l in range(num_threads):
                 call(
                     [
-                    "rm " + beginning_text + phenotypes[k] + "_%05d.txt" %l
+                    "rm " + beginning_text + Samples.phenotypes[k] + "_%05d.txt" %l
                     ],
                     shell=True
                     )     
