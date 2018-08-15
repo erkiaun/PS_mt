@@ -97,6 +97,7 @@ def within_1_tier_accuracy(targets, predictions):
 class Samples():
 
     phenotype_scale = "binary"
+    testvariaabel = False
     no_samples = 0
     no_phenoypes = 0
     phenotypes = []
@@ -419,9 +420,7 @@ def get_kmers_tested(samweight,
         no_kmers_to_analyse, phenotypes_to_analyse,
         split_of_kmer_lists
         ):
-    print(samweight)
-    print(Samples.weights)
-    print(Samples.no_samples)
+    print("->", Samples.testvariaabel)
     names_of_samples = samples.keys()
     phenotypes_of_samples = [sample_data.phenotypes[k] for sample_data in samples.values()]
     pvalues = []
@@ -2195,6 +2194,7 @@ def modeling(args):
         Samples.weights = True
         get_weights(samples, args.cutoff)
     print(Samples.weights)
+    Samples.testvariaable = True
     (
     pvalues_all_phenotypes, vectors_as_multiple_input
     ) = test_kmers_association_with_phenotype(
