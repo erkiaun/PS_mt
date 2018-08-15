@@ -505,7 +505,7 @@ def conduct_t_test(
 
     if len(x) < min_freq or len(y) < 2 or len(x) > max_freq:
         return
-
+    print(Samples.weights)
     if Samples.weights:
         t_statistic, pvalue, mean_x, mean_y = weighted_t_test(
             x, y, x_weights, y_weights
