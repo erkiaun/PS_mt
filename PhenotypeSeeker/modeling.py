@@ -354,11 +354,12 @@ def _newick_to_GSC_weights(newick_tree):
 # -------------------------------------------------------------------
 # Functions for calculating the association test results for kmers.
 
-def test_kmers_association_with_phenotype(Samples,
+def test_kmers_association_with_phenotype(
         samples, num_threads, phenotypes_to_analyse, 
         min_samples, max_samples, lock, phenotypes,
         pool
         ):
+    print(Samples.weights)
     pvalues_all_phenotypes = []
     if Samples.phenotype_scale == "continuous":
         sys.stderr.write("\nConducting the k-mer specific Welch t-tests:\n")
@@ -375,7 +376,7 @@ def test_kmers_association_with_phenotype(Samples,
         previousPercent.value = 0
         pvalues_from_all_threads = pool.map(
             partial(
-                get_kmers_tested, Samples, min_samples, max_samples,
+                get_kmers_tested, min_samples, max_samples,
                 progress_checkpoint, k, lock, samples,
                 no_kmers_to_analyse, phenotypes_to_analyse
                 ), 
@@ -413,7 +414,7 @@ def _splitted_vectors_to_multiple_input(samples, num_threads):
         vectors_as_multiple_input.append(["K-mer_lists/" + sample + "_mapped_%05d" %i for sample in samples])
     return vectors_as_multiple_input
 
-def get_kmers_tested(Samples,
+def get_kmers_tested(
         min_freq, max_freq, checkpoint, k, l, samples,
         no_kmers_to_analyse, phenotypes_to_analyse,
         split_of_kmer_lists
@@ -2195,7 +2196,7 @@ def modeling(args):
     print(Samples.weights)
     (
     pvalues_all_phenotypes, vectors_as_multiple_input
-    ) = test_kmers_association_with_phenotype(Samples,
+    ) = test_kmers_association_with_phenotype(
         samples, args.num_threads, phenotypes_to_analyse,
         min_samples, max_samples, lock, Samples.phenotypes, 
         pool
