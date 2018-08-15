@@ -355,7 +355,7 @@ def _newick_to_GSC_weights(newick_tree):
 
 def test_kmers_association_with_phenotype(
         samples, num_threads, phenotypes_to_analyse, 
-        min_samples, max_samples, lock, phenotypes,
+        min_samples, max_samples, lock,
         pool
         ):
     pvalues_all_phenotypes = []
@@ -411,7 +411,7 @@ def _splitted_vectors_to_multiple_input(samples, num_threads):
         vectors_as_multiple_input.append(["K-mer_lists/" + sample + "_mapped_%05d" %i for sample in samples])
     return vectors_as_multiple_input
 
-def get_kmers_tested(samweight,
+def get_kmers_tested(
         min_freq, max_freq, checkpoint, k, l, samples,
         no_kmers_to_analyse, phenotypes_to_analyse,
         split_of_kmer_lists
@@ -2190,7 +2190,7 @@ def modeling(args):
     pvalues_all_phenotypes, vectors_as_multiple_input
     ) = test_kmers_association_with_phenotype(
         samples, args.num_threads, phenotypes_to_analyse,
-        min_samples, max_samples, lock, Samples.phenotypes, 
+        min_samples, max_samples, lock,
         pool
         )
     kmers_passed_all_phenotypes = kmer_filtering_by_pvalue(
