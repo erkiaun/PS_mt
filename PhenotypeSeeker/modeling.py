@@ -102,9 +102,9 @@ class Samples():
     phenotypes = []
     take_logs = None
     headerline = None
-    weights = True
+    weights = None
 
-    def __init__(self, name, address, phenotypes, weight=1):
+    def __init__(self, name, address, phenotypes, weight=None):
         self.name = name
         self.address = address
         self.phenotypes = phenotypes
@@ -2188,7 +2188,7 @@ def modeling(args):
         map_samples, lock, samples, args.length), mt_split)
     #call(["rm -r K-mer_lists/"], shell = True)
     if args.weights == "+":
-        #Samples.weights = True
+        Samples.weights = True
         get_weights(samples, args.cutoff)
     (
     pvalues_all_phenotypes, vectors_as_multiple_input
