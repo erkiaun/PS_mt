@@ -539,6 +539,7 @@ def get_samples_distribution_for_ttest(
                 samples_w_kmer.append(sample_name)
 
 def weighted_t_test(x, y, x_weights, y_weights):
+    print("weighted_t_test")
     #Parametes for group containig the k-mer
     wtd_mean_y = np.average(y, weights=y_weights)
     sumofweightsy = sum(y_weights)
@@ -2190,8 +2191,6 @@ def modeling(args):
     if args.weights == "+":
         Samples.weights = True
         get_weights(samples, args.cutoff)
-    for item in samples:
-        print(samples[item].weight)
     (
     pvalues_all_phenotypes, vectors_as_multiple_input
     ) = test_kmers_association_with_phenotype(
