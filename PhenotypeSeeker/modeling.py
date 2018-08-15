@@ -376,7 +376,7 @@ def test_kmers_association_with_phenotype(
         previousPercent.value = 0
         pvalues_from_all_threads = pool.map(
             partial(
-                get_kmers_tested, min_samples, max_samples,
+                get_kmers_tested, Samples.weights, min_samples, max_samples,
                 progress_checkpoint, k, lock, samples,
                 no_kmers_to_analyse, phenotypes_to_analyse
                 ), 
@@ -414,11 +414,12 @@ def _splitted_vectors_to_multiple_input(samples, num_threads):
         vectors_as_multiple_input.append(["K-mer_lists/" + sample + "_mapped_%05d" %i for sample in samples])
     return vectors_as_multiple_input
 
-def get_kmers_tested(
+def get_kmers_tested(samweight,
         min_freq, max_freq, checkpoint, k, l, samples,
         no_kmers_to_analyse, phenotypes_to_analyse,
         split_of_kmer_lists
         ):
+    print(samweight)
     print(Samples.weights)
     names_of_samples = samples.keys()
     phenotypes_of_samples = [sample_data.phenotypes[k] for sample_data in samples.values()]
