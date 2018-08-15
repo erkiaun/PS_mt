@@ -370,7 +370,7 @@ def test_kmers_association_with_phenotype(
     ) = get_params_for_kmers_testing(
         samples, num_threads, phenotypes_to_analyse
         )
-
+    print("oluline", Samples.weights)
     for j, k in enumerate(phenotypes_to_analyse):
         currentKmerNum.value = 0
         previousPercent.value = 0
