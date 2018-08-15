@@ -102,7 +102,7 @@ class Samples():
     phenotypes = []
     take_logs = None
     headerline = None
-    weights = False
+    weights = True
 
     def __init__(self, name, address, phenotypes, weight=None):
         self.name = name
