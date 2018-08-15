@@ -104,7 +104,7 @@ class Samples():
     headerline = None
     weights = True
 
-    def __init__(self, name, address, phenotypes, weight=1):
+    def __init__(self, name, address, phenotypes, weight=None):
         self.name = name
         self.address = address
         self.phenotypes = phenotypes
@@ -2188,13 +2188,13 @@ def modeling(args):
         map_samples, lock, samples, args.length), mt_split)
     #call(["rm -r K-mer_lists/"], shell = True)
     if args.weights == "+":
-        #Samples.weights = True
+        Samples.weights = True
         get_weights(samples, args.cutoff)
     (
     pvalues_all_phenotypes, vectors_as_multiple_input
     ) = test_kmers_association_with_phenotype(
         samples, args.num_threads, phenotypes_to_analyse,
-        min_samples, max_samples, lock, weights, Samples.phenotypes, 
+        min_samples, max_samples, lock, Samples.phenotypes, 
         pool
         )
     kmers_passed_all_phenotypes = kmer_filtering_by_pvalue(
@@ -2207,7 +2207,7 @@ def modeling(args):
         linear_regression(
             pool, vectors_as_multiple_input, samples, alphas,
             kmers_passed_all_phenotypes, args.regularization, args.n_splits,
-            weights, args.testset_size, args.weights,
+            args.testset_size,
             args.l1_ratio, phenotypes_to_analyse, args.max_iter,
             args.tol
             )
@@ -2216,7 +2216,7 @@ def modeling(args):
             logistic_regression(
                 pool, vectors_as_multiple_input, samples, alphas,
                 kmers_passed_all_phenotypes, args.regularization, args.n_splits,
-                weights, args.testset_size, args.weights,
+                args.testset_size,
                 args.l1_ratio, phenotypes_to_analyse, args.max_iter, 
                 args.tol
                 )
@@ -2224,7 +2224,7 @@ def modeling(args):
             support_vector_classifier(
                 pool, vectors_as_multiple_input, samples, alphas,
                 kmers_passed_all_phenotypes, args.regularization, args.n_splits,
-                weights, args.testset_size, args.weights,
+                args.testset_size,
                 args.kernel, gammas, args.n_iter, phenotypes_to_analyse,
                 args.max_iter, args.tol
                 )
@@ -2232,7 +2232,7 @@ def modeling(args):
         	random_forest(
                 pool, vectors_as_multiple_input, samples,
                 kmers_passed_all_phenotypes, args.n_splits,
-                weights, args.testset_size, args.weights,
+                args.testset_size,
                 phenotypes_to_analyse,
                 )
 
