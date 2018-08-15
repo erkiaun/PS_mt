@@ -419,6 +419,7 @@ def get_kmers_tested(
         no_kmers_to_analyse, phenotypes_to_analyse,
         split_of_kmer_lists
         ):
+    print(Samples.weights)
     names_of_samples = samples.keys()
     phenotypes_of_samples = [sample_data.phenotypes[k] for sample_data in samples.values()]
     pvalues = []
@@ -506,7 +507,6 @@ def conduct_t_test(
 
     if len(x) < min_freq or len(y) < 2 or len(x) > max_freq:
         return
-    print(Samples.weights)
     if Samples.weights:
         t_statistic, pvalue, mean_x, mean_y = weighted_t_test(
             x, y, x_weights, y_weights
@@ -540,7 +540,6 @@ def get_samples_distribution_for_ttest(
                 samples_w_kmer.append(sample_name)
 
 def weighted_t_test(x, y, x_weights, y_weights):
-    print("weighted_t_test")
     #Parametes for group containig the k-mer
     wtd_mean_y = np.average(y, weights=y_weights)
     sumofweightsy = sum(y_weights)
