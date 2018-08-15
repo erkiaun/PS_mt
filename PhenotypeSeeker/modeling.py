@@ -2190,6 +2190,8 @@ def modeling(args):
     if args.weights == "+":
         Samples.weights = True
         get_weights(samples, args.cutoff)
+    for item in samples:
+        print(samples[item].weight)
     (
     pvalues_all_phenotypes, vectors_as_multiple_input
     ) = test_kmers_association_with_phenotype(
