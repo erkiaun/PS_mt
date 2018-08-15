@@ -421,6 +421,7 @@ def get_kmers_tested(samweight,
         ):
     print(samweight)
     print(Samples.weights)
+    print(Samples.no_samples)
     names_of_samples = samples.keys()
     phenotypes_of_samples = [sample_data.phenotypes[k] for sample_data in samples.values()]
     pvalues = []
