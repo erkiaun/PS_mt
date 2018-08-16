@@ -2130,10 +2130,10 @@ def modeling(args):
         args.num_threads, samples
         )
     sys.stderr.write("Generating the k-mer lists for input samples:\n")
-    # pool.map(partial(
-    #     get_kmer_lists, lock, samples, args.length, args.cutoff
-    #     ), mt_split)
-    map(lambda x: x.get_kmer_lists(lock, samples, args.length, args.cutoff), samples.values()) 
+    pool.map(partial(
+        get_kmer_lists, lock, samples, args.length, args.cutoff
+        ), mt_split)
+    # map(lambda x: x.get_kmer_lists(lock, samples, args.length, args.cutoff), samples.values()) 
     sys.stderr.write("\nGenerating the k-mer feature vector.\n")
     get_feature_vector(args.length, min_samples, samples)
     sys.stderr.write("Mapping samples to the feature vector space:\n")
