@@ -114,24 +114,24 @@ class Samples():
     def get_kmer_lists(
         self, lock, samples_info, kmer_length, freq
         ):
-    # Makes "K-mer_lists" directory where all lists are stored.
-    # Generates k-mer lists for every sample in names_of_samples variable 
-    # (list or dict).
-    call(["mkdir", "-p", "K-mer_lists"])
-    # for sample in input_samples:
-    #     genomefail_address = samples_info[sample].address
-    call(
-        ["glistmaker " + self.address + " -o K-mer_lists/" 
-        + sample + " -w " + kmer_length + " -c " + freq], 
-        shell=True
-        )
-    lock.acquire()
-    currentSampleNum.value += 1
-    lock.release()
-    output = "\t%d of %d lists generated." % (
-        currentSampleNum.value, Samples.no_samples
-        )
-    stderr_print(output)
+        # Makes "K-mer_lists" directory where all lists are stored.
+        # Generates k-mer lists for every sample in names_of_samples variable 
+        # (list or dict).
+        call(["mkdir", "-p", "K-mer_lists"])
+        # for sample in input_samples:
+        #     genomefail_address = samples_info[sample].address
+        call(
+            ["glistmaker " + self.address + " -o K-mer_lists/" 
+            + self + " -w " + kmer_length + " -c " + freq], 
+            shell=True
+            )
+        lock.acquire()
+        currentSampleNum.value += 1
+        lock.release()
+        output = "\t%d of %d lists generated." % (
+            currentSampleNum.value, Samples.no_samples
+            )
+        stderr_print(output)
 
     @classmethod
     def from_inputfile(cls, line):
