@@ -503,12 +503,10 @@ def conduct_t_test(
 
     if len(x) < min_freq or len(y) < 2 or len(x) > max_freq:
         return
-    if samples.values()[0].weight:
-        t_statistic, pvalue, mean_x, mean_y = weighted_t_test(
-            x, y, x_weights, y_weights
-            )
-    else:
-        t_statistic, pvalue, mean_x, mean_y = t_test(x, y)
+
+    t_statistic, pvalue, mean_x, mean_y = t_test(
+        x, y, x_weights, y_weights
+        )
 
     test_results_file.write(
         kmer + "\t" + str(round(t_statistic, 2)) + "\t" + \
@@ -527,15 +525,13 @@ def get_samples_distribution_for_ttest(
         if item != "NA":
             if list1[i] == "0":
                 y.append(float(item))
-                if samples[sample_name].weight:
-                    y_weights.append(samples[sample_name].weight)
+                y_weights.append(samples[sample_name].weight)
             else:
                 x.append(float(item))
-                if samples[sample_name].weight:
-                    x_weights.append(samples[sample_name].weight)
+                x_weights.append(samples[sample_name].weight)
                 samples_w_kmer.append(sample_name)
 
-def weighted_t_test(x, y, x_weights, y_weights):
+def t_test(x, y, x_weights, y_weights):
     #Parametes for group containig the k-mer
     wtd_mean_y = np.average(y, weights=y_weights)
     sumofweightsy = sum(y_weights)
@@ -556,15 +552,6 @@ def weighted_t_test(x, y, x_weights, y_weights):
     pvalue = stats.t.sf(abs(t), df)*2
 
     return t, pvalue, wtd_mean_x, wtd_mean_y
-
-def t_test(x, y):
-    #Calculating the Welch's t-test results using scipy.stats
-    meanx = round((sum(x)/len(x)), 2)
-    meany = round((sum(y)/len(y)), 2)
-    ttest = stats.ttest_ind(x, y, equal_var=False)
-    t_statistic = ttest[0]
-    p_value = ttest[1]
-    return t_statistic, p_value, meanx, meany
 
 def conduct_chi_squared_test(
     phenotypes_of_samples, names_of_samples, kmer, kmer_presence,
@@ -619,28 +606,16 @@ def get_samples_distribution_for_chisquared(
         if item != "NA":
             if item == "1":
                 if (list1[i] != "0"):
-                    if samples[sample_name].weight:
-                        with_pheno_with_kmer += samples[sample_name].weight   
-                    else:
-                        with_pheno_with_kmer += 1
+                    with_pheno_with_kmer += samples[sample_name].weight 
                     samples_w_kmer.append(sample_name)
                 else:
-                    if samples[sample_name].weight:
-                        with_pheno_without_kmer += samples[sample_name].weight
-                    else: 
-                        with_pheno_without_kmer += 1
+                    with_pheno_without_kmer += samples[sample_name].weight
             else:
                 if (list1[i] != "0"):
-                    if samples[sample_name].weight:
-                        without_pheno_with_kmer += samples[sample_name].weight
-                    else:
-                        without_pheno_with_kmer += 1
+                    without_pheno_with_kmer += samples[sample_name].weight
                     samples_w_kmer.append(names_of_samples[i])
                 else:
-                    if samples[sample_name].weight:
-                        without_pheno_without_kmer += samples[sample_name].weight
-                    else:
-                        without_pheno_without_kmer += 1
+                    without_pheno_without_kmer += samples[sample_name].weight
     return(
         with_pheno_with_kmer, with_pheno_without_kmer,
         without_pheno_with_kmer, without_pheno_without_kmer
@@ -976,10 +951,18 @@ def linear_regression(
         # (with or without considering the weights). Writing results
         # into corresponding files.
         if testset_size != 0.0:
-            if penalty == 'L2' and samples.values()[0].weight:
+            if penalty == 'L1':
+                (
+                X_train, X_test, y_train, y_test, samples_train, samples_test
+                ) = train_test_split(
+                dataset.data, dataset.target, samples_in_analyze,
+                test_size=testset_size, random_state=55
+                )
+                model = clf.fit(X_train, y_train)
+            else:
                 array_weights = np.array(
-                	[samples[item].weight for item in samples_in_analyze]
-                	)
+                    [samples[item].weight for item in samples_in_analyze]
+                    )
                 (
                 X_train, X_test, sample_weights_train, sample_weights_test,
                 y_train, y_test, samples_train, 
@@ -989,17 +972,9 @@ def linear_regression(
                 samples_in_analyze, test_size=testset_size, random_state=55
                 )
                 model = clf.fit(
-                	X_train, y_train,
-                	sample_weight=sample_weights_train
-                	)
-            else:
-                (
-                X_train, X_test, y_train, y_test, samples_train, samples_test
-                ) = train_test_split(
-                dataset.data, dataset.target, samples_in_analyze,
-                test_size=testset_size, random_state=55
-                )
-                model = clf.fit(X_train, y_train)
+                    X_train, y_train,
+                    sample_weight=sample_weights_train
+                    )
             f1.write('Parameters:\n%s\n\n' % model)
             f1.write("Grid scores (R2 score) on development set: \n")
             means = clf.cv_results_['mean_test_score']
@@ -1056,15 +1031,15 @@ def linear_regression(
                     )
                 )
         else:
-            if penalty == 'L2' and samples.values()[0].weight:
-                array_weights = np.array(
-                	[samples[item].weight for item in samples_in_analyze]
-                	)
-                model = clf.fit(
-                	dataset.data, dataset.target, sample_weight=array_weights
-                	)
-            else:
+            if penalty == 'L1':
                 model = clf.fit(dataset.data, dataset.target)
+            else:
+                array_weights = np.array(
+                    [samples[item].weight for item in samples_in_analyze]
+                    )
+                model = clf.fit(
+                    dataset.data, dataset.target, sample_weight=array_weights
+                    )
             f1.write('Parameters:\n%s\n\n' % model)
             f1.write("Grid scores (R2 score) on development set:")
             means = clf.cv_results_['mean_test_score']
@@ -1241,31 +1216,20 @@ def logistic_regression(
         # (with or without considering the weights). Writing logistic
         # regression results into corresponding files.
         if testset_size != 0.0:
-            if samples.values()[0].weight:
-                array_weights = np.array(
-                	[samples[item].weight for item in samples_in_analyze]
-                	)
-                (
-                    X_train, X_test, sample_weights_train, sample_weights_test,
-                    y_train, y_test, samples_train, samples_test
-                    ) = train_test_split(
-                    dataset.data, array_weights, dataset.target,
-                    samples_in_analyze, test_size=testset_size,
-                    stratify=dataset.target, random_state=55
-                    )
-                model = clf.fit(
-                	X_train, y_train, sample_weight=sample_weights_train
-                	)
-            else:
-                (
-                    X_train, X_test, y_train, y_test, samples_train,
-                    samples_test
-                    ) = train_test_split(
-                    dataset.data, dataset.target, samples_in_analyze,
-                    stratify=dataset.target, test_size=testset_size, 
-                    random_state=55
-                    )
-                model = clf.fit(X_train, y_train)
+            array_weights = np.array(
+            	[samples[item].weight for item in samples_in_analyze]
+            	)
+            (
+                X_train, X_test, sample_weights_train, sample_weights_test,
+                y_train, y_test, samples_train, samples_test
+                ) = train_test_split(
+                dataset.data, array_weights, dataset.target,
+                samples_in_analyze, test_size=testset_size,
+                stratify=dataset.target, random_state=55
+                )
+            model = clf.fit(
+            	X_train, y_train, sample_weight=sample_weights_train
+            	)
             f1.write('Parameters:\n%s\n\n' % model)
             f1.write("Grid scores (mean accuracy) on development set:\n")
             means = clf.cv_results_['mean_test_score']
@@ -1360,15 +1324,12 @@ def logistic_regression(
             f1.write("0\t\t%s\t%s\n" % tuple(cm[0]))
             f1.write("1\t\t%s\t%s\n\n" % tuple(cm[1])) 
         else:
-            if samples.values()[0].weight:
-                array_weights = np.array(
-                	[samples[item].weight for item in samples_in_analyze])
-                model = clf.fit(
-                	dataset.data, dataset.target, 
-                	fit_params={'sample_weight': array_weights}
-                	)
-            else:
-                model = clf.fit(dataset.data, dataset.target)
+            array_weights = np.array(
+            	[samples[item].weight for item in samples_in_analyze])
+            model = clf.fit(
+            	dataset.data, dataset.target, 
+            	fit_params={'sample_weight': array_weights}
+            	)
             f1.write('Parameters:\n%s\n\n' % model)
             f1.write("Grid scores on development set:\n")
             means = clf.cv_results_['mean_test_score']
@@ -1555,31 +1516,20 @@ def support_vector_classifier(
         # (with or without considering the weights). Writing logistic
         # regression results into corresponding files.
         if testset_size != 0.0:
-            if samples.values()[0].weight:
-                array_weights = np.array(
-                    [samples[item].weight for item in samples_in_analyze]
-                    )
-                (
-                    X_train, X_test, sample_weights_train, sample_weights_test,
-                    y_train, y_test, samples_train, samples_test
-                    ) = train_test_split(
-                    dataset.data, array_weights, dataset.target,
-                    samples_in_analyze, test_size=testset_size,
-                    stratify=dataset.target, random_state=55
-                    )
-                model = clf.fit(
-                    X_train, y_train, sample_weight=sample_weights_train
-                    )
-            else:
-                (
-                    X_train, X_test, y_train, y_test, samples_train,
-                    samples_test
-                    ) = train_test_split(
-                    dataset.data, dataset.target, samples_in_analyze,
-                    stratify=dataset.target, test_size=testset_size, 
-                    random_state=55
-                    )
-                model = clf.fit(X_train, y_train)
+            array_weights = np.array(
+                [samples[item].weight for item in samples_in_analyze]
+                )
+            (
+                X_train, X_test, sample_weights_train, sample_weights_test,
+                y_train, y_test, samples_train, samples_test
+                ) = train_test_split(
+                dataset.data, array_weights, dataset.target,
+                samples_in_analyze, test_size=testset_size,
+                stratify=dataset.target, random_state=55
+                )
+            model = clf.fit(
+                X_train, y_train, sample_weight=sample_weights_train
+                )
             f1.write('Parameters:\n%s\n\n' % model)
             f1.write("Grid scores (mean accuracy) on development set:\n")
             means = clf.cv_results_['mean_test_score']
@@ -1674,15 +1624,12 @@ def support_vector_classifier(
             f1.write("0\t\t%s\t%s\n" % tuple(cm[0]))
             f1.write("1\t\t%s\t%s\n\n" % tuple(cm[1])) 
         else:
-            if samples.values()[0].weight:
-                array_weights = np.array(
-                    [samples[item].weight for item in samples_in_analyze])
-                model = clf.fit(
-                    dataset.data, dataset.target, 
-                    fit_params={'sample_weight': array_weights}
-                    )
-            else:
-                model = clf.fit(dataset.data, dataset.target)
+            array_weights = np.array(
+                [samples[item].weight for item in samples_in_analyze])
+            model = clf.fit(
+                dataset.data, dataset.target, 
+                fit_params={'sample_weight': array_weights}
+                )
             f1.write('Parameters:\n%s\n\n' % model)
             f1.write("Grid scores on development set:\n")
             means = clf.cv_results_['mean_test_score']
@@ -1855,31 +1802,20 @@ def random_forest(
         # (with or without considering the weights). Writing logistic
         # regression results into corresponding files.
         if testset_size != 0.0:
-            if samples.values()[0].weight:
-                array_weights = np.array(
-                	[samples[item].weight for item in samples_in_analyze]
-                	)
-                (
-                    X_train, X_test, sample_weights_train, sample_weights_test,
-                    y_train, y_test, samples_train, samples_test
-                    ) = train_test_split(
-                    dataset.data, array_weights, dataset.target,
-                    samples_in_analyze, test_size=testset_size,
-                    stratify=dataset.target, random_state=55
-                    )
-                model = clf.fit(
-                	X_train, y_train, sample_weight=sample_weights_train
-                	)
-            else:
-                (
-                    X_train, X_test, y_train, y_test, samples_train,
-                    samples_test
-                    ) = train_test_split(
-                    dataset.data, dataset.target, samples_in_analyze,
-                    stratify=dataset.target, test_size=testset_size, 
-                    random_state=55
-                    )
-                model = clf.fit(X_train, y_train)
+            array_weights = np.array(
+            	[samples[item].weight for item in samples_in_analyze]
+            	)
+            (
+                X_train, X_test, sample_weights_train, sample_weights_test,
+                y_train, y_test, samples_train, samples_test
+                ) = train_test_split(
+                dataset.data, array_weights, dataset.target,
+                samples_in_analyze, test_size=testset_size,
+                stratify=dataset.target, random_state=55
+                )
+            model = clf.fit(
+            	X_train, y_train, sample_weight=sample_weights_train
+            	)
             f1.write("\n\nModel predictions on test set:\nSample_ID \
             	Acutal_phenotype Predicted_phenotype\n")
             y_train_pred = clf.predict(X_train)
@@ -1961,15 +1897,12 @@ def random_forest(
             f1.write("0\t\t%s\t%s\n" % tuple(cm[0]))
             f1.write("1\t\t%s\t%s\n\n" % tuple(cm[1])) 
         else:
-            if samples.values()[0].weight:
-                array_weights = np.array(
-                	[samples[item].weight for item in samples_in_analyze])
-                model = clf.fit(
-                	dataset.data, dataset.target, 
-                	fit_params={'sample_weight': array_weights}
-                	)
-            else:
-                model = clf.fit(dataset.data, dataset.target)
+            array_weights = np.array(
+            	[samples[item].weight for item in samples_in_analyze])
+            model = clf.fit(
+            	dataset.data, dataset.target, 
+            	fit_params={'sample_weight': array_weights}
+            	)
             f1.write('Parameters:\n%s\n\n' % model)
             f1.write("Grid scores on development set:\n")
             means = clf.cv_results_['mean_test_score']
