@@ -538,7 +538,6 @@ def get_samples_distribution_for_ttest(
 def weighted_t_test(x, y, x_weights, y_weights):
     #Parametes for group containig the k-mer
     wtd_mean_y = np.average(y, weights=y_weights)
-    print(wtd_mean_y)
     sumofweightsy = sum(y_weights)
     sumofweightsy2 = sum(i**2 for i in y_weights)
     vary = (sumofweightsy / (sumofweightsy**2 - sumofweightsy2)) * sum(y_weights * (y - wtd_mean_y)**2)
@@ -554,6 +553,7 @@ def weighted_t_test(x, y, x_weights, y_weights):
     sxy = math.sqrt((varx/sumofweightsx)+(vary/sumofweightsy))
     df = (((varx/sumofweightsx)+(vary/sumofweightsy))**2)/((((varx/sumofweightsx)**2)/(sumofweightsx-1))+((vary/sumofweightsy)**2/(sumofweightsy-1)))
     t= dif/sxy
+    print(t)
     pvalue = stats.t.sf(abs(t), df)*2
 
     return t, pvalue, wtd_mean_x, wtd_mean_y
