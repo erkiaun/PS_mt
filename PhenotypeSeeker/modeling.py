@@ -549,12 +549,12 @@ def weighted_t_test(x, y, x_weights, y_weights):
     sumofweightsx = sum(x_weights)
     sumofweightsx2 = sum(i**2 for i in x_weights)
     varx = (sumofweightsx / (sumofweightsx**2 - sumofweightsx2)) * sum(x_weights * (x - wtd_mean_x)**2)
+    print("varx esimene kordaja", (sumofweightsx / (sumofweightsx**2 - sumofweightsx2)))
+    print("varx teine kordaja", sum(x_weights * (x - wtd_mean_x)**2))
 
     #Calculating the weighted Welch's t-test results
     dif = wtd_mean_x-wtd_mean_y
     sxy = math.sqrt((varx/sumofweightsx)+(vary/sumofweightsy))
-    print("varx esimene kordaja", (sumofweightsx / (sumofweightsx**2 - sumofweightsx2)))
-    print("varx teine kordaja", sumofweightsx)
     df = (((varx/sumofweightsx)+(vary/sumofweightsy))**2)/((((varx/sumofweightsx)**2)/(sumofweightsx-1))+((vary/sumofweightsy)**2/(sumofweightsy-1)))
     t= dif/sxy
     pvalue = stats.t.sf(abs(t), df)*2
