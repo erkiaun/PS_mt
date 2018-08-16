@@ -104,6 +104,9 @@ class Samples():
     take_logs = None
     headerline = None
 
+    kmer_length = None
+    freq = None
+
     def __init__(self, name, address, phenotypes, weight=1):
         self.name = name
         self.address = address
@@ -112,9 +115,7 @@ class Samples():
 
         Samples.no_samples += 1
 
-    def get_kmer_lists(
-        self, lock, kmer_length, freq
-        ):
+    def get_kmer_lists(self, lock):
         # Makes "K-mer_lists" directory where all lists are stored.
         # Generates k-mer lists for every sample in names_of_samples variable 
         # (list or dict).
@@ -171,12 +172,15 @@ def get_input_data(inputfilename, take_logs):
 def process_input_args(
         alphas, alpha_min, alpha_max, n_alphas,
         gammas, gamma_min, gamma_max, n_gammas, 
-        min_samples, max_samples, mpheno,
+        min_samples, max_samples, mpheno, kmer_length,
+        cutoff
         ):
     alphas = _get_alphas(alphas, alpha_min, alpha_max, n_alphas)
     gammas = _get_gammas(gammas, gamma_min, gamma_max, n_gammas)
     min_samples, max_samples = _get_min_max(min_samples, max_samples)
     phenotypes_to_analyse = _get_phenotypes_to_analyse(mpheno)
+    Samples.kmer_length = kmer_length
+    Samples.cutoff = cutoff
     return alphas, gammas, min_samples, max_samples, phenotypes_to_analyse
 
 def _get_alphas(alphas, alpha_min, alpha_max, n_alphas):       
@@ -2122,14 +2126,14 @@ def modeling(args):
         ) = process_input_args(
             args.alphas, args.alpha_min, args.alpha_max, args.n_alphas,
             args.gammas, args.gamma_min, args.gamma_max, args.n_gammas,
-            args.min, args.max, args.mpheno 
+            args.min, args.max, args.mpheno, args.length, args.cutoff 
             )
     lock, pool, mt_split = get_multithreading_parameters(
         args.num_threads, samples
         )
     sys.stderr.write("Generating the k-mer lists for input samples:\n")
     t = time.time()
-    pool.map(lambda x: x.get_kmer_lists(lock, args.length, args.cutoff), samples.values()) 
+    pool.map(lambda x: x.get_kmer_lists(lock), samples.values()) 
     print(time.time()-t)
     # sys.stderr.write("\nGenerating the k-mer feature vector.\n")
     # get_feature_vector(args.length, min_samples, samples)
