@@ -37,6 +37,55 @@ import numpy as np
 
 
 
+# -------------------------------------------------------------------
+class Samples():
+
+    phenotype_scale = "binary"
+    no_samples = 0
+    no_phenoypes = 0
+    phenotypes = []
+    take_logs = None
+    headerline = None
+
+    kmer_length = None
+    freq = None
+
+    def __init__(self, name, address, phenotypes, weight=1):
+        self.name = name
+        self.address = address
+        self.phenotypes = phenotypes
+        self.weight = weight
+
+        Samples.no_samples += 1
+
+    def get_kmer_lists(self, lock):
+        # Makes "K-mer_lists" directory where all lists are stored.
+        # Generates k-mer lists for every sample in names_of_samples variable 
+        # (list or dict).
+        call(["mkdir", "-p", "K-mer_lists"])
+        call(
+            ["glistmaker " + self.address + " -o K-mer_lists/" 
+            + self.name + " -w " + self.kmer_length + " -c " + self.freq], 
+            shell=True
+            )
+        lock.acquire()
+        currentSampleNum.value += 1
+        lock.release()
+        output = "\t%d of %d lists generated." % (
+            currentSampleNum.value, Samples.no_samples
+            )
+        stderr_print(output)
+
+    @classmethod
+    def from_inputfile(cls, line):
+        name, address, phenotypes = \
+            line.split()[0], line.split()[1], line.split()[2:]
+        if not all(x == "0" or x == "1" or x == "NA" for x in phenotypes):
+            Samples.phenotype_scale = "continuous"
+        if Samples.take_logs:
+            phenotypes = map(lambda x: math.log(x, 2), phenotypes)
+        return cls(name, address, phenotypes)
+
 # --------------------------------------------------------
 # Functions and variables necessarry to show the progress 
 # information in standard error.
@@ -93,55 +142,6 @@ def within_1_tier_accuracy(targets, predictions):
             within_1_tier +=1
     accuracy = float(within_1_tier)/len(targets)
     return accuracy
-
-# -------------------------------------------------------------------
-class Samples():
-
-    phenotype_scale = "binary"
-    no_samples = 0
-    no_phenoypes = 0
-    phenotypes = []
-    take_logs = None
-    headerline = None
-
-    kmer_length = None
-    freq = None
-
-    def __init__(self, name, address, phenotypes, weight=1):
-        self.name = name
-        self.address = address
-        self.phenotypes = phenotypes
-        self.weight = weight
-
-        Samples.no_samples += 1
-
-    def get_kmer_lists(self, lock):
-        # Makes "K-mer_lists" directory where all lists are stored.
-        # Generates k-mer lists for every sample in names_of_samples variable 
-        # (list or dict).
-        call(["mkdir", "-p", "K-mer_lists"])
-        call(
-            ["glistmaker " + self.address + " -o K-mer_lists/" 
-            + self.name + " -w " + self.kmer_length + " -c " + self.freq], 
-            shell=True
-            )
-        lock.acquire()
-        currentSampleNum.value += 1
-        lock.release()
-        output = "\t%d of %d lists generated." % (
-            currentSampleNum.value, Samples.no_samples
-            )
-        stderr_print(output)
-
-    @classmethod
-    def from_inputfile(cls, line):
-        name, address, phenotypes = \
-            line.split()[0], line.split()[1], line.split()[2:]
-        if not all(x == "0" or x == "1" or x == "NA" for x in phenotypes):
-            Samples.phenotype_scale = "continuous"
-        if Samples.take_logs:
-            phenotypes = map(lambda x: math.log(x, 2), phenotypes)
-        return cls(name, address, phenotypes)
 
 # -------------------------------------------------------------------
 # Read the data from inputfile into "samples" directory
