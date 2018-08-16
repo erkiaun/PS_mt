@@ -541,16 +541,17 @@ def weighted_t_test(x, y, x_weights, y_weights):
     sumofweightsy = sum(y_weights)
     sumofweightsy2 = sum(i**2 for i in y_weights)
     vary = (sumofweightsy / (sumofweightsy**2 - sumofweightsy2)) * sum(y_weights * (y - wtd_mean_y)**2)
-    print("y", y)
-    print("weighted mean y", wtd_mean_y)
+    print(y-wtd_mean_y)
+    # print("y", y)
+    # print("weighted mean y", wtd_mean_y)
     
     #Parameters for group not containig the k-mer
     wtd_mean_x = np.average(x, weights=x_weights)
     sumofweightsx = sum(x_weights)
     sumofweightsx2 = sum(i**2 for i in x_weights)
     varx = (sumofweightsx / (sumofweightsx**2 - sumofweightsx2)) * sum(x_weights * (x - wtd_mean_x)**2)
-    print("varx esimene kordaja", (sumofweightsx / (sumofweightsx**2 - sumofweightsx2)))
-    print("varx teine kordaja", sum(x_weights * (x - wtd_mean_x)**2))
+    # print("varx esimene kordaja", (sumofweightsx / (sumofweightsx**2 - sumofweightsx2)))
+    # print("varx teine kordaja", sum(x_weights * (x - wtd_mean_x)**2))
 
     #Calculating the weighted Welch's t-test results
     dif = wtd_mean_x-wtd_mean_y
