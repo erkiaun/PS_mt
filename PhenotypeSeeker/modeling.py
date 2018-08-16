@@ -122,7 +122,7 @@ class Samples():
         call(["mkdir", "-p", "K-mer_lists"])
         call(
             ["glistmaker " + self.address + " -o K-mer_lists/" 
-            + self.name + " -w " + kmer_length + " -c " + freq], 
+            + self.name + " -w " + self.kmer_length + " -c " + self.freq], 
             shell=True
             )
         lock.acquire()
