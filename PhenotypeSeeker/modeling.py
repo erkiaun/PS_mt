@@ -17,7 +17,7 @@ from Bio.Phylo.TreeConstruction import DistanceTreeConstructor, _DistanceMatrix
 from cogent import LoadTree
 from cogent.align.weights.methods import GSC
 from collections import Counter, OrderedDict
-from multiprocess import Manager, Pool, Value
+from multiprocessing import Manager, Pool, Value
 from scipy import stats
 from sklearn.externals import joblib
 from sklearn.ensemble import RandomForestClassifier
@@ -2133,16 +2133,15 @@ def modeling(args):
     # pool.map(partial(
     #     get_kmer_lists, lock, samples, args.length, args.cutoff
     #     ), mt_split)
+    map(lambda x: x.get_kmer_lists(lock, samples, args.length, args.cutoff), samples.values()) 
+    sys.stderr.write("\nGenerating the k-mer feature vector.\n")
+    get_feature_vector(args.length, min_samples, samples)
+    sys.stderr.write("Mapping samples to the feature vector space:\n")
+    currentSampleNum.value = 0
     t = time.time()
-    pool.map(lambda x: x.get_kmer_lists(lock, samples, args.length, args.cutoff), samples.values()) 
+    pool.map(partial(
+        map_samples, lock, samples, args.length), mt_split)
     print(time.time()-t)
-    
-    # sys.stderr.write("\nGenerating the k-mer feature vector.\n")
-    # get_feature_vector(args.length, min_samples, samples)
-    # sys.stderr.write("Mapping samples to the feature vector space:\n")
-    # currentSampleNum.value = 0
-    # pool.map(partial(
-    #     map_samples, lock, samples, args.length), mt_split)
     # #call(["rm -r K-mer_lists/"], shell = True)
     # if args.weights == "+":
     #     get_weights(samples, args.cutoff)
