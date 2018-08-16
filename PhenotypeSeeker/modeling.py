@@ -541,8 +541,8 @@ def weighted_t_test(x, y, x_weights, y_weights):
     sumofweightsy = sum(y_weights)
     sumofweightsy2 = sum(i**2 for i in y_weights)
     vary = (sumofweightsy / (sumofweightsy**2 - sumofweightsy2)) * sum(y_weights * (y - wtd_mean_y)**2)
-    print(type(y))
-    print(type(wtd_mean_y))
+    # print(type(y))
+    # print(type(wtd_mean_y))
     # print(y-wtd_mean_y)
     # print("y", y)
     # print("weighted mean y", wtd_mean_y)
@@ -2193,6 +2193,8 @@ def modeling(args):
     #call(["rm -r K-mer_lists/"], shell = True)
     if args.weights == "+":
         get_weights(samples, args.cutoff)
+    for item in samples:
+        print(samples[item].weight)
     (
     pvalues_all_phenotypes, vectors_as_multiple_input
     ) = test_kmers_association_with_phenotype(
