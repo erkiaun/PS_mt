@@ -951,7 +951,7 @@ def linear_regression(
         # (with or without considering the weights). Writing results
         # into corresponding files.
         if testset_size != 0.0:
-            if penalty == 'L1':
+            if penalty == 'l1' or "L1":
                 (
                 X_train, X_test, y_train, y_test, samples_train, samples_test
                 ) = train_test_split(
@@ -1031,7 +1031,7 @@ def linear_regression(
                     )
                 )
         else:
-            if penalty == 'L1':
+            if penalty == 'l1' or "L1":
                 model = clf.fit(dataset.data, dataset.target)
             else:
                 array_weights = np.array(
