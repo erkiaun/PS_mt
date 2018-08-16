@@ -103,7 +103,7 @@ class Samples():
     take_logs = None
     headerline = None
 
-    def __init__(self, name, address, phenotypes, weight=None):
+    def __init__(self, name, address, phenotypes, weight=1):
         self.name = name
         self.address = address
         self.phenotypes = phenotypes
