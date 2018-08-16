@@ -541,7 +541,9 @@ def weighted_t_test(x, y, x_weights, y_weights):
     sumofweightsy = sum(y_weights)
     sumofweightsy2 = sum(i**2 for i in y_weights)
     vary = (sumofweightsy / (sumofweightsy**2 - sumofweightsy2)) * sum(y_weights * (y - wtd_mean_y)**2)
-    print(y-wtd_mean_y)
+    print(type(y))
+    print(type(wtd_mean_y))
+    # print(y-wtd_mean_y)
     # print("y", y)
     # print("weighted mean y", wtd_mean_y)
     
