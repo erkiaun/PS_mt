@@ -100,9 +100,7 @@ class stderr_print():
         sys.stderr.write("\r\x1b[K"+data.__str__())
         sys.stderr.flush()
 
-def check_progress(
-        prevPer, curKmerNum, totalKmers, text, phenotype=""
-        ):
+def check_progress(prevPer, curKmerNum, totalKmers, text, phenotype=""):
     currentPercent = (curKmerNum/float(totalKmers))*100
     if int(currentPercent) > prevPer:
         output = "\t" + phenotype + "%d%% of " % (
@@ -237,28 +235,6 @@ def get_multithreading_parameters(num_threads, samples):
     pool = Pool(num_threads)
     return lock, pool, mt_split
 
-# def get_kmer_lists(
-#         lock, samples_info, kmer_length, freq, input_samples
-#         ):
-#     # Makes "K-mer_lists" directory where all lists are stored.
-#     # Generates k-mer lists for every sample in names_of_samples variable 
-#     # (list or dict).
-#     call(["mkdir", "-p", "K-mer_lists"])
-#     for sample in input_samples:
-#         genomefail_address = samples_info[sample].address
-#         call(
-#         	["glistmaker " + genomefail_address + " -o K-mer_lists/" 
-#         	+ sample + " -w " + kmer_length + " -c " + freq], 
-#         	shell=True
-#         	)
-#         lock.acquire()
-#         currentSampleNum.value += 1
-#         lock.release()
-#         output = "\t%d of %d lists generated." % (
-#             currentSampleNum.value, Samples.no_samples
-#             )
-#         stderr_print(output)
-
 def get_feature_vector(length, min_freq, samples):
     call(["mkdir", "-p", "K-mer_lists"])
     glistmaker_args = ["glistmaker"]
@@ -269,9 +245,7 @@ def get_feature_vector(length, min_freq, samples):
         ]
     call(glistmaker_args)
 
-def map_samples(
-        lock, samples, kmer_length, samples_splitted
-        ):
+def map_samples(lock, samples, kmer_length, samples_splitted):
     #Takes k-mers, which passed frequency filtering as feature space and maps samples k-mer lists
     #to that feature space. A vector of k-mers frequency information is created for every sample.
     for sample in samples_splitted:
@@ -674,10 +648,7 @@ def get_expected_distribution(w_pheno, wo_pheno, w_kmer, wo_kmer, total):
         wo_pheno_w_kmer_expected, wo_pheno_wo_kmer_expected
         )
 
-def concatenate_test_files(
-        num_threads,
-        phenotypes_2_analyse
-        ):
+def concatenate_test_files(num_threads, phenotypes_2_analyse):
     if Samples.phenotype_scale == "continuous":
         beginning_text = "t-test_results_"
     else:
@@ -863,8 +834,7 @@ def get_kmer_presence_matrix(kmers_passed, split_of_kmer_lists):
 def linear_regression(
 	    pool, kmer_lists_splitted, samples, alphas,
 	    kmers_passed_all_phenotypes, penalty, n_splits, testset_size,
-	    l1_ratio, phenotypes_to_analyse,
-        max_iter, tol
+	    l1_ratio, phenotypes_to_analyse, max_iter, tol
 	    ):
 
     names_of_samples = samples.keys()
@@ -1116,8 +1086,7 @@ def linear_regression(
 def logistic_regression(
 	    pool, kmer_lists_splitted, samples, alphas,
 	    kmers_passed_all_phenotypes, penalty, n_splits, testset_size,
-	    l1_ratio, phenotypes_to_analyse,
-        max_iter, tol
+	    l1_ratio, phenotypes_to_analyse, max_iter, tol
 	    ):
     # Applies the logistic regression modeling on k-mers
     # that passed the filtering by p-value of statistical test. K-mers
@@ -1425,8 +1394,7 @@ def logistic_regression(
 def support_vector_classifier(
         pool, kmer_lists_splitted, samples, alphas,
         kmers_passed_all_phenotypes, penalty, n_splits, testset_size,
-        kernel, gammas, n_iter,
-        phenotypes_to_analyse, max_iter, tol
+        kernel, gammas, n_iter, phenotypes_to_analyse, max_iter, tol
         ):
     # Applies support vector machine modeling on k-mers
     # that passed the filtering by p-value of statistical test. K-mers
@@ -1724,9 +1692,8 @@ def support_vector_classifier(
         f2.close()
 
 def random_forest(
-	    pool, kmer_lists_splitted, samples,
-	    kmers_passed_all_phenotypes, n_splits, testset_size,
-	    phenotypes_to_analyse
+	    pool, kmer_lists_splitted, samples, kmers_passed_all_phenotypes,
+        n_splits, testset_size, phenotypes_to_analyse
 	    ):
 
     names_of_samples = samples.keys()
@@ -2132,63 +2099,61 @@ def modeling(args):
         args.num_threads, samples
         )
     sys.stderr.write("Generating the k-mer lists for input samples:\n")
-    t = time.time()
-    pool.map(lambda x: x.get_kmer_lists(lock), samples.values()) 
-    print(time.time()-t)
-    # sys.stderr.write("\nGenerating the k-mer feature vector.\n")
-    # get_feature_vector(args.length, min_samples, samples)
-    # sys.stderr.write("Mapping samples to the feature vector space:\n")
-    # currentSampleNum.value = 0
-    # pool.map(partial(
-    #     map_samples, lock, samples, args.length), mt_split)
-    # #call(["rm -r K-mer_lists/"], shell = True)
-    # if args.weights == "+":
-    #     get_weights(samples, args.cutoff)
-    # (
-    # pvalues_all_phenotypes, vectors_as_multiple_input
-    # ) = test_kmers_association_with_phenotype(
-    #     samples, args.num_threads, phenotypes_to_analyse,
-    #     min_samples, max_samples, lock,
-    #     pool
-    #     )
-    # kmers_passed_all_phenotypes = kmer_filtering_by_pvalue(
-    #     lock, args.pvalue, 
-    #     pvalues_all_phenotypes, args.n_kmers, 
-    #     phenotypes_to_analyse, args.FDR, args.Bonferroni
-    #     )
+    pool.map(lambda x: x.get_kmer_lists(lock), samples.values())
+    sys.stderr.write("\nGenerating the k-mer feature vector.\n")
+    get_feature_vector(args.length, min_samples, samples)
+    sys.stderr.write("Mapping samples to the feature vector space:\n")
+    currentSampleNum.value = 0
+    pool.map(partial(
+        map_samples, lock, samples, args.length), mt_split)
+    #call(["rm -r K-mer_lists/"], shell = True)
+    if args.weights == "+":
+        get_weights(samples, args.cutoff)
+    (
+    pvalues_all_phenotypes, vectors_as_multiple_input
+    ) = test_kmers_association_with_phenotype(
+        samples, args.num_threads, phenotypes_to_analyse,
+        min_samples, max_samples, lock,
+        pool
+        )
+    kmers_passed_all_phenotypes = kmer_filtering_by_pvalue(
+        lock, args.pvalue, 
+        pvalues_all_phenotypes, args.n_kmers, 
+        phenotypes_to_analyse, args.FDR, args.Bonferroni
+        )
 
-    # if Samples.phenotype_scale == "continuous":
-    #     linear_regression(
-    #         pool, vectors_as_multiple_input, samples, alphas,
-    #         kmers_passed_all_phenotypes, args.regularization, args.n_splits,
-    #         args.testset_size,
-    #         args.l1_ratio, phenotypes_to_analyse, args.max_iter,
-    #         args.tol
-    #         )
-    # elif Samples.phenotype_scale == "binary":
-    #     if args.binary_classifier == "log":
-    #         logistic_regression(
-    #             pool, vectors_as_multiple_input, samples, alphas,
-    #             kmers_passed_all_phenotypes, args.regularization, args.n_splits,
-    #             args.testset_size,
-    #             args.l1_ratio, phenotypes_to_analyse, args.max_iter, 
-    #             args.tol
-    #             )
-    #     elif args.binary_classifier == "SVM":
-    #         support_vector_classifier(
-    #             pool, vectors_as_multiple_input, samples, alphas,
-    #             kmers_passed_all_phenotypes, args.regularization, args.n_splits,
-    #             args.testset_size,
-    #             args.kernel, gammas, args.n_iter, phenotypes_to_analyse,
-    #             args.max_iter, args.tol
-    #             )
-    #     elif args.binary_classifier == "RF":
-    #     	random_forest(
-    #             pool, vectors_as_multiple_input, samples,
-    #             kmers_passed_all_phenotypes, args.n_splits,
-    #             args.testset_size,
-    #             phenotypes_to_analyse,
-    #             )
+    if Samples.phenotype_scale == "continuous":
+        linear_regression(
+            pool, vectors_as_multiple_input, samples, alphas,
+            kmers_passed_all_phenotypes, args.regularization, args.n_splits,
+            args.testset_size,
+            args.l1_ratio, phenotypes_to_analyse, args.max_iter,
+            args.tol
+            )
+    elif Samples.phenotype_scale == "binary":
+        if args.binary_classifier == "log":
+            logistic_regression(
+                pool, vectors_as_multiple_input, samples, alphas,
+                kmers_passed_all_phenotypes, args.regularization, args.n_splits,
+                args.testset_size,
+                args.l1_ratio, phenotypes_to_analyse, args.max_iter, 
+                args.tol
+                )
+        elif args.binary_classifier == "SVM":
+            support_vector_classifier(
+                pool, vectors_as_multiple_input, samples, alphas,
+                kmers_passed_all_phenotypes, args.regularization, args.n_splits,
+                args.testset_size,
+                args.kernel, gammas, args.n_iter, phenotypes_to_analyse,
+                args.max_iter, args.tol
+                )
+        elif args.binary_classifier == "RF":
+        	random_forest(
+                pool, vectors_as_multiple_input, samples,
+                kmers_passed_all_phenotypes, args.n_splits,
+                args.testset_size,
+                phenotypes_to_analyse,
+                )
 
-    # if args.assembly == "+":
-    #     assembling(kmers_passed_all_phenotypes, args.mpheno)
+    if args.assembly == "+":
+        assembling(kmers_passed_all_phenotypes, args.mpheno)
