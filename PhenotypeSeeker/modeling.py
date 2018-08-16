@@ -17,7 +17,7 @@ from Bio.Phylo.TreeConstruction import DistanceTreeConstructor, _DistanceMatrix
 from cogent import LoadTree
 from cogent.align.weights.methods import GSC
 from collections import Counter, OrderedDict
-from multiprocessing import Manager, Pool, Value
+from multiprocess import Manager, Pool, Value
 from scipy import stats
 from sklearn.externals import joblib
 from sklearn.ensemble import RandomForestClassifier
@@ -112,27 +112,25 @@ class Samples():
 
         Samples.no_samples += 1
 
-    # def get_kmer_lists(
-    #     self, lock, samples_info, kmer_length, freq
-    #     ):
-    #     # Makes "K-mer_lists" directory where all lists are stored.
-    #     # Generates k-mer lists for every sample in names_of_samples variable 
-    #     # (list or dict).
-    #     call(["mkdir", "-p", "K-mer_lists"])
-    #     # for sample in input_samples:
-    #     #     genomefail_address = samples_info[sample].address
-    #     call(
-    #         ["glistmaker " + self.address + " -o K-mer_lists/" 
-    #         + self.name + " -w " + kmer_length + " -c " + freq], 
-    #         shell=True
-    #         )
-    #     lock.acquire()
-    #     currentSampleNum.value += 1
-    #     lock.release()
-    #     output = "\t%d of %d lists generated." % (
-    #         currentSampleNum.value, Samples.no_samples
-    #         )
-    #     stderr_print(output)
+    def get_kmer_lists(
+        self, lock, kmer_length, freq
+        ):
+        # Makes "K-mer_lists" directory where all lists are stored.
+        # Generates k-mer lists for every sample in names_of_samples variable 
+        # (list or dict).
+        call(["mkdir", "-p", "K-mer_lists"])
+        call(
+            ["glistmaker " + self.address + " -o K-mer_lists/" 
+            + self.name + " -w " + kmer_length + " -c " + freq], 
+            shell=True
+            )
+        lock.acquire()
+        currentSampleNum.value += 1
+        lock.release()
+        output = "\t%d of %d lists generated." % (
+            currentSampleNum.value, Samples.no_samples
+            )
+        stderr_print(output)
 
     @classmethod
     def from_inputfile(cls, line):
@@ -235,27 +233,27 @@ def get_multithreading_parameters(num_threads, samples):
     pool = Pool(num_threads)
     return lock, pool, mt_split
 
-def get_kmer_lists(
-        lock, samples_info, kmer_length, freq, input_samples
-        ):
-    # Makes "K-mer_lists" directory where all lists are stored.
-    # Generates k-mer lists for every sample in names_of_samples variable 
-    # (list or dict).
-    call(["mkdir", "-p", "K-mer_lists"])
-    for sample in input_samples:
-        genomefail_address = samples_info[sample].address
-        call(
-        	["glistmaker " + genomefail_address + " -o K-mer_lists/" 
-        	+ sample + " -w " + kmer_length + " -c " + freq], 
-        	shell=True
-        	)
-        lock.acquire()
-        currentSampleNum.value += 1
-        lock.release()
-        output = "\t%d of %d lists generated." % (
-            currentSampleNum.value, Samples.no_samples
-            )
-        stderr_print(output)
+# def get_kmer_lists(
+#         lock, samples_info, kmer_length, freq, input_samples
+#         ):
+#     # Makes "K-mer_lists" directory where all lists are stored.
+#     # Generates k-mer lists for every sample in names_of_samples variable 
+#     # (list or dict).
+#     call(["mkdir", "-p", "K-mer_lists"])
+#     for sample in input_samples:
+#         genomefail_address = samples_info[sample].address
+#         call(
+#         	["glistmaker " + genomefail_address + " -o K-mer_lists/" 
+#         	+ sample + " -w " + kmer_length + " -c " + freq], 
+#         	shell=True
+#         	)
+#         lock.acquire()
+#         currentSampleNum.value += 1
+#         lock.release()
+#         output = "\t%d of %d lists generated." % (
+#             currentSampleNum.value, Samples.no_samples
+#             )
+#         stderr_print(output)
 
 def get_feature_vector(length, min_freq, samples):
     call(["mkdir", "-p", "K-mer_lists"])
@@ -2131,17 +2129,14 @@ def modeling(args):
         )
     sys.stderr.write("Generating the k-mer lists for input samples:\n")
     t = time.time()
-    pool.map(partial(
-        get_kmer_lists, lock, samples, args.length, args.cutoff
-        ), mt_split)
+    pool.map(lambda x: x.get_kmer_lists(lock, args.length, args.cutoff), samples.values()) 
     print(time.time()-t)
-    # map(lambda x: x.get_kmer_lists(lock, samples, args.length, args.cutoff), samples.values()) 
-    sys.stderr.write("\nGenerating the k-mer feature vector.\n")
-    get_feature_vector(args.length, min_samples, samples)
-    sys.stderr.write("Mapping samples to the feature vector space:\n")
-    currentSampleNum.value = 0
-    pool.map(partial(
-        map_samples, lock, samples, args.length), mt_split)
+    # sys.stderr.write("\nGenerating the k-mer feature vector.\n")
+    # get_feature_vector(args.length, min_samples, samples)
+    # sys.stderr.write("Mapping samples to the feature vector space:\n")
+    # currentSampleNum.value = 0
+    # pool.map(partial(
+    #     map_samples, lock, samples, args.length), mt_split)
     # #call(["rm -r K-mer_lists/"], shell = True)
     # if args.weights == "+":
     #     get_weights(samples, args.cutoff)
