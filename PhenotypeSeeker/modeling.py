@@ -122,7 +122,7 @@ class Samples():
         #     genomefail_address = samples_info[sample].address
         call(
             ["glistmaker " + self.address + " -o K-mer_lists/" 
-            + self + " -w " + kmer_length + " -c " + freq], 
+            + self.name + " -w " + kmer_length + " -c " + freq], 
             shell=True
             )
         lock.acquire()
