@@ -48,7 +48,7 @@ class Samples():
     headerline = None
 
     kmer_length = None
-    freq = None
+    cutoff = None
 
     def __init__(self, name, address, phenotypes, weight=1):
         self.name = name
@@ -65,7 +65,7 @@ class Samples():
         call(["mkdir", "-p", "K-mer_lists"])
         call(
             ["glistmaker " + self.address + " -o K-mer_lists/" 
-            + self.name + " -w " + self.kmer_length + " -c " + self.freq], 
+            + self.name + " -w " + self.kmer_length + " -c " + self.cutoff], 
             shell=True
             )
         lock.acquire()
