@@ -326,16 +326,15 @@ class stderr_print():
         sys.stderr.write("\r\x1b[K"+data.__str__())
         sys.stderr.flush()
 
-    @staticmethod
-    def check_progress(prevPer, totalKmers, text, phenotype=""):
+    @classmethod
+    def check_progress(cls, totalKmers, text, phenotype=""):
         currentPercent = (stderr_print.currentKmerNum.value/float(totalKmers))*100
-        if int(currentPercent) > prevPer:
+        if int(currentPercent) > stderr_print.prevPer:
             output = "\t" + phenotype + "%d%% of " % (
                 currentPercent
                 ) + text
-            stderr_print(output)
             stderr_print.previousPercent.value = int(currentPercent)
-
+            cls(stderr_print(output))
 
 # ---------------------------------------------------------
 # Self-implemented performance measure functions
