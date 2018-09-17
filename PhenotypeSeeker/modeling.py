@@ -443,7 +443,7 @@ def get_kmers_tested(
             process_input.lock.acquire()
             stderr_print.currentKmerNum.value += checkpoint
             process_input.lock.release()
-            check_progress(
+            stderr_print.check_progress(
                 no_kmers_to_analyse, text2_4_stderr, text1_4_stderr
             )
         kmer = line[0].split()[0]
