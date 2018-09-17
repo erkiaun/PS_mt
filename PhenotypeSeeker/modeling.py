@@ -79,7 +79,7 @@ class Samples():
         # feature space and maps samples k-mer list to that 
         # feature space. A vector of k-mers frequency information 
         # is created for every sample.
-        outputfile = "K-mer_lists/" + sample + "_mapped.txt"
+        outputfile = "K-mer_lists/" + self.name + "_mapped.txt"
         with open(outputfile, "w+") as outputfile:
             call(
                 [
