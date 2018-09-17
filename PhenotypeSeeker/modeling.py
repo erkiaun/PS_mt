@@ -126,7 +126,7 @@ class Samples():
         Samples._mash_output_to_distance_matrix(samples.keys(), "mash_distances.mat")
         dist_mat = Samples._distance_matrix_modifier("distances.mat")
         Samples._distance_matrix_to_phyloxml(samples.keys(), dist_mat)   
-        Sampels._phyloxml_to_newick("tree_xml.txt")
+        Samples._phyloxml_to_newick("tree_xml.txt")
         sys.stderr.write("Calculating the Gerstein Sonnhammer Coathia " \
             "weights from mash distance matrix...")
         weights = Samples._newick_to_GSC_weights("tree_newick.txt")
