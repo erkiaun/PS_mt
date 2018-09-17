@@ -68,9 +68,9 @@ class process_input():
     # ---------------------------------------------------------
     # Set parameters for multithreading
     @staticmethod
-    def get_multithreading_parameters(num_threads):
+    def get_multithreading_parameters():
         process_input.lock = Manager().Lock()
-        process_input.pool = Pool(num_threads)
+        process_input.pool = Pool(Samples.num_threads)
 
     # ---------------------------------------------------------
     # Functions for processing the command line input arguments
@@ -80,7 +80,7 @@ class process_input():
             alphas, alpha_min, alpha_max, n_alphas,
             gammas, gamma_min, gamma_max, n_gammas, 
             min_samples, max_samples, mpheno, kmer_length,
-            cutoff
+            cutoff, num_threads
             ):
         Samples.alphas = process_input._get_alphas(alphas, alpha_min, alpha_max, n_alphas)
         Samples.gammas = process_input._get_gammas(gammas, gamma_min, gamma_max, n_gammas)
@@ -88,6 +88,7 @@ class process_input():
         Samples.phenotypes_to_analyse = process_input._get_phenotypes_to_analyse(mpheno)
         Samples.kmer_length = kmer_length
         Samples.cutoff = cutoff
+        Samples.num_threads = num_threads
         
     @staticmethod
     def _get_alphas(alphas, alpha_min, alpha_max, n_alphas):       
@@ -149,6 +150,7 @@ class Samples():
     gammas = None
     min_samples = None
     max_samples = None
+    num_threads = None
 
     def __init__(self, name, address, phenotypes, weight=1):
         self.name = name
@@ -365,7 +367,7 @@ def within_1_tier_accuracy(targets, predictions):
 # -------------------------------------------------------------------
 # Functions for calculating the association test results for kmers.
 
-def test_kmers_association_with_phenotype(num_threads):
+def test_kmers_association_with_phenotype():
     pvalues_all_phenotypes = []
     if Samples.phenotype_scale == "continuous":
         sys.stderr.write("\nConducting the k-mer specific Welch t-tests:\n")
@@ -373,7 +375,7 @@ def test_kmers_association_with_phenotype(num_threads):
         sys.stderr.write("\nConducting the k-mer specific chi-square tests:\n")
     (
     vectors_as_multiple_input, progress_checkpoint, no_kmers_to_analyse
-    ) = get_params_for_kmers_testing(num_threads)
+    ) = get_params_for_kmers_testing()
     for j, k in enumerate():
         currentKmerNum.value = 0
         previousPercent.value = 0
@@ -387,33 +389,31 @@ def test_kmers_association_with_phenotype(num_threads):
             )
         pvalues_all_phenotypes.append(list(chain(*pvalues_from_all_threads)))
         sys.stderr.write("\n")
-    concatenate_test_files(num_threads)
+    concatenate_test_files()
     return pvalues_all_phenotypes, vectors_as_multiple_input
 
 
-def get_params_for_kmers_testing( num_threads):
-    _split_sample_vectors_for_multithreading(num_threads)
-    vectors_as_multiple_input = _splitted_vectors_to_multiple_input(
-         num_threads
-         )
+def get_params_for_kmers_testing():
+    _split_sample_vectors_for_multithreading()
+    vectors_as_multiple_input = _splitted_vectors_to_multiple_input()
     kmers_to_analyse = float(
         check_output(
             ['wc', '-l', "K-mer_lists/" + process_input.samples.keys()[0] + "_mapped.txt"]
             ).split()[0]
         )
-    progress_checkpoint = int(math.ceil(kmers_to_analyse/(100*num_threads)))
+    progress_checkpoint = int(math.ceil(kmers_to_analyse/(100*Samples.num_threads)))
     return(vectors_as_multiple_input, progress_checkpoint, kmers_to_analyse)
 
-def _split_sample_vectors_for_multithreading(num_threads):
+def _split_sample_vectors_for_multithreading():
     for sample in process_input.samples:
         call([
-            "split -a 5 -d -n r/" + str(num_threads) + " K-mer_lists/" +
+            "split -a 5 -d -n r/" + Samples.num_threads + " K-mer_lists/" +
             sample + "_mapped.txt " + "K-mer_lists/" + sample + "_mapped_"
             ], shell=True)
 
-def _splitted_vectors_to_multiple_input(num_threads):
+def _splitted_vectors_to_multiple_input():
     vectors_as_multiple_input = []
-    for i in range(num_threads):
+    for i in range(Samples.num_threads):
         vectors_as_multiple_input.append(["K-mer_lists/" + sample + "_mapped_%05d" %i for sample in process_input.samples])
     return vectors_as_multiple_input
 
@@ -655,7 +655,7 @@ def get_expected_distribution(w_pheno, wo_pheno, w_kmer, wo_kmer, total):
         wo_pheno_w_kmer_expected, wo_pheno_wo_kmer_expected
         )
 
-def concatenate_test_files(num_threads, phenotypes_2_analyse):
+def concatenate_test_files(phenotypes_2_analyse):
     if Samples.phenotype_scale == "continuous":
         beginning_text = "t-test_results_"
     else:
@@ -669,7 +669,7 @@ def concatenate_test_files(num_threads, phenotypes_2_analyse):
                 ],
                 shell=True
                 )
-            for l in range(num_threads):
+            for l in range(Samples.num_threads):
                 call(
                     [
                     "rm " + beginning_text + Samples.phenotypes[k] +
@@ -686,7 +686,7 @@ def concatenate_test_files(num_threads, phenotypes_2_analyse):
                 ],
                 shell=True
                 )
-            for l in range(num_threads):
+            for l in range(Samples.num_threads):
                 call(
                     [
                     "rm " + beginning_text + Samples.phenotypes[k] + "_%05d.txt" %l
@@ -2096,9 +2096,10 @@ def modeling(args):
     process_input.process_input_args(
         args.alphas, args.alpha_min, args.alpha_max, args.n_alphas,
         args.gammas, args.gamma_min, args.gamma_max, args.n_gammas,
-        args.min, args.max, args.mpheno, args.length, args.cutoff 
+        args.min, args.max, args.mpheno, args.length, args.cutoff,
+        args.num_threads 
         )
-    process_input.get_multithreading_parameters(args.num_threads)
+    process_input.get_multithreading_parameters()
     sys.stderr.write("Generating the k-mer lists for input samples:\n")
     process_input.pool.map(
         lambda x: x.get_kmer_lists(), process_input.samples.values()
@@ -2113,9 +2114,7 @@ def modeling(args):
         Samples.get_weights()
     (
     pvalues_all_phenotypes, vectors_as_multiple_input
-    ) = test_kmers_association_with_phenotype(
-        args.num_threads, Samples.min_samples, Samples.max_samples
-        )
+    ) = test_kmers_association_with_phenotype()
     kmers_passed_all_phenotypes = kmer_filtering_by_pvalue(
         args.pvalue, 
         pvalues_all_phenotypes, args.n_kmers, 
