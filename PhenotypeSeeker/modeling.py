@@ -457,9 +457,9 @@ def get_kmers_tested(
                 )
         if pvalue:
             pvalues.append(pvalue)
-    l.acquire()
+    process_input.lock.acquire()
     currentKmerNum.value += counter%checkpoint
-    l.release()
+    process_input.lock.release()
     check_progress(
         previousPercent.value, currentKmerNum.value,
         no_kmers_to_analyse, text2_4_stderr, text1_4_stderr
@@ -762,9 +762,9 @@ def kmer_filtering_by_pvalue(
                         kmers_passed.append(list1[0])
                         number_of_kmers += 1
                 if counter%checkpoint == 0:
-                    l.acquire()
+                    process_input.lock.acquire()
                     currentKmerNum.value += checkpoint
-                    l.release()
+                    process_input.lock.release()
                     check_progress(
                         previousPercent.value, currentKmerNum.value, nr_of_kmers_tested, "k-mers filtered.", phenotype
                     )
@@ -787,9 +787,9 @@ def kmer_filtering_by_pvalue(
                         kmers_passed.append(list1[0])
                         number_of_kmers += 1
                 if counter%checkpoint == 0:
-                    l.acquire()
+                    process_input.lock.acquire()
                     currentKmerNum.value += checkpoint
-                    l.release()
+                    process_input.lock.release()
                     check_progress(
                         previousPercent.value, currentKmerNum.value, nr_of_kmers_tested, "k-mers filtered.", phenotype
                     )
@@ -803,16 +803,16 @@ def kmer_filtering_by_pvalue(
                         kmers_passed.append(list1[0])
                         number_of_kmers += 1
                 if counter%checkpoint == 0:
-                    l.acquire()
+                    process_input.lock.acquire()
                     currentKmerNum.value += checkpoint
-                    l.release()
+                    process_input.lock.release()
                     check_progress(
                         previousPercent.value, currentKmerNum.value, nr_of_kmers_tested, "k-mers filtered.", phenotype
                     )
         kmers_passed_all_phenotypes.append(kmers_passed)
-        l.acquire()
+        process_input.lock.acquire()
         currentKmerNum.value += counter%checkpoint
-        l.release()
+        process_input.lock.release()
         check_progress(
             previousPercent.value, currentKmerNum.value, nr_of_kmers_tested, "k-mers filtered.", phenotype
             )
@@ -2115,8 +2115,7 @@ def modeling(args):
     pvalues_all_phenotypes, vectors_as_multiple_input
     ) = test_kmers_association_with_phenotype()
     kmers_passed_all_phenotypes = kmer_filtering_by_pvalue(
-        args.pvalue, 
-        pvalues_all_phenotypes, args.n_kmers, 
+        args.pvalue, pvalues_all_phenotypes, args.n_kmers, 
         args.FDR, args.Bonferroni
         )
 
