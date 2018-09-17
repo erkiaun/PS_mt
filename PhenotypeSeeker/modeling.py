@@ -42,8 +42,8 @@ class process_input():
     pool = None
     lock = None
     
-    @staticmethod
-    def get_input_data(inputfilename, take_logs):
+    @classmethod
+    def get_input_data(cls, inputfilename, take_logs):
         # Read the data from inputfile into "samples" directory
         samples = OrderedDict()
         Samples.take_logs = take_logs
@@ -63,29 +63,29 @@ class process_input():
                 samples[sample_name] = (
                     Samples.from_inputfile(line)
                     )
-        process_input.samples = samples
+        cls.samples = samples
 
     # ---------------------------------------------------------
     # Set parameters for multithreading
-    @staticmethod
-    def get_multithreading_parameters():
-        process_input.lock = Manager().Lock()
-        process_input.pool = Pool(Samples.num_threads)
+    @classmethod
+    def get_multithreading_parameters(cls):
+        cls.lock = Manager().Lock()
+        cls.pool = Pool(Samples.num_threads)
 
     # ---------------------------------------------------------
     # Functions for processing the command line input arguments
 
-    @staticmethod
+    @classmethod
     def process_input_args(
-            alphas, alpha_min, alpha_max, n_alphas,
+            cls, alphas, alpha_min, alpha_max, n_alphas,
             gammas, gamma_min, gamma_max, n_gammas, 
             min_samples, max_samples, mpheno, kmer_length,
             cutoff, num_threads
             ):
-        Samples.alphas = process_input._get_alphas(alphas, alpha_min, alpha_max, n_alphas)
-        Samples.gammas = process_input._get_gammas(gammas, gamma_min, gamma_max, n_gammas)
-        Samples.min_samples, Samples.max_samples = process_input._get_min_max(min_samples, max_samples)
-        Samples.phenotypes_to_analyse = process_input._get_phenotypes_to_analyse(mpheno)
+        Samples.alphas = cls._get_alphas(alphas, alpha_min, alpha_max, n_alphas)
+        Samples.gammas = cls._get_gammas(gammas, gamma_min, gamma_max, n_gammas)
+        Samples.min_samples, Samples.max_samples = cls._get_min_max(min_samples, max_samples)
+        Samples.phenotypes_to_analyse = cls._get_phenotypes_to_analyse(mpheno)
         Samples.kmer_length = kmer_length
         Samples.cutoff = cutoff
         Samples.num_threads = num_threads
@@ -173,9 +173,7 @@ class Samples():
         process_input.lock.acquire()
         stderr_print.currentSampleNum.value += 1
         process_input.lock.release()
-        output = "\t%d of %d lists generated." % (
-            stderr_print.currentSampleNum.value, Samples.no_samples
-            )
+        stderr_print.print_progress()
         stderr_print(output)
 
     def map_samples(self):
@@ -195,9 +193,7 @@ class Samples():
         process_input.lock.acquire()
         stderr_print.currentSampleNum.value += 1
         process_input.lock.release()
-        output = "\t%d of %d samples mapped." % (
-            stderr_print.currentSampleNum.value, Samples.no_samples
-            )
+        stderr_print.format_output()
         stderr_print(output)
 
     @classmethod
@@ -331,6 +327,13 @@ class stderr_print():
                 ) + text
             cls.previousPercent.value = int(currentPercent)
             cls(output)
+
+    @classmethod
+    def print_progress(cls):
+        output = "\t%d of %d lists generated." % (
+            cls.currentSampleNum.value, Samples.no_samples
+            )
+        cls(output)
 
 # ---------------------------------------------------------
 # Self-implemented performance measure functions
