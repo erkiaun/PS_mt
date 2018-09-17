@@ -74,14 +74,6 @@ class Samples():
             )
         stderr_print(output)
 
-    def get_feature_vector(self, min_freq, samples):
-        glistmaker_args = ["glistmaker"] + \
-            [sample.address for sample in samples.values()] + \
-            [
-            '-c', str(min_freq), '-w', self.kmer_length, '-o', 'K-mer_lists/feature_vector'
-            ]
-        call(glistmaker_args)
-
     @classmethod
     def from_inputfile(cls, line):
         name, address, phenotypes = \
@@ -91,6 +83,15 @@ class Samples():
         if Samples.take_logs:
             phenotypes = map(lambda x: math.log(x, 2), phenotypes)
         return cls(name, address, phenotypes)
+
+    @staticmethod
+    def get_feature_vector(self, min_freq, samples):
+        glistmaker_args = ["glistmaker"] + \
+            [sample.address for sample in samples.values()] + \
+            [
+            '-c', str(min_freq), '-w', self.kmer_length, '-o', 'K-mer_lists/feature_vector'
+            ]
+        call(glistmaker_args)
 
 # --------------------------------------------------------
 # Functions and variables necessarry to show the progress 
