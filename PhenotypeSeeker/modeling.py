@@ -63,7 +63,7 @@ class process_input():
                 samples[sample_name] = (
                     Samples.from_inputfile(line)
                     )
-        Input.samples = samples
+        process_input.samples = samples
 
     # ---------------------------------------------------------
     # Set parameters for multithreading
