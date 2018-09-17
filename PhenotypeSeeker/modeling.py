@@ -133,7 +133,7 @@ class process_input():
             phenotypes_to_analyse = map(lambda x: x-1, mpheno)
         return phenotypes_to_analyse
 
-# -------------------------------------------------------------------
+
 class Samples():
 
     phenotype_scale = "binary"
@@ -171,10 +171,10 @@ class Samples():
             shell=True
             )
         process_input.lock.acquire()
-        currentSampleNum.value += 1
+        stderr_print.currentSampleNum.value += 1
         process_input.lock.release()
         output = "\t%d of %d lists generated." % (
-            currentSampleNum.value, Samples.no_samples
+            stderr_print.currentSampleNum.value, Samples.no_samples
             )
         stderr_print(output)
 
@@ -193,10 +193,10 @@ class Samples():
                 ]
                 , stdout=outputfile)
         process_input.lock.acquire()
-        currentSampleNum.value += 1
+        stderr_print.currentSampleNum.value += 1
         process_input.lock.release()
         output = "\t%d of %d samples mapped." % (
-            currentSampleNum.value, Samples.no_samples
+            stderr_print.currentSampleNum.value, Samples.no_samples
             )
         stderr_print(output)
 
@@ -308,28 +308,33 @@ class Samples():
             weights[item] = 1 - weights[item]
         return(weights)
 
-# --------------------------------------------------------
-# Functions and variables necessarry to show the progress 
-# information in standard error.
 
-currentSampleNum = Value("i", 0)
-currentKmerNum = Value("i", 0)
-previousPercent = Value("i", 0)
+
+
+
 
 class stderr_print():
-    # Print things to stdout on one line dynamically.
+    # --------------------------------------------------------
+    # Functions and variables necessarry to show the progress 
+    # information in standard error.
+
+    currentSampleNum = Value("i", 0)
+    currentKmerNum = Value("i", 0)
+    previousPercent = Value("i", 0)
+
     def __init__(self,data):
         sys.stderr.write("\r\x1b[K"+data.__str__())
         sys.stderr.flush()
 
-def check_progress(prevPer, curKmerNum, totalKmers, text, phenotype=""):
-    currentPercent = (curKmerNum/float(totalKmers))*100
-    if int(currentPercent) > prevPer:
-        output = "\t" + phenotype + "%d%% of " % (
-            currentPercent
-            ) + text
-        stderr_print(output)
-        previousPercent.value = int(currentPercent)
+    @staticmethod
+    def check_progress(prevPer, totalKmers, text, phenotype=""):
+        currentPercent = (stderr_print.currentKmerNum.value/float(totalKmers))*100
+        if int(currentPercent) > prevPer:
+            output = "\t" + phenotype + "%d%% of " % (
+                currentPercent
+                ) + text
+            stderr_print(output)
+            stderr_print.previousPercent.value = int(currentPercent)
 
 
 # ---------------------------------------------------------
@@ -377,8 +382,8 @@ def test_kmers_association_with_phenotype():
     vectors_as_multiple_input, progress_checkpoint, no_kmers_to_analyse
     ) = get_params_for_kmers_testing()
     for j, k in enumerate(Samples.phenotypes_to_analyse):
-        currentKmerNum.value = 0
-        previousPercent.value = 0
+        stderr_print.currentKmerNum.value = 0
+        stderr_print.previousPercent.value = 0
         pvalues_from_all_threads = process_input.pool.map(
             partial(
                 get_kmers_tested, progress_checkpoint, k,
@@ -436,10 +441,9 @@ def get_kmers_tested(
         counter += 1
         if counter%checkpoint == 0:
             process_input.lock.acquire()
-            currentKmerNum.value += checkpoint
+            stderr_print.currentKmerNum.value += checkpoint
             process_input.lock.release()
             check_progress(
-                previousPercent.value, currentKmerNum.value,
                 no_kmers_to_analyse, text2_4_stderr, text1_4_stderr
             )
         kmer = line[0].split()[0]
@@ -458,10 +462,9 @@ def get_kmers_tested(
         if pvalue:
             pvalues.append(pvalue)
     process_input.lock.acquire()
-    currentKmerNum.value += counter%checkpoint
+    stderr_print.currentKmerNum.value += counter%checkpoint
     process_input.lock.release()
     check_progress(
-        previousPercent.value, currentKmerNum.value,
         no_kmers_to_analyse, text2_4_stderr, text1_4_stderr
     )
     test_results_file.close()
@@ -711,8 +714,8 @@ def kmer_filtering_by_pvalue(
     kmers_passed_all_phenotypes = []
     for j, k in enumerate(p_t_a):
         nr_of_kmers_tested = float(len(pvalues_all_phenotypes[j]))
-        currentKmerNum.value = 0
-        previousPercent.value = 0
+        stderr_print.currentKmerNum.value = 0
+        stderr_print.previousPercent.value = 0
         checkpoint = int(math.ceil(nr_of_kmers_tested/100))
         counter = 0
         kmers_passed = []
@@ -763,10 +766,10 @@ def kmer_filtering_by_pvalue(
                         number_of_kmers += 1
                 if counter%checkpoint == 0:
                     process_input.lock.acquire()
-                    currentKmerNum.value += checkpoint
+                    stderr_print.currentKmerNum.value += checkpoint
                     process_input.lock.release()
                     check_progress(
-                        previousPercent.value, currentKmerNum.value, nr_of_kmers_tested, "k-mers filtered.", phenotype
+                        nr_of_kmers_tested, "k-mers filtered.", phenotype
                     )
         elif FDR:
             max_pvalue_by_FDR = 0
@@ -788,10 +791,10 @@ def kmer_filtering_by_pvalue(
                         number_of_kmers += 1
                 if counter%checkpoint == 0:
                     process_input.lock.acquire()
-                    currentKmerNum.value += checkpoint
+                    stderr_print.currentKmerNum.value += checkpoint
                     process_input.lock.release()
                     check_progress(
-                        previousPercent.value, currentKmerNum.value, nr_of_kmers_tested, "k-mers filtered.", phenotype
+                        nr_of_kmers_tested, "k-mers filtered.", phenotype
                     )
         else:
             for line in f1:
@@ -804,17 +807,17 @@ def kmer_filtering_by_pvalue(
                         number_of_kmers += 1
                 if counter%checkpoint == 0:
                     process_input.lock.acquire()
-                    currentKmerNum.value += checkpoint
+                    stderr_print.currentKmerNum.value += checkpoint
                     process_input.lock.release()
                     check_progress(
-                        previousPercent.value, currentKmerNum.value, nr_of_kmers_tested, "k-mers filtered.", phenotype
+                        nr_of_kmers_tested, "k-mers filtered.", phenotype
                     )
         kmers_passed_all_phenotypes.append(kmers_passed)
         process_input.lock.acquire()
-        currentKmerNum.value += counter%checkpoint
+        stderr_print.currentKmerNum.value += counter%checkpoint
         process_input.lock.release()
         check_progress(
-            previousPercent.value, currentKmerNum.value, nr_of_kmers_tested, "k-mers filtered.", phenotype
+            nr_of_kmers_tested, "k-mers filtered.", phenotype
             )
         if len(p_t_a) > 1 and k != p_t_a[-1]:
             sys.stderr.write("\n")
@@ -2106,7 +2109,7 @@ def modeling(args):
     sys.stderr.write("\nGenerating the k-mer feature vector.\n")
     Samples.get_feature_vector()
     sys.stderr.write("Mapping samples to the feature vector space:\n")
-    currentSampleNum.value = 0
+    stderr_print.currentSampleNum.value = 0
     process_input.pool.map(lambda x: x.map_samples(), process_input.samples.values())
     #call(["rm -r K-mer_lists/"], shell = True)
     if args.weights == "+":
