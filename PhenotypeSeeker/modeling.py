@@ -448,12 +448,12 @@ def get_kmers_tested(
         if Samples.phenotype_scale == "binary":
             pvalue = conduct_chi_squared_test(
                 phenotypes_of_samples, names_of_samples, kmer, kmer_presence,
-                min_freq, max_freq, test_results_file
+                test_results_file
                 )
         elif Samples.phenotype_scale == "continuous":
             pvalue = conduct_t_test(
                 phenotypes_of_samples, names_of_samples, kmer, kmer_presence,
-                min_freq, max_freq, test_results_file
+                test_results_file
                 )
         if pvalue:
             pvalues.append(pvalue)
@@ -493,7 +493,7 @@ def get_text1_4_stderr(k):
 
 def conduct_t_test(
     phenotypes_of_samples, names_of_samples, kmer, kmer_presence, 
-    min_freq, max_freq, test_results_file
+    test_results_file
     ):
     samples_w_kmer = []
     x = []
@@ -506,7 +506,7 @@ def conduct_t_test(
         samples_w_kmer, phenotypes_of_samples, names_of_samples
         )
 
-    if len(x) < min_freq or len(y) < 2 or len(x) > max_freq:
+    if len(x) < Samples.min_samples or len(y) < 2 or len(x) > Samples.max_samples:
         return
 
     t_statistic, pvalue, mean_x, mean_y = t_test(
@@ -560,7 +560,7 @@ def t_test(x, y, x_weights, y_weights):
 
 def conduct_chi_squared_test(
     phenotypes_of_samples, names_of_samples, kmer, kmer_presence,
-    min_freq, max_freq, test_results_file
+    test_results_file
     ):
     samples_w_kmer = []
     (
@@ -572,7 +572,7 @@ def conduct_chi_squared_test(
         w_pheno_w_kmer, w_pheno_wo_kmer, wo_pheno_w_kmer, wo_pheno_wo_kmer
         )
     no_samples_w_kmer = len(samples_w_kmer)
-    if no_samples_w_kmer < min_freq or no_samples_w_kmer > max_freq:
+    if no_samples_w_kmer < Samples.min_samples or no_samples_w_kmer > Samples.max_samples:
         return
 
     (
