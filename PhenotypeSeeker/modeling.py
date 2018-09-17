@@ -174,7 +174,7 @@ class Samples():
         stderr_print.currentSampleNum.value += 1
         process_input.lock.release()
         output = "\t%d of %d lists generated." % (
-            stderr_print.currentSampleNum.value, cls.no_samples
+            stderr_print.currentSampleNum.value, Samples.no_samples
             )
         stderr_print(output)
 
