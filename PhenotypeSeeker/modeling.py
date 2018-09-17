@@ -221,7 +221,7 @@ class Samples():
     @classmethod
     def get_weights(cls):
         cls._mash_caller()
-        cls._mash_output_to_distance_matrix(cls.samples.keys(), "mash_distances.mat")
+        cls._mash_output_to_distance_matrix(process_input.samples.keys(), "mash_distances.mat")
         dist_mat = cls._distance_matrix_modifier("distances.mat")
         cls._distance_matrix_to_phyloxml(cls.samples.keys(), dist_mat)   
         cls._phyloxml_to_newick("tree_xml.txt")
