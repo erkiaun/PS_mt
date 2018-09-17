@@ -74,6 +74,28 @@ class Samples():
             )
         stderr_print(output)
 
+    def map_samples(lock):
+        # Takes k-mers, which passed frequency filtering as 
+        # feature space and maps samples k-mer list to that 
+        # feature space. A vector of k-mers frequency information 
+        # is created for every sample.
+        outputfile = "K-mer_lists/" + sample + "_mapped.txt"
+        with open(outputfile, "w+") as outputfile:
+            call(
+                [
+                "glistquery", "K-mer_lists/" + self.name + "_" + self.kmer_length +
+                ".list", "-l", "K-mer_lists/feature_vector_" + self.kmer_length +
+                ".list"
+                ]
+                , stdout=outputfile)
+        lock.acquire()
+        currentSampleNum.value += 1
+        lock.release()
+        output = "\t%d of %d samples mapped." % (
+            currentSampleNum.value, Samples.no_samples
+            )
+        stderr_print(output)
+
     @classmethod
     def from_inputfile(cls, line):
         name, address, phenotypes = \
@@ -241,28 +263,6 @@ def get_multithreading_parameters(num_threads, samples):
             )
     pool = Pool(num_threads)
     return lock, pool, mt_split
-
-def map_samples(lock, samples, kmer_length, samples_splitted):
-    #Takes k-mers, which passed frequency filtering as feature space and maps samples k-mer lists
-    #to that feature space. A vector of k-mers frequency information is created for every sample.
-    for sample in samples_splitted:
-        outputfile = "K-mer_lists/" + sample + "_mapped.txt"
-        with open(outputfile, "w+") as outputfile:
-            call(
-                [
-                "glistquery", "K-mer_lists/" + sample + "_" + kmer_length +
-                ".list", "-l", "K-mer_lists/feature_vector_" + kmer_length +
-                ".list"
-                ]
-                , stdout=outputfile)
-        lock.acquire()
-        currentSampleNum.value += 1
-        lock.release()
-        output = "\t%d of %d samples mapped." % (
-            currentSampleNum.value, Samples.no_samples
-            )
-        stderr_print(output)
-
 
 # -------------------------------------------------------------------
 # Functions for calculating the mash distances and GSC weights for
@@ -2101,8 +2101,7 @@ def modeling(args):
     Samples.get_feature_vector(min_samples, samples)
     sys.stderr.write("Mapping samples to the feature vector space:\n")
     currentSampleNum.value = 0
-    pool.map(partial(
-        map_samples, lock, samples, args.length), mt_split)
+    pool.map(lambda x: x.map_samples(), samples.values())
     #call(["rm -r K-mer_lists/"], shell = True)
     if args.weights == "+":
         get_weights(samples, args.cutoff)
