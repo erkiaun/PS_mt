@@ -214,11 +214,11 @@ class Samples():
         return cls(name, address, phenotypes)
 
     @staticmethod
-    def get_feature_vector(min_freq, samples):
+    def get_feature_vector():
         glistmaker_args = ["glistmaker"] + \
             [sample.address for sample in process_input.samples.values()] + \
             [
-            '-c', str(min_freq), '-w', Samples.kmer_length, '-o', 'K-mer_lists/feature_vector'
+            '-c', str(Samples.min_freq), '-w', Samples.kmer_length, '-o', 'K-mer_lists/feature_vector'
             ]
         call(glistmaker_args)
 
