@@ -464,7 +464,7 @@ def get_kmers_tested(
     process_input.lock.acquire()
     stderr_print.currentKmerNum.value += counter%checkpoint
     process_input.lock.release()
-    check_progress(
+    stderr_print.check_progress(
         no_kmers_to_analyse, text2_4_stderr, text1_4_stderr
     )
     test_results_file.close()
@@ -768,7 +768,7 @@ def kmer_filtering_by_pvalue(
                     process_input.lock.acquire()
                     stderr_print.currentKmerNum.value += checkpoint
                     process_input.lock.release()
-                    check_progress(
+                    stderr_print.check_progress(
                         nr_of_kmers_tested, "k-mers filtered.", phenotype
                     )
         elif FDR:
@@ -793,7 +793,7 @@ def kmer_filtering_by_pvalue(
                     process_input.lock.acquire()
                     stderr_print.currentKmerNum.value += checkpoint
                     process_input.lock.release()
-                    check_progress(
+                    stderr_print.check_progress(
                         nr_of_kmers_tested, "k-mers filtered.", phenotype
                     )
         else:
@@ -809,14 +809,14 @@ def kmer_filtering_by_pvalue(
                     process_input.lock.acquire()
                     stderr_print.currentKmerNum.value += checkpoint
                     process_input.lock.release()
-                    check_progress(
+                    stderr_print.check_progress(
                         nr_of_kmers_tested, "k-mers filtered.", phenotype
                     )
         kmers_passed_all_phenotypes.append(kmers_passed)
         process_input.lock.acquire()
         stderr_print.currentKmerNum.value += counter%checkpoint
         process_input.lock.release()
-        check_progress(
+        stderr_print.check_progress(
             nr_of_kmers_tested, "k-mers filtered.", phenotype
             )
         if len(p_t_a) > 1 and k != p_t_a[-1]:
