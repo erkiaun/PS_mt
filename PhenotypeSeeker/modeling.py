@@ -376,7 +376,7 @@ def test_kmers_association_with_phenotype():
     (
     vectors_as_multiple_input, progress_checkpoint, no_kmers_to_analyse
     ) = get_params_for_kmers_testing()
-    for j, k in enumerate():
+    for j, k in enumerate(Samples.phenotypes_to_analyse):
         currentKmerNum.value = 0
         previousPercent.value = 0
         pvalues_from_all_threads = process_input.pool.map(
