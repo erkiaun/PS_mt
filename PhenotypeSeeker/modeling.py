@@ -82,10 +82,10 @@ class process_input():
             min_samples, max_samples, mpheno, kmer_length,
             cutoff
             ):
-        alphas = Input._get_alphas(alphas, alpha_min, alpha_max, n_alphas)
-        gammas = Input._get_gammas(gammas, gamma_min, gamma_max, n_gammas)
-        min_samples, max_samples = Input._get_min_max(min_samples, max_samples)
-        phenotypes_to_analyse = Input._get_phenotypes_to_analyse(mpheno)
+        alphas = process_input._get_alphas(alphas, alpha_min, alpha_max, n_alphas)
+        gammas = process_input._get_gammas(gammas, gamma_min, gamma_max, n_gammas)
+        min_samples, max_samples = process_input._get_min_max(min_samples, max_samples)
+        phenotypes_to_analyse = process_input._get_phenotypes_to_analyse(mpheno)
         Samples.kmer_length = kmer_length
         Samples.cutoff = cutoff
         Samples.phenotypes_to_analyse = phenotypes_to_analyse
