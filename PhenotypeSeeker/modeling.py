@@ -35,8 +35,6 @@ import Bio
 import sklearn.datasets
 import numpy as np
 
-
-
 # -------------------------------------------------------------------
 class Samples():
 
@@ -75,6 +73,14 @@ class Samples():
             currentSampleNum.value, Samples.no_samples
             )
         stderr_print(output)
+
+    def get_feature_vector(self, min_freq, samples):
+        glistmaker_args = ["glistmaker"] + \
+            [sample.address for sample in samples.values()] + \
+            [
+            '-c', str(min_freq), '-w', self.kmer_length, '-o', 'K-mer_lists/feature_vector'
+            ]
+        call(glistmaker_args)
 
     @classmethod
     def from_inputfile(cls, line):
@@ -234,16 +240,6 @@ def get_multithreading_parameters(num_threads, samples):
             )
     pool = Pool(num_threads)
     return lock, pool, mt_split
-
-def get_feature_vector(length, min_freq, samples):
-    call(["mkdir", "-p", "K-mer_lists"])
-    glistmaker_args = ["glistmaker"]
-    for sample_data in samples.values():
-        glistmaker_args.append(sample_data.address)
-    glistmaker_args += [
-        '-c', str(min_freq), '-w', length, '-o', 'K-mer_lists/feature_vector'
-        ]
-    call(glistmaker_args)
 
 def map_samples(lock, samples, kmer_length, samples_splitted):
     #Takes k-mers, which passed frequency filtering as feature space and maps samples k-mer lists
@@ -2101,7 +2097,7 @@ def modeling(args):
     sys.stderr.write("Generating the k-mer lists for input samples:\n")
     pool.map(lambda x: x.get_kmer_lists(lock), samples.values())
     sys.stderr.write("\nGenerating the k-mer feature vector.\n")
-    get_feature_vector(args.length, min_samples, samples)
+    Samples.get_feature_vector(min_samples, samples)
     sys.stderr.write("Mapping samples to the feature vector space:\n")
     currentSampleNum.value = 0
     pool.map(partial(
