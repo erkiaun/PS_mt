@@ -174,7 +174,6 @@ class Samples():
         stderr_print.currentSampleNum.value += 1
         process_input.lock.release()
         stderr_print.print_progress()
-        stderr_print(output)
 
     def map_samples(self):
         # Takes k-mers, which passed frequency filtering as 
