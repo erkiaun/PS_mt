@@ -192,8 +192,7 @@ class Samples():
         process_input.lock.acquire()
         stderr_print.currentSampleNum.value += 1
         process_input.lock.release()
-        stderr_print.format_output()
-        stderr_print(output)
+        stderr_print.print_progress()
 
     @classmethod
     def from_inputfile(cls, line):
