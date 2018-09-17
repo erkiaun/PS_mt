@@ -2109,7 +2109,7 @@ def modeling(args):
     Samples.get_feature_vector(min_samples, samples)
     sys.stderr.write("Mapping samples to the feature vector space:\n")
     currentSampleNum.value = 0
-    pool.map(lambda x: x.map_samples(), samples.values())
+    pool.map(lambda x: x.map_samples(lock), samples.values())
     #call(["rm -r K-mer_lists/"], shell = True)
     if args.weights == "+":
         Samples.get_weights(samples, args.cutoff)
