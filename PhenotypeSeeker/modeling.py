@@ -228,7 +228,7 @@ class Samples():
     # input samples.
     
     @staticmethod
-    def get_weights(:
+    def get_weights():
         Samples._mash_caller()
         Samples._mash_output_to_distance_matrix(samples.keys(), "mash_distances.mat")
         dist_mat = Samples._distance_matrix_modifier("distances.mat")
