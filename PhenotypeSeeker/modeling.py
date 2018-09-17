@@ -36,9 +36,11 @@ import sklearn.datasets
 import numpy as np
 
 
-class Input():
+class process_input():
 
     samples = None
+    pool = None
+    lock = None
     
     @staticmethod
     def get_input_data(inputfilename, take_logs):
@@ -62,6 +64,13 @@ class Input():
                     Samples.from_inputfile(line)
                     )
         Input.samples = samples
+
+    # ---------------------------------------------------------
+    # Set parameters for multithreading
+    @staticmethod
+    def get_multithreading_parameters(num_threads):
+        process_input.lock = Manager().Lock()
+        process_input.pool = Pool(num_threads)
 
     # ---------------------------------------------------------
     # Functions for processing the command line input arguments
@@ -207,7 +216,7 @@ class Samples():
     @staticmethod
     def get_feature_vector(min_freq, samples):
         glistmaker_args = ["glistmaker"] + \
-            [sample.address for sample in samples.values()] + \
+            [sample.address for sample in process_input.samples.values()] + \
             [
             '-c', str(min_freq), '-w', Samples.kmer_length, '-o', 'K-mer_lists/feature_vector'
             ]
@@ -219,8 +228,8 @@ class Samples():
     # input samples.
     
     @staticmethod
-    def get_weights(samples, cutoff):
-        Samples._mash_caller(samples, cutoff)
+    def get_weights(cutoff):
+        Samples._mash_caller()
         Samples._mash_output_to_distance_matrix(samples.keys(), "mash_distances.mat")
         dist_mat = Samples._distance_matrix_modifier("distances.mat")
         Samples._distance_matrix_to_phyloxml(samples.keys(), dist_mat)   
@@ -232,11 +241,11 @@ class Samples():
             samples[key].weight = value
     
     @staticmethod
-    def _mash_caller(samples_info, freq):
+    def _mash_caller():
         #Estimating phylogenetic distances between samples using mash
         sys.stderr.write("\nEstimating the Mash distances between samples...\n")
-        mash_args = ["mash", "sketch", "-o", "reference", "-m", freq]
-        for sample_data in samples_info.values():
+        mash_args = ["mash", "sketch", "-o", "reference", "-m", Samples.cutoff]
+        for sample_data in process_input.samples.values():
             mash_args.append(sample_data.address)
         process = Popen(mash_args, stderr=PIPE)
         for line in iter(process.stderr.readline, ''):
@@ -356,23 +365,6 @@ def within_1_tier_accuracy(targets, predictions):
             within_1_tier +=1
     accuracy = float(within_1_tier)/len(targets)
     return accuracy
-
-
-
-# ---------------------------------------------------------
-# Set parameters for multithreading
-def get_multithreading_parameters(num_threads, samples):
-    lock = Manager().Lock()
-    # Splitting samples for multithreading
-    mt_split = []
-    for i in range(num_threads):
-        mt_split.append(
-            [samples.keys()[j] for j in xrange(
-                i, Samples.no_samples, num_threads
-                )]
-            )
-    pool = Pool(num_threads)
-    return lock, pool, mt_split
 
 
 # -------------------------------------------------------------------
@@ -2113,25 +2105,27 @@ def assembling(kmers_passed_all_phenotypes, phenotypes_to_analyze):
 
 def modeling(args):
     # The main function of "phenotypeseeker modeling"
-    Input.get_input_data(args.inputfile, args.take_logs)
-    Input.process_input_args(
+    process_input.get_input_data(args.inputfile, args.take_logs)
+    process_input.process_input_args(
         args.alphas, args.alpha_min, args.alpha_max, args.n_alphas,
         args.gammas, args.gamma_min, args.gamma_max, args.n_gammas,
         args.min, args.max, args.mpheno, args.length, args.cutoff 
         )
-    lock, pool, mt_split = get_multithreading_parameters(
-        args.num_threads, samples
-        )
+    process_input.get_multithreading_parameters(args.num_threads)
     sys.stderr.write("Generating the k-mer lists for input samples:\n")
-    pool.map(lambda x: x.get_kmer_lists(lock), samples.values())
+    pool.map(
+        lambda x: x.get_kmer_lists(
+            process_input.lock
+            ), process_input.samples.values()
+        )
     sys.stderr.write("\nGenerating the k-mer feature vector.\n")
-    Samples.get_feature_vector(min_samples, samples)
+    Samples.get_feature_vector(Samples.min_samples)
     sys.stderr.write("Mapping samples to the feature vector space:\n")
     currentSampleNum.value = 0
-    pool.map(lambda x: x.map_samples(lock), samples.values())
+    pool.map(lambda x: x.map_samples(lock), process_input.samples.values())
     #call(["rm -r K-mer_lists/"], shell = True)
     if args.weights == "+":
-        Samples.get_weights(samples, args.cutoff)
+        Samples.get_weights(args.cutoff)
     (
     pvalues_all_phenotypes, vectors_as_multiple_input
     ) = test_kmers_association_with_phenotype(
