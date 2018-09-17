@@ -407,7 +407,7 @@ def get_params_for_kmers_testing():
 def _split_sample_vectors_for_multithreading():
     for sample in process_input.samples:
         call([
-            "split -a 5 -d -n r/" + Samples.num_threads + " K-mer_lists/" +
+            "split -a 5 -d -n r/" + str(Samples.num_threads) + " K-mer_lists/" +
             sample + "_mapped.txt " + "K-mer_lists/" + sample + "_mapped_"
             ], shell=True)
 
