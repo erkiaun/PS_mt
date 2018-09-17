@@ -89,7 +89,7 @@ class Samples():
         glistmaker_args = ["glistmaker"] + \
             [sample.address for sample in samples.values()] + \
             [
-            '-c', str(min_freq), '-w', self.kmer_length, '-o', 'K-mer_lists/feature_vector'
+            '-c', str(min_freq), '-w', Samples.kmer_length, '-o', 'K-mer_lists/feature_vector'
             ]
         call(glistmaker_args)
 
