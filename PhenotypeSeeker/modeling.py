@@ -656,13 +656,13 @@ def get_expected_distribution(w_pheno, wo_pheno, w_kmer, wo_kmer, total):
         wo_pheno_w_kmer_expected, wo_pheno_wo_kmer_expected
         )
 
-def concatenate_test_files(phenotypes_2_analyse):
+def concatenate_test_files():
     if Samples.phenotype_scale == "continuous":
         beginning_text = "t-test_results_"
     else:
         beginning_text = "chi-squared_test_results_"
     if Samples.headerline:
-        for k in phenotypes_2_analyse:
+        for k in Samples.phenotypes_to_analyse:
             call(
                 [
                 "cat " + beginning_text + Samples.phenotypes[k] + "_* > " +
