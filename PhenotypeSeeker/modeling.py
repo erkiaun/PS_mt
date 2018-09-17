@@ -365,10 +365,7 @@ def within_1_tier_accuracy(targets, predictions):
 # -------------------------------------------------------------------
 # Functions for calculating the association test results for kmers.
 
-def test_kmers_association_with_phenotype(
-        samples, num_threads,
-        min_samples, max_samples
-        ):
+def test_kmers_association_with_phenotype(num_threads):
     pvalues_all_phenotypes = []
     if Samples.phenotype_scale == "continuous":
         sys.stderr.write("\nConducting the k-mer specific Welch t-tests:\n")
@@ -382,7 +379,7 @@ def test_kmers_association_with_phenotype(
         previousPercent.value = 0
         pvalues_from_all_threads = process_input.pool.map(
             partial(
-                get_kmers_tested, min_samples, max_samples,
+                get_kmers_tested, Samples.min_samples, Samples.max_samples,
                 progress_checkpoint, k,
                 no_kmers_to_analyse
                 ), 
@@ -479,7 +476,7 @@ def test_result_output(k, code):
     if Samples.headerline:
         outputfile = beginning_text + \
             Samples.phenotypes[k] + "_" + code + ".txt"
-    elif len(phenotypes_to_analyse) > 1:
+    elif len(Samples.phenotypes_to_analyse) > 1:
         outputfile = beginning_text + \
             Samples.phenotypes[k] + "_" + code + ".txt"
     else:
@@ -2117,7 +2114,7 @@ def modeling(args):
     (
     pvalues_all_phenotypes, vectors_as_multiple_input
     ) = test_kmers_association_with_phenotype(
-        args.num_threads, min_samples, max_samples
+        args.num_threads, Samples.min_samples, Samples.max_samples
         )
     kmers_passed_all_phenotypes = kmer_filtering_by_pvalue(
         args.pvalue, 
