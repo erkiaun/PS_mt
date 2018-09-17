@@ -163,7 +163,7 @@ class Samples():
 
         Samples.no_samples += 1
 
-    def get_kmer_lists(self, lock):
+    def get_kmer_lists(self):
         # Makes "K-mer_lists" directory where all lists are stored.
         # Generates k-mer lists for every sample in names_of_samples variable 
         # (list or dict).
@@ -173,15 +173,15 @@ class Samples():
             + self.name + " -w " + self.kmer_length + " -c " + self.cutoff], 
             shell=True
             )
-        lock.acquire()
+        process_input.lock.acquire()
         currentSampleNum.value += 1
-        lock.release()
+        process_input.lock.release()
         output = "\t%d of %d lists generated." % (
             currentSampleNum.value, Samples.no_samples
             )
         stderr_print(output)
 
-    def map_samples(self, lock):
+    def map_samples(self):
         # Takes k-mers, which passed frequency filtering as 
         # feature space and maps samples k-mer list to that 
         # feature space. A vector of k-mers frequency information 
@@ -195,9 +195,9 @@ class Samples():
                 ".list"
                 ]
                 , stdout=outputfile)
-        lock.acquire()
+        process_input.lock.acquire()
         currentSampleNum.value += 1
-        lock.release()
+        process_input.lock.release()
         output = "\t%d of %d samples mapped." % (
             currentSampleNum.value, Samples.no_samples
             )
@@ -372,7 +372,7 @@ def within_1_tier_accuracy(targets, predictions):
 
 def test_kmers_association_with_phenotype(
         samples, num_threads, phenotypes_to_analyse, 
-        min_samples, max_samples, lock
+        min_samples, max_samples
         ):
     pvalues_all_phenotypes = []
     if Samples.phenotype_scale == "continuous":
@@ -390,7 +390,7 @@ def test_kmers_association_with_phenotype(
         pvalues_from_all_threads = process_input.pool.map(
             partial(
                 get_kmers_tested, min_samples, max_samples,
-                progress_checkpoint, k, lock, samples,
+                progress_checkpoint, k, samples,
                 no_kmers_to_analyse, phenotypes_to_analyse
                 ), 
             vectors_as_multiple_input
@@ -2113,15 +2113,13 @@ def modeling(args):
     process_input.get_multithreading_parameters(args.num_threads)
     sys.stderr.write("Generating the k-mer lists for input samples:\n")
     process_input.pool.map(
-        lambda x: x.get_kmer_lists(
-            process_input.lock
-            ), process_input.samples.values()
+        lambda x: x.get_kmer_lists(), process_input.samples.values()
         )
     sys.stderr.write("\nGenerating the k-mer feature vector.\n")
-    Samples.get_feature_vector(Samples.min_samples)
+    Samples.get_feature_vector()
     sys.stderr.write("Mapping samples to the feature vector space:\n")
     currentSampleNum.value = 0
-    process_input.pool.map(lambda x: x.map_samples(lock), process_input.samples.values())
+    process_input.pool.map(lambda x: x.map_samples(), process_input.samples.values())
     #call(["rm -r K-mer_lists/"], shell = True)
     if args.weights == "+":
         Samples.get_weights(args.cutoff)
@@ -2129,10 +2127,10 @@ def modeling(args):
     pvalues_all_phenotypes, vectors_as_multiple_input
     ) = test_kmers_association_with_phenotype(
         samples, args.num_threads, phenotypes_to_analyse,
-        min_samples, max_samples, lock,
+        min_samples, max_samples
         )
     kmers_passed_all_phenotypes = kmer_filtering_by_pvalue(
-        lock, args.pvalue, 
+        args.pvalue, 
         pvalues_all_phenotypes, args.n_kmers, 
         phenotypes_to_analyse, args.FDR, args.Bonferroni
         )
