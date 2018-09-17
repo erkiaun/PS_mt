@@ -704,7 +704,7 @@ def concatenate_test_files():
             )
 
 def kmer_filtering_by_pvalue(
-        l, pvalue, pvalues_all_phenotypes, kmer_limit,
+        pvalue, pvalues_all_phenotypes, kmer_limit,
         FDR=False, B=False
         ):
     # Filters the k-mers by their p-value achieved in statistical 
