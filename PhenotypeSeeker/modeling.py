@@ -417,7 +417,7 @@ def _splitted_vectors_to_multiple_input():
     return vectors_as_multiple_input
 
 def get_kmers_tested(
-        checkpoint, k, l,
+        checkpoint, k,
         no_kmers_to_analyse,
         split_of_kmer_lists
         ):
@@ -435,9 +435,9 @@ def get_kmers_tested(
     for line in izip_longest(*[open(item) for item in split_of_kmer_lists], fillvalue = ''):
         counter += 1
         if counter%checkpoint == 0:
-            l.acquire()
+            process_input.lock.acquire()
             currentKmerNum.value += checkpoint
-            l.release()
+            process_input.lock.release()
             check_progress(
                 previousPercent.value, currentKmerNum.value,
                 no_kmers_to_analyse, text2_4_stderr, text1_4_stderr
