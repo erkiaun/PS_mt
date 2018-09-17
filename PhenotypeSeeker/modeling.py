@@ -372,8 +372,7 @@ def within_1_tier_accuracy(targets, predictions):
 
 def test_kmers_association_with_phenotype(
         samples, num_threads, phenotypes_to_analyse, 
-        min_samples, max_samples, lock,
-        pool
+        min_samples, max_samples, lock
         ):
     pvalues_all_phenotypes = []
     if Samples.phenotype_scale == "continuous":
@@ -388,7 +387,7 @@ def test_kmers_association_with_phenotype(
     for j, k in enumerate(phenotypes_to_analyse):
         currentKmerNum.value = 0
         previousPercent.value = 0
-        pvalues_from_all_threads = pool.map(
+        pvalues_from_all_threads = process_input.pool.map(
             partial(
                 get_kmers_tested, min_samples, max_samples,
                 progress_checkpoint, k, lock, samples,
@@ -850,7 +849,7 @@ def get_kmer_presence_matrix(kmers_passed, split_of_kmer_lists):
     return(kmers_presence_matrix, features)
 
 def linear_regression(
-	    pool, kmer_lists_splitted, samples, alphas,
+	    kmer_lists_splitted, samples, alphas,
 	    kmers_passed_all_phenotypes, penalty, n_splits, testset_size,
 	    l1_ratio, phenotypes_to_analyse, max_iter, tol
 	    ):
@@ -903,7 +902,7 @@ def linear_regression(
         # of k-mer names based on information in k-mer_matrix.txt 
         matrix_and_features = map(
             list, zip(
-                *pool.map(
+                *process_input.pool.map(
                     partial(
                         get_kmer_presence_matrix,
                         set(kmers_passed_all_phenotypes[j])
@@ -1102,7 +1101,7 @@ def linear_regression(
         f2.close()
 
 def logistic_regression(
-	    pool, kmer_lists_splitted, samples, alphas,
+	    kmer_lists_splitted, samples, alphas,
 	    kmers_passed_all_phenotypes, penalty, n_splits, testset_size,
 	    l1_ratio, phenotypes_to_analyse, max_iter, tol
 	    ):
@@ -1154,7 +1153,7 @@ def logistic_regression(
         # of k-mer names based on information in k-mer_matrix.txt
         matrix_and_features = map(
             list, zip(
-                *pool.map(
+                *process_input.pool.map(
                     partial(
                         get_kmer_presence_matrix,
                         set(kmers_passed_all_phenotypes[j])
@@ -1410,7 +1409,7 @@ def logistic_regression(
         f2.close()
 
 def support_vector_classifier(
-        pool, kmer_lists_splitted, samples, alphas,
+        kmer_lists_splitted, samples, alphas,
         kmers_passed_all_phenotypes, penalty, n_splits, testset_size,
         kernel, gammas, n_iter, phenotypes_to_analyse, max_iter, tol
         ):
@@ -1465,7 +1464,7 @@ def support_vector_classifier(
         # of k-mer names based on information in k-mer_matrix.txt 
         matrix_and_features = map(
             list, zip(
-                *pool.map(
+                *process_input.pool.map(
                     partial(
                         get_kmer_presence_matrix,
                         set(kmers_passed_all_phenotypes[j])
@@ -1710,7 +1709,7 @@ def support_vector_classifier(
         f2.close()
 
 def random_forest(
-	    pool, kmer_lists_splitted, samples, kmers_passed_all_phenotypes,
+	    kmer_lists_splitted, samples, kmers_passed_all_phenotypes,
         n_splits, testset_size, phenotypes_to_analyse
 	    ):
 
@@ -1764,7 +1763,7 @@ def random_forest(
         # of k-mer names based on information in k-mer_matrix.txt
         matrix_and_features = map(
             list, zip(
-                *pool.map(
+                *process_input.pool.map(
                     partial(
                         get_kmer_presence_matrix,
                         set(kmers_passed_all_phenotypes[j])
@@ -2113,7 +2112,7 @@ def modeling(args):
         )
     process_input.get_multithreading_parameters(args.num_threads)
     sys.stderr.write("Generating the k-mer lists for input samples:\n")
-    pool.map(
+    process_input.pool.map(
         lambda x: x.get_kmer_lists(
             process_input.lock
             ), process_input.samples.values()
@@ -2122,7 +2121,7 @@ def modeling(args):
     Samples.get_feature_vector(Samples.min_samples)
     sys.stderr.write("Mapping samples to the feature vector space:\n")
     currentSampleNum.value = 0
-    pool.map(lambda x: x.map_samples(lock), process_input.samples.values())
+    process_input.pool.map(lambda x: x.map_samples(lock), process_input.samples.values())
     #call(["rm -r K-mer_lists/"], shell = True)
     if args.weights == "+":
         Samples.get_weights(args.cutoff)
@@ -2131,7 +2130,6 @@ def modeling(args):
     ) = test_kmers_association_with_phenotype(
         samples, args.num_threads, phenotypes_to_analyse,
         min_samples, max_samples, lock,
-        pool
         )
     kmers_passed_all_phenotypes = kmer_filtering_by_pvalue(
         lock, args.pvalue, 
@@ -2141,7 +2139,7 @@ def modeling(args):
 
     if Samples.phenotype_scale == "continuous":
         linear_regression(
-            pool, vectors_as_multiple_input, samples, alphas,
+            vectors_as_multiple_input, samples, alphas,
             kmers_passed_all_phenotypes, args.regularization, args.n_splits,
             args.testset_size,
             args.l1_ratio, phenotypes_to_analyse, args.max_iter,
@@ -2150,7 +2148,7 @@ def modeling(args):
     elif Samples.phenotype_scale == "binary":
         if args.binary_classifier == "log":
             logistic_regression(
-                pool, vectors_as_multiple_input, samples, alphas,
+                vectors_as_multiple_input, samples, alphas,
                 kmers_passed_all_phenotypes, args.regularization, args.n_splits,
                 args.testset_size,
                 args.l1_ratio, phenotypes_to_analyse, args.max_iter, 
@@ -2158,7 +2156,7 @@ def modeling(args):
                 )
         elif args.binary_classifier == "SVM":
             support_vector_classifier(
-                pool, vectors_as_multiple_input, samples, alphas,
+                vectors_as_multiple_input, samples, alphas,
                 kmers_passed_all_phenotypes, args.regularization, args.n_splits,
                 args.testset_size,
                 args.kernel, gammas, args.n_iter, phenotypes_to_analyse,
@@ -2166,7 +2164,7 @@ def modeling(args):
                 )
         elif args.binary_classifier == "RF":
         	random_forest(
-                pool, vectors_as_multiple_input, samples,
+                vectors_as_multiple_input, samples,
                 kmers_passed_all_phenotypes, args.n_splits,
                 args.testset_size,
                 phenotypes_to_analyse,
