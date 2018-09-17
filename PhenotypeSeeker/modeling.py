@@ -223,7 +223,7 @@ class Samples():
         cls._mash_caller()
         cls._mash_output_to_distance_matrix(process_input.samples.keys(), "mash_distances.mat")
         dist_mat = cls._distance_matrix_modifier("distances.mat")
-        cls._distance_matrix_to_phyloxml(cls.samples.keys(), dist_mat)   
+        cls._distance_matrix_to_phyloxml(process_input.samples.keys(), dist_mat)   
         cls._phyloxml_to_newick("tree_xml.txt")
         sys.stderr.write("Calculating the Gerstein Sonnhammer Coathia " \
             "weights from mash distance matrix...")
@@ -333,6 +333,8 @@ class stderr_print():
             )
         cls(output)
 
+class metrics():
+    pass
 # ---------------------------------------------------------
 # Self-implemented performance measure functions
 
