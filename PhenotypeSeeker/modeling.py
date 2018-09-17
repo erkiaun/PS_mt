@@ -211,7 +211,7 @@ class Samples():
         return cls(name, address, phenotypes)
 
     @classmethod
-    def get_feature_vector():
+    def get_feature_vector(cls):
         glistmaker_args = ["glistmaker"] + \
             [sample.address for sample in process_input.samples.values()] + \
             [
