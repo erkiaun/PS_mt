@@ -199,8 +199,8 @@ class Samples():
         name, address, phenotypes = \
             line.split()[0], line.split()[1], line.split()[2:]
         if not all(x == "0" or x == "1" or x == "NA" for x in phenotypes):
-            Samples.phenotype_scale = "continuous"
-        if Samples.take_logs:
+            cls.phenotype_scale = "continuous"
+        if cls.take_logs:
             phenotypes = map(lambda x: math.log(x, 2), phenotypes)
         return cls(name, address, phenotypes)
 
@@ -218,24 +218,24 @@ class Samples():
     # Functions for calculating the mash distances and GSC weights for
     # input samples.
     
-    @staticmethod
-    def get_weights():
-        Samples._mash_caller()
-        Samples._mash_output_to_distance_matrix(process_input.samples.keys(), "mash_distances.mat")
-        dist_mat = Samples._distance_matrix_modifier("distances.mat")
-        Samples._distance_matrix_to_phyloxml(process_input.samples.keys(), dist_mat)   
-        Samples._phyloxml_to_newick("tree_xml.txt")
+    @classmethod
+    def get_weights(cls):
+        cls._mash_caller()
+        cls._mash_output_to_distance_matrix(cls.samples.keys(), "mash_distances.mat")
+        dist_mat = cls._distance_matrix_modifier("distances.mat")
+        cls._distance_matrix_to_phyloxml(cls.samples.keys(), dist_mat)   
+        cls._phyloxml_to_newick("tree_xml.txt")
         sys.stderr.write("Calculating the Gerstein Sonnhammer Coathia " \
             "weights from mash distance matrix...")
-        weights = Samples._newick_to_GSC_weights("tree_newick.txt")
+        weights = cls._newick_to_GSC_weights("tree_newick.txt")
         for key, value in weights.iteritems():
             process_input.samples[key].weight = value
     
-    @staticmethod
-    def _mash_caller():
+    @classmethod
+    def _mash_caller(cls):
         #Estimating phylogenetic distances between samples using mash
         sys.stderr.write("\nEstimating the Mash distances between samples...\n")
-        mash_args = ["mash", "sketch", "-o", "reference", "-m", Samples.cutoff]
+        mash_args = ["mash", "sketch", "-o", "reference", "-m", cls.cutoff]
         for sample_data in process_input.samples.values():
             mash_args.append(sample_data.address)
         process = Popen(mash_args, stderr=PIPE)
@@ -245,8 +245,8 @@ class Samples():
         with open("mash_distances.mat", "w+") as f1:
             call(["mash", "dist", "reference.msh", "reference.msh"], stdout=f1)
 
-    @staticmethod
-    def _mash_output_to_distance_matrix(names_of_samples, mash_distances):
+    @classmethod
+    def _mash_output_to_distance_matrix(cls, names_of_samples, mash_distances):
         with open(mash_distances) as f1:
             with open("distances.mat", "w+") as f2:
                 counter = 0
@@ -255,10 +255,10 @@ class Samples():
                     distance = line.split()[2]
                     f2.write("\t" + distance)
                     counter += 1
-                    if counter%Samples.no_samples == 0:
-                        if counter != Samples.no_samples**2:
+                    if counter%cls.no_samples == 0:
+                        if counter != cls.no_samples**2:
                             f2.write(
-                                "\n" + names_of_samples[counter/Samples.no_samples]
+                                "\n" + names_of_samples[counter/cls.no_samples]
                                 )
 
     @staticmethod
