@@ -334,7 +334,7 @@ class stderr_print():
                 currentPercent
                 ) + text
             stderr_print.previousPercent.value = int(currentPercent)
-            cls(stderr_print(output))
+            cls(output)
 
 # ---------------------------------------------------------
 # Self-implemented performance measure functions
