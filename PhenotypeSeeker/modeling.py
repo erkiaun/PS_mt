@@ -218,7 +218,7 @@ class Samples():
         glistmaker_args = ["glistmaker"] + \
             [sample.address for sample in process_input.samples.values()] + \
             [
-            '-c', str(Samples.min_freq), '-w', Samples.kmer_length, '-o', 'K-mer_lists/feature_vector'
+            '-c', Samples.cutoff, '-w', Samples.kmer_length, '-o', 'K-mer_lists/feature_vector'
             ]
         call(glistmaker_args)
 
@@ -228,7 +228,7 @@ class Samples():
     # input samples.
     
     @staticmethod
-    def get_weights(cutoff):
+    def get_weights(:
         Samples._mash_caller()
         Samples._mash_output_to_distance_matrix(samples.keys(), "mash_distances.mat")
         dist_mat = Samples._distance_matrix_modifier("distances.mat")
@@ -2122,7 +2122,7 @@ def modeling(args):
     process_input.pool.map(lambda x: x.map_samples(), process_input.samples.values())
     #call(["rm -r K-mer_lists/"], shell = True)
     if args.weights == "+":
-        Samples.get_weights(args.cutoff)
+        Samples.get_weights()
     (
     pvalues_all_phenotypes, vectors_as_multiple_input
     ) = test_kmers_association_with_phenotype(
