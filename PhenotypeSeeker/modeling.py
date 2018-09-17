@@ -705,13 +705,13 @@ def concatenate_test_files():
 
 def kmer_filtering_by_pvalue(
         l, pvalue, pvalues_all_phenotypes, kmer_limit,
-        p_t_a, FDR=False, B=False
+        FDR=False, B=False
         ):
     # Filters the k-mers by their p-value achieved in statistical 
     # testing.
     sys.stderr.write("Filtering the k-mers by p-value:\n")
     kmers_passed_all_phenotypes = []
-    for j, k in enumerate(p_t_a):
+    for j, k in enumerate(Samples.phenotypes_to_analyse):
         nr_of_kmers_tested = float(len(pvalues_all_phenotypes[j]))
         stderr_print.currentKmerNum.value = 0
         stderr_print.previousPercent.value = 0
@@ -818,7 +818,7 @@ def kmer_filtering_by_pvalue(
         stderr_print.check_progress(
             nr_of_kmers_tested, "k-mers filtered.", phenotype
             )
-        if len(p_t_a) > 1 and k != p_t_a[-1]:
+        if len(Samples.phenotypes_to_analyse) > 1 and k != Samples.phenotypes_to_analyse[-1]:
             sys.stderr.write("\n")
         if len(kmers_passed) == 0:
             f2.write("\nNo k-mers passed the filtration by p-value.\n")
