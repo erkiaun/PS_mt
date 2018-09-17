@@ -35,6 +35,99 @@ import Bio
 import sklearn.datasets
 import numpy as np
 
+
+class Input():
+
+    samples = None
+    
+    @staticmethod
+    def get_input_data(inputfilename, take_logs):
+        # Read the data from inputfile into "samples" directory
+        samples = OrderedDict()
+        Samples.take_logs = take_logs
+        with open(inputfilename) as inputfile:
+            for i, line in enumerate(inputfile):
+                if i == 0:
+                    firstline = line.split()
+                    Samples.no_phenotypes = len(firstline)-2
+                    if firstline[0] == "SampleID":
+                        Samples.phenotypes = firstline[2:]
+                        Samples.headerline = True
+                        continue
+                    else:
+                        for j in xrange(1, Samples.no_phenotypes + 1):
+                            Samples.phenotypes.append("phenotype%s" %j)
+                sample_name = line.split()[0]
+                samples[sample_name] = (
+                    Samples.from_inputfile(line)
+                    )
+        Input.samples = samples
+
+    # ---------------------------------------------------------
+    # Functions for processing the command line input arguments
+
+    @staticmethod
+    def process_input_args(
+            alphas, alpha_min, alpha_max, n_alphas,
+            gammas, gamma_min, gamma_max, n_gammas, 
+            min_samples, max_samples, mpheno, kmer_length,
+            cutoff
+            ):
+        alphas = Input._get_alphas(alphas, alpha_min, alpha_max, n_alphas)
+        gammas = Input._get_gammas(gammas, gamma_min, gamma_max, n_gammas)
+        min_samples, max_samples = Input._get_min_max(min_samples, max_samples)
+        phenotypes_to_analyse = Input._get_phenotypes_to_analyse(mpheno)
+        Samples.kmer_length = kmer_length
+        Samples.cutoff = cutoff
+        Samples.phenotypes_to_analyse = phenotypes_to_analyse
+        Samples.alphas = alphas
+        Samples.gammas = gammas
+        Samples.min_samples = min_samples
+        Samples.max_samples = max_samples
+        
+    @staticmethod
+    def _get_alphas(alphas, alpha_min, alpha_max, n_alphas):       
+        # Generating the vector of alphas (hyperparameters in regression analysis)
+        # based on the given command line arguments.
+        if alphas == None:
+            alphas = np.logspace(
+                math.log10(alpha_min),
+                math.log10(alpha_max), num=n_alphas)
+        else: 
+            alphas = np.array(alphas)
+        return alphas
+
+    @staticmethod
+    def _get_gammas(gammas, gamma_min, gamma_max, n_gammas):
+        # Generating the vector of alphas (hyperparameters in regression analysis)
+        # based on the given command line arguments.
+        if gammas == None:
+            gammas = np.logspace(
+                math.log10(gamma_min),
+                math.log10(gamma_max), num=n_gammas)
+        else: 
+            gammas = np.array(gammas)
+        return gammas
+
+    @staticmethod
+    def _get_min_max(min_samples, max_samples):
+        # Set the min and max arguments to default values
+        min_samples = int(min_samples)
+        if min_samples == 0:
+            min_samples = 2
+        max_samples = int(max_samples)
+        if max_samples == 0:
+            max_samples = Samples.no_samples - 2
+        return min_samples, max_samples
+
+    @staticmethod
+    def _get_phenotypes_to_analyse(mpheno):
+        if not mpheno:
+            phenotypes_to_analyse = range(Samples.no_phenotypes)
+        else: 
+            phenotypes_to_analyse = map(lambda x: x-1, mpheno)
+        return phenotypes_to_analyse
+
 # -------------------------------------------------------------------
 class Samples():
 
@@ -47,6 +140,11 @@ class Samples():
 
     kmer_length = None
     cutoff = None
+    phenotypes_to_analyse = None
+    alphas = None
+    gammas = None
+    min_samples = None
+    max_samples = None
 
     def __init__(self, name, address, phenotypes, weight=1):
         self.name = name
@@ -259,84 +357,7 @@ def within_1_tier_accuracy(targets, predictions):
     accuracy = float(within_1_tier)/len(targets)
     return accuracy
 
-# -------------------------------------------------------------------
-# Read the data from inputfile into "samples" directory
-def get_input_data(inputfilename, take_logs):
-    samples = OrderedDict()
-    Samples.take_logs = take_logs
-    with open(inputfilename) as inputfile:
-        for i, line in enumerate(inputfile):
-            if i == 0:
-                firstline = line.split()
-                Samples.no_phenotypes = len(firstline)-2
-                if firstline[0] == "SampleID":
-                    Samples.phenotypes = firstline[2:]
-                    Samples.headerline = True
-                    continue
-                else:
-                    for j in xrange(1, Samples.no_phenotypes + 1):
-                        Samples.phenotypes.append("phenotype%s" %j)
-            sample_name = line.split()[0]
-            samples[sample_name] = (
-                Samples.from_inputfile(line)
-                )
-    return samples
 
-# ---------------------------------------------------------
-# Functions for processing the command line input arguments
-
-def process_input_args(
-        alphas, alpha_min, alpha_max, n_alphas,
-        gammas, gamma_min, gamma_max, n_gammas, 
-        min_samples, max_samples, mpheno, kmer_length,
-        cutoff
-        ):
-    alphas = _get_alphas(alphas, alpha_min, alpha_max, n_alphas)
-    gammas = _get_gammas(gammas, gamma_min, gamma_max, n_gammas)
-    min_samples, max_samples = _get_min_max(min_samples, max_samples)
-    phenotypes_to_analyse = _get_phenotypes_to_analyse(mpheno)
-    Samples.kmer_length = kmer_length
-    Samples.cutoff = cutoff
-    return alphas, gammas, min_samples, max_samples, phenotypes_to_analyse
-
-def _get_alphas(alphas, alpha_min, alpha_max, n_alphas):       
-    # Generating the vector of alphas (hyperparameters in regression analysis)
-    # based on the given command line arguments.
-    if alphas == None:
-        alphas = np.logspace(
-            math.log10(alpha_min),
-            math.log10(alpha_max), num=n_alphas)
-    else: 
-        alphas = np.array(alphas)
-    return alphas
-
-def _get_gammas(gammas, gamma_min, gamma_max, n_gammas):
-    # Generating the vector of alphas (hyperparameters in regression analysis)
-    # based on the given command line arguments.
-    if gammas == None:
-        gammas = np.logspace(
-            math.log10(gamma_min),
-            math.log10(gamma_max), num=n_gammas)
-    else: 
-        gammas = np.array(gammas)
-    return gammas
-
-def _get_min_max(min_samples, max_samples):
-    # Set the min and max arguments to default values
-    min_samples = int(min_samples)
-    if min_samples == 0:
-        min_samples = 2
-    max_samples = int(max_samples)
-    if max_samples == 0:
-        max_samples = Samples.no_samples - 2
-    return min_samples, max_samples
-
-def _get_phenotypes_to_analyse(mpheno):
-    if not mpheno:
-        phenotypes_to_analyse = range(Samples.no_phenotypes)
-    else: 
-        phenotypes_to_analyse = map(lambda x: x-1, mpheno)
-    return phenotypes_to_analyse
 
 # ---------------------------------------------------------
 # Set parameters for multithreading
@@ -2092,14 +2113,12 @@ def assembling(kmers_passed_all_phenotypes, phenotypes_to_analyze):
 
 def modeling(args):
     # The main function of "phenotypeseeker modeling"
-    samples = get_input_data(args.inputfile, args.take_logs)
-    (
-    alphas, gammas, min_samples, max_samples, phenotypes_to_analyse
-        ) = process_input_args(
-            args.alphas, args.alpha_min, args.alpha_max, args.n_alphas,
-            args.gammas, args.gamma_min, args.gamma_max, args.n_gammas,
-            args.min, args.max, args.mpheno, args.length, args.cutoff 
-            )
+    Input.get_input_data(args.inputfile, args.take_logs)
+    Input.process_input_args(
+        args.alphas, args.alpha_min, args.alpha_max, args.n_alphas,
+        args.gammas, args.gamma_min, args.gamma_max, args.n_gammas,
+        args.min, args.max, args.mpheno, args.length, args.cutoff 
+        )
     lock, pool, mt_split = get_multithreading_parameters(
         args.num_threads, samples
         )
