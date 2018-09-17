@@ -74,7 +74,7 @@ class Samples():
             )
         stderr_print(output)
 
-    def map_samples(lock):
+    def map_samples(self, lock):
         # Takes k-mers, which passed frequency filtering as 
         # feature space and maps samples k-mer list to that 
         # feature space. A vector of k-mers frequency information 
@@ -114,6 +114,95 @@ class Samples():
             '-c', str(min_freq), '-w', Samples.kmer_length, '-o', 'K-mer_lists/feature_vector'
             ]
         call(glistmaker_args)
+
+
+    # -------------------------------------------------------------------
+    # Functions for calculating the mash distances and GSC weights for
+    # input samples.
+    
+    @staticmethod
+    def get_weights(samples, cutoff):
+        Samples._mash_caller(samples, cutoff)
+        Samples._mash_output_to_distance_matrix(samples.keys(), "mash_distances.mat")
+        dist_mat = Samples._distance_matrix_modifier("distances.mat")
+        Samples._distance_matrix_to_phyloxml(samples.keys(), dist_mat)   
+        Sampels._phyloxml_to_newick("tree_xml.txt")
+        sys.stderr.write("Calculating the Gerstein Sonnhammer Coathia " \
+            "weights from mash distance matrix...")
+        weights = Samples._newick_to_GSC_weights("tree_newick.txt")
+        for key, value in weights.iteritems():
+            samples[key].weight = value
+    
+    @staticmethod
+    def _mash_caller(samples_info, freq):
+        #Estimating phylogenetic distances between samples using mash
+        sys.stderr.write("\nEstimating the Mash distances between samples...\n")
+        mash_args = ["mash", "sketch", "-o", "reference", "-m", freq]
+        for sample_data in samples_info.values():
+            mash_args.append(sample_data.address)
+        process = Popen(mash_args, stderr=PIPE)
+        for line in iter(process.stderr.readline, ''):
+            stderr_print(line.strip())
+        stderr_print("")
+        with open("mash_distances.mat", "w+") as f1:
+            call(["mash", "dist", "reference.msh", "reference.msh"], stdout=f1)
+
+    @staticmethod
+    def _mash_output_to_distance_matrix(names_of_samples, mash_distances):
+        with open(mash_distances) as f1:
+            with open("distances.mat", "w+") as f2:
+                counter = 0
+                f2.write(names_of_samples[counter])
+                for line in f1:
+                    distance = line.split()[2]
+                    f2.write("\t" + distance)
+                    counter += 1
+                    if counter%Samples.no_samples == 0:
+                        if counter != Samples.no_samples**2:
+                            f2.write(
+                                "\n" + names_of_samples[counter/Samples.no_samples]
+                                )
+
+    @staticmethod
+    def _distance_matrix_modifier(distance_matrix):
+        # Modifies distance matrix to be suitable argument 
+        # for Bio.Phylo.TreeConstruction._DistanceMatrix function
+        distancematrix = []
+        with open(distance_matrix) as f1:
+            counter = 2
+            for line in f1:
+                line = line.strip().split()
+                distancematrix.append(line[1:counter])
+                counter += 1
+        for i in range(len(distancematrix)):
+            for j in range(len(distancematrix[i])):
+                distancematrix[i][j] = float(distancematrix[i][j])
+        return(distancematrix)
+
+    @staticmethod
+    def _distance_matrix_to_phyloxml(samples_order, distance_matrix):
+        #Converting distance matrix to phyloxml
+        dm = _DistanceMatrix(samples_order, distance_matrix)
+        tree_xml = DistanceTreeConstructor().nj(dm)
+        with open("tree_xml.txt", "w+") as f1:
+            Bio.Phylo.write(tree_xml, f1, "phyloxml")
+
+    @staticmethod
+    def _phyloxml_to_newick(phyloxml):
+        #Converting phyloxml to newick
+        with open("tree_newick.txt", "w+") as f1:
+            Bio.Phylo.convert(phyloxml, "phyloxml", f1, "newick")
+
+    @staticmethod
+    def _newick_to_GSC_weights(newick_tree):
+        # Calculating Gerstein Sonnhammer Coathia weights from Newick 
+        # string. Returns dictionary where sample names are keys and GSC 
+        # weights are values.
+        tree=LoadTree(newick_tree)
+        weights=GSC(tree)
+        for item in weights:
+            weights[item] = 1 - weights[item]
+        return(weights)
 
 # --------------------------------------------------------
 # Functions and variables necessarry to show the progress 
@@ -263,87 +352,6 @@ def get_multithreading_parameters(num_threads, samples):
             )
     pool = Pool(num_threads)
     return lock, pool, mt_split
-
-# -------------------------------------------------------------------
-# Functions for calculating the mash distances and GSC weights for
-# input samples.
-
-def get_weights(samples, cutoff):
-    _mash_caller(samples, cutoff)
-    _mash_output_to_distance_matrix(samples.keys(), "mash_distances.mat")
-    dist_mat = _distance_matrix_modifier("distances.mat")
-    _distance_matrix_to_phyloxml(samples.keys(), dist_mat)   
-    _phyloxml_to_newick("tree_xml.txt")
-    sys.stderr.write("Calculating the Gerstein Sonnhammer Coathia " \
-        "weights from mash distance matrix...")
-    weights = _newick_to_GSC_weights("tree_newick.txt")
-    for key, value in weights.iteritems():
-        samples[key].weight = value
-
-def _mash_caller(samples_info, freq):
-    #Estimating phylogenetic distances between samples using mash
-    sys.stderr.write("\nEstimating the Mash distances between samples...\n")
-    mash_args = ["mash", "sketch", "-o", "reference", "-m", freq]
-    for sample_data in samples_info.values():
-        mash_args.append(sample_data.address)
-    process = Popen(mash_args, stderr=PIPE)
-    for line in iter(process.stderr.readline, ''):
-        stderr_print(line.strip())
-    stderr_print("")
-    with open("mash_distances.mat", "w+") as f1:
-        call(["mash", "dist", "reference.msh", "reference.msh"], stdout=f1)
-
-def _mash_output_to_distance_matrix(names_of_samples, mash_distances):
-    with open(mash_distances) as f1:
-        with open("distances.mat", "w+") as f2:
-            counter = 0
-            f2.write(names_of_samples[counter])
-            for line in f1:
-                distance = line.split()[2]
-                f2.write("\t" + distance)
-                counter += 1
-                if counter%Samples.no_samples == 0:
-                    if counter != Samples.no_samples**2:
-                        f2.write(
-                        	"\n" + names_of_samples[counter/Samples.no_samples]
-                        	)
-
-def _distance_matrix_modifier(distance_matrix):
-    # Modifies distance matrix to be suitable argument 
-    # for Bio.Phylo.TreeConstruction._DistanceMatrix function
-    distancematrix = []
-    with open(distance_matrix) as f1:
-        counter = 2
-        for line in f1:
-            line = line.strip().split()
-            distancematrix.append(line[1:counter])
-            counter += 1
-    for i in range(len(distancematrix)):
-        for j in range(len(distancematrix[i])):
-            distancematrix[i][j] = float(distancematrix[i][j])
-    return(distancematrix)
-
-def _distance_matrix_to_phyloxml(samples_order, distance_matrix):
-    #Converting distance matrix to phyloxml
-    dm = _DistanceMatrix(samples_order, distance_matrix)
-    tree_xml = DistanceTreeConstructor().nj(dm)
-    with open("tree_xml.txt", "w+") as f1:
-        Bio.Phylo.write(tree_xml, f1, "phyloxml")
-
-def _phyloxml_to_newick(phyloxml):
-    #Converting phyloxml to newick
-    with open("tree_newick.txt", "w+") as f1:
-        Bio.Phylo.convert(phyloxml, "phyloxml", f1, "newick")
-
-def _newick_to_GSC_weights(newick_tree):
-    # Calculating Gerstein Sonnhammer Coathia weights from Newick 
-    # string. Returns dictionary where sample names are keys and GSC 
-    # weights are values.
-    tree=LoadTree(newick_tree)
-    weights=GSC(tree)
-    for item in weights:
-        weights[item] = 1 - weights[item]
-    return(weights)
 
 
 # -------------------------------------------------------------------
@@ -2104,7 +2112,7 @@ def modeling(args):
     pool.map(lambda x: x.map_samples(), samples.values())
     #call(["rm -r K-mer_lists/"], shell = True)
     if args.weights == "+":
-        get_weights(samples, args.cutoff)
+        Samples.get_weights(samples, args.cutoff)
     (
     pvalues_all_phenotypes, vectors_as_multiple_input
     ) = test_kmers_association_with_phenotype(
