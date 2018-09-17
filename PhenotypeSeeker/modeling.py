@@ -82,17 +82,12 @@ class process_input():
             min_samples, max_samples, mpheno, kmer_length,
             cutoff
             ):
-        alphas = process_input._get_alphas(alphas, alpha_min, alpha_max, n_alphas)
-        gammas = process_input._get_gammas(gammas, gamma_min, gamma_max, n_gammas)
-        min_samples, max_samples = process_input._get_min_max(min_samples, max_samples)
-        phenotypes_to_analyse = process_input._get_phenotypes_to_analyse(mpheno)
+        Samples.alphas = process_input._get_alphas(alphas, alpha_min, alpha_max, n_alphas)
+        Samples.gammas = process_input._get_gammas(gammas, gamma_min, gamma_max, n_gammas)
+        Samples.min_samples, Samples.max_samples = process_input._get_min_max(min_samples, max_samples)
+        Samples.phenotypes_to_analyse = process_input._get_phenotypes_to_analyse(mpheno)
         Samples.kmer_length = kmer_length
         Samples.cutoff = cutoff
-        Samples.phenotypes_to_analyse = phenotypes_to_analyse
-        Samples.alphas = alphas
-        Samples.gammas = gammas
-        Samples.min_samples = min_samples
-        Samples.max_samples = max_samples
         
     @staticmethod
     def _get_alphas(alphas, alpha_min, alpha_max, n_alphas):       
@@ -371,7 +366,7 @@ def within_1_tier_accuracy(targets, predictions):
 # Functions for calculating the association test results for kmers.
 
 def test_kmers_association_with_phenotype(
-        samples, num_threads, phenotypes_to_analyse, 
+        samples, num_threads,
         min_samples, max_samples
         ):
     pvalues_all_phenotypes = []
@@ -381,27 +376,25 @@ def test_kmers_association_with_phenotype(
         sys.stderr.write("\nConducting the k-mer specific chi-square tests:\n")
     (
     vectors_as_multiple_input, progress_checkpoint, no_kmers_to_analyse
-    ) = get_params_for_kmers_testing(
-        num_threads, phenotypes_to_analyse
-        )
-    for j, k in enumerate(phenotypes_to_analyse):
+    ) = get_params_for_kmers_testing(num_threads)
+    for j, k in enumerate():
         currentKmerNum.value = 0
         previousPercent.value = 0
         pvalues_from_all_threads = process_input.pool.map(
             partial(
                 get_kmers_tested, min_samples, max_samples,
                 progress_checkpoint, k,
-                no_kmers_to_analyse, phenotypes_to_analyse
+                no_kmers_to_analyse
                 ), 
             vectors_as_multiple_input
             )
         pvalues_all_phenotypes.append(list(chain(*pvalues_from_all_threads)))
         sys.stderr.write("\n")
-    concatenate_test_files(num_threads, phenotypes_to_analyse)
+    concatenate_test_files(num_threads)
     return pvalues_all_phenotypes, vectors_as_multiple_input
 
 
-def get_params_for_kmers_testing( num_threads, phenotypes_to_analyse):
+def get_params_for_kmers_testing( num_threads):
     _split_sample_vectors_for_multithreading(num_threads)
     vectors_as_multiple_input = _splitted_vectors_to_multiple_input(
          num_threads
@@ -429,7 +422,7 @@ def _splitted_vectors_to_multiple_input(num_threads):
 
 def get_kmers_tested(
         min_freq, max_freq, checkpoint, k, l,
-        no_kmers_to_analyse, phenotypes_to_analyse,
+        no_kmers_to_analyse,
         split_of_kmer_lists
         ):
     names_of_samples = process_input.samples.keys()
@@ -439,9 +432,9 @@ def get_kmers_tested(
 
     multithreading_code = split_of_kmer_lists[0][-5:]
     test_results_file = open(test_result_output(
-        k, multithreading_code, phenotypes_to_analyse
+        k, multithreading_code
         ), "w")
-    text1_4_stderr = get_text1_4_stderr(k, phenotypes_to_analyse)
+    text1_4_stderr = get_text1_4_stderr(k)
     text2_4_stderr = "tests conducted."
     for line in izip_longest(*[open(item) for item in split_of_kmer_lists], fillvalue = ''):
         counter += 1
@@ -478,7 +471,7 @@ def get_kmers_tested(
     test_results_file.close()
     return(pvalues)
 
-def test_result_output(k, code, phenotypes_to_analyse):
+def test_result_output(k, code):
     if Samples.phenotype_scale == "continuous":
         beginning_text = "t-test_results_"
     else:
@@ -493,10 +486,10 @@ def test_result_output(k, code, phenotypes_to_analyse):
         outputfile = beginning_text + code + ".txt"
     return outputfile
 
-def get_text1_4_stderr(k, phenotypes_to_analyse):
+def get_text1_4_stderr(k):
     if Samples.headerline:
         text2_4_stderr = Samples.phenotypes[k] + ": "
-    elif len(phenotypes_to_analyse) > 1:
+    elif len(Samples.phenotypes_to_analyse) > 1:
         text2_4_stderr = "phenotype " + Samples.phenotypes[k] + ": "
     else:
         text2_4_stderr = ""
@@ -851,7 +844,7 @@ def get_kmer_presence_matrix(kmers_passed, split_of_kmer_lists):
 def linear_regression(
 	    kmer_lists_splitted, alphas,
 	    kmers_passed_all_phenotypes, penalty, n_splits, testset_size,
-	    l1_ratio, phenotypes_to_analyse, max_iter, tol
+	    l1_ratio, max_iter, tol
 	    ):
 
     names_of_samples = process_input.samples.keys()
@@ -861,7 +854,7 @@ def linear_regression(
     # presence/absence (0/1) in samples are used as independent
     # parameters, resistance value (continuous) is used as dependent
     # parameter.
-    if len(phenotypes_to_analyse) > 1:
+    if len(Samples.phenotypes_to_analyse) > 1:
         sys.stderr.write("\nConducting the linear regression analysis:\n")
     elif Samples.headerline:
         sys.stderr.write("\nConducting the linear regression analysis of " 
@@ -869,7 +862,7 @@ def linear_regression(
     else:
         sys.stderr.write("\nConducting the linear regression analysis...\n")
 
-    for j, k in enumerate(phenotypes_to_analyse):
+    for j, k in enumerate(Samples.phenotypes_to_analyse):
         #Open files to write results of linear regression
         phenotype = Samples.phenotypes[k]
         if Samples.headerline:
@@ -878,7 +871,7 @@ def linear_regression(
             f2 = open("k-mers_and_coefficients_in_lin_reg_model_" 
                      + phenotype + ".txt", "w+")
             model_filename = "lin_reg_model_" + phenotype + ".pkl"
-            if len(phenotypes_to_analyse) > 1:
+            if len(Samples.phenotypes_to_analyse) > 1:
                 sys.stderr.write("\tregression analysis of " 
                     +  phenotype + " data...\n")
         elif Samples.no_phenotypes > 1:
@@ -1103,7 +1096,7 @@ def linear_regression(
 def logistic_regression(
 	    kmer_lists_splitted, alphas,
 	    kmers_passed_all_phenotypes, penalty, n_splits, testset_size,
-	    l1_ratio, phenotypes_to_analyse, max_iter, tol
+	    l1_ratio, max_iter, tol
 	    ):
     # Applies the logistic regression modeling on k-mers
     # that passed the filtering by p-value of statistical test. K-mers
@@ -1111,7 +1104,7 @@ def logistic_regression(
     # parameters, resistance value (0/1) is used as dependent 
     # parameter.
     names_of_samples = process_input.samples.keys()
-    if len(phenotypes_to_analyse) > 1:
+    if len(Samples.phenotypes_to_analyse) > 1:
         sys.stderr.write("\nConducting the logistic regression analysis:\n")
     elif Samples.headerline:
         sys.stderr.write("\nConducting the logistic regression analysis of " 
@@ -1119,7 +1112,7 @@ def logistic_regression(
     else:
         sys.stderr.write("\nConducting the logistic regression analysis...\n")
 
-    for j, k in enumerate(phenotypes_to_analyse):
+    for j, k in enumerate(Samples.phenotypes_to_analyse):
         #Open files to write results of logistic regression
         phenotype = Samples.phenotypes[k]
         if Samples.headerline:
@@ -1129,7 +1122,7 @@ def logistic_regression(
             f2 = open("k-mers_and_coefficients_in_log_reg_model_" 
                      + phenotype + ".txt", "w+")
             model_filename = "log_reg_model_" + phenotype + ".pkl"
-            if len(phenotypes_to_analyse) > 1:
+            if len(Samples.phenotypes_to_analyse) > 1:
                 sys.stderr.write("\tregression analysis of " 
                     +  phenotype + " data...\n")
         elif Samples.no_phenotypes > 1:
@@ -1411,7 +1404,7 @@ def logistic_regression(
 def support_vector_classifier(
         kmer_lists_splitted, alphas,
         kmers_passed_all_phenotypes, penalty, n_splits, testset_size,
-        kernel, gammas, n_iter, phenotypes_to_analyse, max_iter, tol
+        kernel, gammas, n_iter, max_iter, tol
         ):
     # Applies support vector machine modeling on k-mers
     # that passed the filtering by p-value of statistical test. K-mers
@@ -1419,7 +1412,7 @@ def support_vector_classifier(
     # parameters, resistance value (0/1) is used as dependent 
     # parameter.
     names_of_samples = process_input.samples.keys()
-    if len(phenotypes_to_analyse) > 1:
+    if len(Samples.phenotypes_to_analyse) > 1:
         sys.stderr.write("\nConducting the SVM classifier analysis:\n")
     elif Samples.headerline:
         sys.stderr.write("\nConducting the SVM classifier analysis of " 
@@ -1427,7 +1420,7 @@ def support_vector_classifier(
     else:
         sys.stderr.write("\nConducting the SVM classifier analysis...\n")
 
-    for j, k in enumerate(phenotypes_to_analyse):
+    for j, k in enumerate(Samples.phenotypes_to_analyse):
         phenotype = Samples.phenotypes[k]
         #Open files to write results of logistic regression
         if Samples.headerline:
@@ -1438,7 +1431,7 @@ def support_vector_classifier(
                 f2 = open("k-mers_and_coefficients_in_SVM_model_" 
                          + phenotype + ".txt", "w+")
             model_filename = "SVM_model_" + phenotype + ".pkl"
-            if len(phenotypes_to_analyse) > 1:
+            if len(Samples.phenotypes_to_analyse) > 1:
                 sys.stderr.write("\tSVM analysis of " 
                     +  phenotype + " data...\n")
         elif Samples.no_phenotypes > 1:
@@ -1710,7 +1703,7 @@ def support_vector_classifier(
 
 def random_forest(
 	    kmer_lists_splitted, kmers_passed_all_phenotypes,
-        n_splits, testset_size, phenotypes_to_analyse
+        n_splits, testset_size
 	    ):
     # Applies random forest modeling on k-mers
     # that passed the filtering by p-value of statistical test. K-mers
@@ -1719,7 +1712,7 @@ def random_forest(
     # parameter.
     
     names_of_samples = samples.keys()
-    if len(phenotypes_to_analyse) > 1:
+    if len(Samples.phenotypes_to_analyse) > 1:
         sys.stderr.write("\nConducting the random forest analysis:\n")
     elif Samples.headerline:
         sys.stderr.write("\nConducting the random forest analysis of " 
@@ -1727,7 +1720,7 @@ def random_forest(
     else:
         sys.stderr.write("\nConducting the random forest analysis...\n")
 
-    for j, k in enumerate(phenotypes_to_analyse):
+    for j, k in enumerate(Samples.phenotypes_to_analyse):
         #Open files to write results of logistic regression
         phenotype = Samples.phenotypes[k]
         if Samples.headerline:
@@ -1737,7 +1730,7 @@ def random_forest(
             f2 = open("k-mers_and_coefficients_in_RF_model_" 
                      + phenotype + ".txt", "w+")
             model_filename = "RF_model_" + phenotype + ".pkl"
-            if len(phenotypes_to_analyse) > 1:
+            if len(Samples.phenotypes_to_analyse) > 1:
                 sys.stderr.write("\trandom forest analysis of " 
                     +  phenotype + " data...\n")
         elif Samples.no_phenotypes > 1:
@@ -2124,13 +2117,12 @@ def modeling(args):
     (
     pvalues_all_phenotypes, vectors_as_multiple_input
     ) = test_kmers_association_with_phenotype(
-        args.num_threads, phenotypes_to_analyse,
-        min_samples, max_samples
+        args.num_threads, min_samples, max_samples
         )
     kmers_passed_all_phenotypes = kmer_filtering_by_pvalue(
         args.pvalue, 
         pvalues_all_phenotypes, args.n_kmers, 
-        phenotypes_to_analyse, args.FDR, args.Bonferroni
+        args.FDR, args.Bonferroni
         )
 
     if Samples.phenotype_scale == "continuous":
@@ -2138,7 +2130,7 @@ def modeling(args):
             vectors_as_multiple_input, alphas,
             kmers_passed_all_phenotypes, args.regularization, args.n_splits,
             args.testset_size,
-            args.l1_ratio, phenotypes_to_analyse, args.max_iter,
+            args.l1_ratio, args.max_iter,
             args.tol
             )
     elif Samples.phenotype_scale == "binary":
@@ -2147,7 +2139,7 @@ def modeling(args):
                 vectors_as_multiple_input, alphas,
                 kmers_passed_all_phenotypes, args.regularization, args.n_splits,
                 args.testset_size,
-                args.l1_ratio, phenotypes_to_analyse, args.max_iter, 
+                args.l1_ratio, args.max_iter, 
                 args.tol
                 )
         elif args.binary_classifier == "SVM":
@@ -2155,7 +2147,7 @@ def modeling(args):
                 vectors_as_multiple_input, alphas,
                 kmers_passed_all_phenotypes, args.regularization, args.n_splits,
                 args.testset_size,
-                args.kernel, gammas, args.n_iter, phenotypes_to_analyse,
+                args.kernel, gammas, args.n_iter, 
                 args.max_iter, args.tol
                 )
         elif args.binary_classifier == "RF":
@@ -2163,7 +2155,6 @@ def modeling(args):
                 vectors_as_multiple_input,
                 kmers_passed_all_phenotypes, args.n_splits,
                 args.testset_size,
-                phenotypes_to_analyse,
                 )
 
     if args.assembly == "+":
