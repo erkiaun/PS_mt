@@ -85,7 +85,7 @@ class Samples():
         return cls(name, address, phenotypes)
 
     @staticmethod
-    def get_feature_vector(self, min_freq, samples):
+    def get_feature_vector(min_freq, samples):
         glistmaker_args = ["glistmaker"] + \
             [sample.address for sample in samples.values()] + \
             [
