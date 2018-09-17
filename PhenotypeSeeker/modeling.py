@@ -174,7 +174,7 @@ class Samples():
         stderr_print.currentSampleNum.value += 1
         process_input.lock.release()
         output = "\t%d of %d lists generated." % (
-            stderr_print.currentSampleNum.value, Samples.no_samples
+            stderr_print.currentSampleNum.value, cls.no_samples
             )
         stderr_print(output)
 
@@ -210,12 +210,12 @@ class Samples():
             phenotypes = map(lambda x: math.log(x, 2), phenotypes)
         return cls(name, address, phenotypes)
 
-    @staticmethod
+    @classmethod
     def get_feature_vector():
         glistmaker_args = ["glistmaker"] + \
             [sample.address for sample in process_input.samples.values()] + \
             [
-            '-c', Samples.cutoff, '-w', Samples.kmer_length, '-o', 'K-mer_lists/feature_vector'
+            '-c', cls.cutoff, '-w', cls.kmer_length, '-o', 'K-mer_lists/feature_vector'
             ]
         call(glistmaker_args)
 
@@ -309,10 +309,6 @@ class Samples():
         return(weights)
 
 
-
-
-
-
 class stderr_print():
     # --------------------------------------------------------
     # Functions and variables necessarry to show the progress 
@@ -328,12 +324,12 @@ class stderr_print():
 
     @classmethod
     def check_progress(cls, totalKmers, text, phenotype=""):
-        currentPercent = (stderr_print.currentKmerNum.value/float(totalKmers))*100
-        if int(currentPercent) > stderr_print.previousPercent.value:
+        currentPercent = (cls.currentKmerNum.value/float(totalKmers))*100
+        if int(currentPercent) > cls.previousPercent.value:
             output = "\t" + phenotype + "%d%% of " % (
                 currentPercent
                 ) + text
-            stderr_print.previousPercent.value = int(currentPercent)
+            cls.previousPercent.value = int(currentPercent)
             cls(output)
 
 # ---------------------------------------------------------
@@ -840,7 +836,7 @@ def get_kmer_presence_matrix(kmers_passed, split_of_kmer_lists):
     return(kmers_presence_matrix, features)
 
 def linear_regression(
-	    kmer_lists_splitted, alphas,
+	    kmer_lists_splitted,
 	    kmers_passed_all_phenotypes, penalty, n_splits, testset_size,
 	    l1_ratio, max_iter, tol
 	    ):
@@ -947,7 +943,7 @@ def linear_regression(
         # Generate grid search classifier where parameters
         # (like regularization strength) are optimized by
         # cross-validated grid-search over a parameter grid.
-        parameters = {'alpha': alphas}
+        parameters = {'alpha': Samples.alphas}
         clf = GridSearchCV(lin_reg, parameters, cv=n_splits)
 
         # Fitting the linear regression model to dataset
@@ -1092,7 +1088,7 @@ def linear_regression(
         f2.close()
 
 def logistic_regression(
-	    kmer_lists_splitted, alphas,
+	    kmer_lists_splitted,
 	    kmers_passed_all_phenotypes, penalty, n_splits, testset_size,
 	    l1_ratio, max_iter, tol
 	    ):
@@ -1206,10 +1202,10 @@ def logistic_regression(
         # (like regularization strength) are optimized by
         # cross-validated grid-search over a parameter grid. 
         if penalty == "l1" or "l2":
-            Cs = list(map(lambda x: 1/x, alphas))
+            Cs = list(map(lambda x: 1/x, Samples.alphas))
             parameters = {'C':Cs}
         if penalty == "elasticnet":
-            parameters = {'alpha': alphas}
+            parameters = {'alpha': Samples.alphas}
         clf = GridSearchCV(log_reg, parameters, cv=n_splits)
 
         
@@ -1400,7 +1396,7 @@ def logistic_regression(
         f2.close()
 
 def support_vector_classifier(
-        kmer_lists_splitted, alphas,
+        kmer_lists_splitted,
         kmers_passed_all_phenotypes, penalty, n_splits, testset_size,
         kernel, gammas, n_iter, max_iter, tol
         ):
@@ -1502,8 +1498,8 @@ def support_vector_classifier(
         # Generate grid search classifier where parameters
         # (like regularization strength) are optimized by
         # cross-validated grid-search over a parameter grid. 
-        Cs = list(map(lambda x: 1/x, alphas))
-        Gammas = list(map(lambda x: 1/x, alphas))
+        Cs = list(map(lambda x: 1/x, Samples.alphas))
+        Gammas = list(map(lambda x: 1/x, Samples.alphas))
         if kernel == "linear":
             parameters = {'C':Cs}
             clf = GridSearchCV(svc, parameters, cv=n_splits)
@@ -2123,7 +2119,7 @@ def modeling(args):
 
     if Samples.phenotype_scale == "continuous":
         linear_regression(
-            vectors_as_multiple_input, alphas,
+            vectors_as_multiple_input,
             kmers_passed_all_phenotypes, args.regularization, args.n_splits,
             args.testset_size,
             args.l1_ratio, args.max_iter,
@@ -2132,7 +2128,7 @@ def modeling(args):
     elif Samples.phenotype_scale == "binary":
         if args.binary_classifier == "log":
             logistic_regression(
-                vectors_as_multiple_input, alphas,
+                vectors_as_multiple_input,
                 kmers_passed_all_phenotypes, args.regularization, args.n_splits,
                 args.testset_size,
                 args.l1_ratio, args.max_iter, 
@@ -2140,7 +2136,7 @@ def modeling(args):
                 )
         elif args.binary_classifier == "SVM":
             support_vector_classifier(
-                vectors_as_multiple_input, alphas,
+                vectors_as_multiple_input,
                 kmers_passed_all_phenotypes, args.regularization, args.n_splits,
                 args.testset_size,
                 args.kernel, gammas, args.n_iter, 
