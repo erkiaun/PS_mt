@@ -138,6 +138,7 @@ class phenotypes():
 
     def __init__(self, name):
         self.name = name
+        self.pvalues = pvalues
 
 class Samples():
 
@@ -2132,7 +2133,7 @@ def modeling(args):
     if args.weights == "+":
         Samples.get_weights()
     kmers.test_kmers_association_with_phenotype()
-    for key, value in process_input.phenotypes_to_analyse:
+    for key, value in process_input.phenotypes_to_analyse.iteritems():
         print(len(value.pvalues))
     kmers_passed_all_phenotypes = kmer_filtering_by_pvalue(
         args.pvalue, pvalues_all_phenotypes, args.n_kmers, 
