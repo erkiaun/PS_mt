@@ -723,9 +723,7 @@ class kmers():
                 )
             for l in range(Samples.num_threads):
                 call(
-                    [
-                    "rm " + beginning_text + phenotype + "_%05d.txt" %l
-                    ],
+                    ["rm " + beginning_text + phenotype + "_%05d.txt" %l],
                     shell=True
                     )     
         else:
@@ -751,6 +749,9 @@ class kmers():
             counter = 0    
 
             phenotype = phenotype_instance.name
+            print(phenotype)
+            print(nr_of_kmers_tested)
+            continue
             text1_4_stderr = cls.get_text1_4_stderr(phenotype)
             text2_4_stderr = "k-mers filtered."
 
@@ -788,6 +789,7 @@ class kmers():
                         stderr_print.check_progress(
                             nr_of_kmers_tested, text2_4_stderr, text1_4_stderr
                         )
+
             process_input.lock.acquire()
             stderr_print.currentKmerNum.value += counter%checkpoint
             process_input.lock.release()
