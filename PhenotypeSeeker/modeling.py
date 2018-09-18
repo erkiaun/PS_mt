@@ -749,8 +749,6 @@ class kmers():
             counter = 0    
 
             phenotype = phenotype_instance.name
-            print(phenotype)
-            print(nr_of_kmers_tested)
             continue
             text1_4_stderr = cls.get_text1_4_stderr(phenotype)
             text2_4_stderr = "k-mers filtered."
@@ -782,13 +780,13 @@ class kmers():
                     outputfile.write(line)
                     if float(line_to_list[2]) <= max_pvalue_by_limit:
                             phenotype_instance.kmers_for_ML.append(line_to_list[0])
-                    if counter%checkpoint == 0:
-                        process_input.lock.acquire()
-                        stderr_print.currentKmerNum.value += checkpoint
-                        process_input.lock.release()
-                        stderr_print.check_progress(
-                            nr_of_kmers_tested, text2_4_stderr, text1_4_stderr
-                        )
+                if counter%checkpoint == 0:
+                    process_input.lock.acquire()
+                    stderr_print.currentKmerNum.value += checkpoint
+                    process_input.lock.release()
+                    stderr_print.check_progress(
+                        nr_of_kmers_tested, text2_4_stderr, text1_4_stderr
+                    )
 
             process_input.lock.acquire()
             stderr_print.currentKmerNum.value += counter%checkpoint
