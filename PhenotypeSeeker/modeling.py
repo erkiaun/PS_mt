@@ -392,6 +392,8 @@ class kmers():
         else:
             sys.stderr.write("\nConducting the k-mer specific chi-square tests:\n")
         cls.get_params_for_kmers_testing()
+        print(progress_checkpoint)
+        print(no_kmers_to_analyse)
         for phenotype in process_input.phenotypes_to_analyse.keys():
             stderr_print.currentKmerNum.value = 0
             stderr_print.previousPercent.value = 0
@@ -432,6 +434,8 @@ class kmers():
 
     @classmethod
     def get_kmers_tested(cls, phenotype, split_of_kmer_lists):
+        print(progress_checkpoint)
+        print(no_kmers_to_analyse)
         names_of_samples = process_input.samples.keys()
         phenotypes_of_samples = [sample_data.phenotypes[phenotype] for sample_data in process_input.samples.values()]
         pvalues = []
