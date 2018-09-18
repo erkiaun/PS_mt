@@ -692,7 +692,7 @@ class kmers():
             beginning_text = "t-test_results_"
         else:
             beginning_text = "chi-squared_test_results_"
-        if Samples.no_samples > 1:
+        if Samples.no_phenotypes > 1:
             outputfile = beginning_text + phenotype + ".txt"
         else:
             outputfile = beginning_text[:-1] + ".txt"
