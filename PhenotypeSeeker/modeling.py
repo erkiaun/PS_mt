@@ -38,7 +38,8 @@ import numpy as np
 
 class process_input():
 
-    samples = None
+    samples = OrderedDict()
+    phenotypes_to_analyse = OrderedDict()
     pool = None
     lock = None
     
@@ -60,10 +61,9 @@ class process_input():
                         for j in xrange(1, Samples.no_phenotypes + 1):
                             Samples.phenotypes.append("phenotype%s" %j)
                 sample_name = line.split()[0]
-                samples[sample_name] = (
+                cls.samples[sample_name] = (
                     Samples.from_inputfile(line)
                     )
-        process_input.samples = samples
 
     # ---------------------------------------------------------
     # Set parameters for multithreading
@@ -125,14 +125,19 @@ class process_input():
             max_samples = Samples.no_samples - 2
         return min_samples, max_samples
 
-    @staticmethod
+    @classmethod
     def _get_phenotypes_to_analyse(mpheno):
         if not mpheno:
-            phenotypes_to_analyse = range(Samples.no_phenotypes)
+            phenotypes_to_analyze = range(Samples.no_phenotypes)
         else: 
-            phenotypes_to_analyse = map(lambda x: x-1, mpheno)
-        return phenotypes_to_analyse
+            phenotypes_to_analyze = map(lambda x: x-1, mpheno)
+        for item in phenotypes_to_analyze:
+            cls.phenotypes_to_analyse[Samples.phenotypes[item]] = phenotypes(Samples.phenotypes[item])
 
+class phenotypes():
+
+    def __init__(self, name):
+        self.name = name
 
 class Samples():
 
@@ -334,373 +339,384 @@ class stderr_print():
         cls(output)
 
 class metrics():
-    pass
-# ---------------------------------------------------------
-# Self-implemented performance measure functions
+    # ---------------------------------------------------------
+    # Self-implemented performance measure functions
 
-def VME(targets, predictions):
-    # Function to calculate the very major error (VME) rate
-    VMEs = 0
-    for item in zip(targets, predictions):
-        if item[0] == 1 and item[1] == 0:
-            VMEs += 1
-    VME = str(float(VMEs)/len(targets)*100)+"%"
-    return VME
+    @staticmethod
+    def VME(targets, predictions):
+        # Function to calculate the very major error (VME) rate
+        VMEs = 0
+        for item in zip(targets, predictions):
+            if item[0] == 1 and item[1] == 0:
+                VMEs += 1
+        VME = str(float(VMEs)/len(targets)*100)+"%"
+        return VME
 
-def ME(targets, predictions):
-    # Function to calculate the major error (ME) rate
-    MEs = 0
-    for item in zip(targets, predictions):
-        if item[0] == 0 and item[1] == 1:
-             MEs += 1
-    ME = str(float(MEs)/len(targets)*100)+"%"
-    return ME
+    @staticmethod
+    def ME(targets, predictions):
+        # Function to calculate the major error (ME) rate
+        MEs = 0
+        for item in zip(targets, predictions):
+            if item[0] == 0 and item[1] == 1:
+                 MEs += 1
+        ME = str(float(MEs)/len(targets)*100)+"%"
+        return ME
 
-def within_1_tier_accuracy(targets, predictions):
-    # Calculate the plus/minus one dilution factor accuracy
-    # for predicted antibiotic resistance values.
-    within_1_tier = 0
-    for item in zip(targets, predictions):
-        if abs(item[0]-item[1]) <= 1:
-            within_1_tier +=1
-    accuracy = float(within_1_tier)/len(targets)
-    return accuracy
+    @staticmethod
+    def within_1_tier_accuracy(targets, predictions):
+        # Calculate the plus/minus one dilution factor accuracy
+        # for predicted antibiotic resistance values.
+        within_1_tier = 0
+        for item in zip(targets, predictions):
+            if abs(item[0]-item[1]) <= 1:
+                within_1_tier +=1
+        accuracy = float(within_1_tier)/len(targets)
+        return accuracy
 
+class kmers():
 
-# -------------------------------------------------------------------
-# Functions for calculating the association test results for kmers.
+    phenotype_instances  = OrderedDict()
 
-def test_kmers_association_with_phenotype():
-    pvalues_all_phenotypes = []
-    if Samples.phenotype_scale == "continuous":
-        sys.stderr.write("\nConducting the k-mer specific Welch t-tests:\n")
-    else:
-        sys.stderr.write("\nConducting the k-mer specific chi-square tests:\n")
-    (
-    vectors_as_multiple_input, progress_checkpoint, no_kmers_to_analyse
-    ) = get_params_for_kmers_testing()
-    for j, k in enumerate(Samples.phenotypes_to_analyse):
-        stderr_print.currentKmerNum.value = 0
-        stderr_print.previousPercent.value = 0
-        pvalues_from_all_threads = process_input.pool.map(
-            partial(
-                get_kmers_tested, progress_checkpoint, k,
-                no_kmers_to_analyse
-                ), 
-            vectors_as_multiple_input
-            )
-        pvalues_all_phenotypes.append(list(chain(*pvalues_from_all_threads)))
-        sys.stderr.write("\n")
-    concatenate_test_files()
-    return pvalues_all_phenotypes, vectors_as_multiple_input
+    vectors_as_multiple_input = None
+    progress_checkpoint = None
+    no_kmers_to_analyse = None
 
-
-def get_params_for_kmers_testing():
-    _split_sample_vectors_for_multithreading()
-    vectors_as_multiple_input = _splitted_vectors_to_multiple_input()
-    kmers_to_analyse = float(
-        check_output(
-            ['wc', '-l', "K-mer_lists/" + process_input.samples.keys()[0] + "_mapped.txt"]
-            ).split()[0]
-        )
-    progress_checkpoint = int(math.ceil(kmers_to_analyse/(100*Samples.num_threads)))
-    return(vectors_as_multiple_input, progress_checkpoint, kmers_to_analyse)
-
-def _split_sample_vectors_for_multithreading():
-    for sample in process_input.samples:
-        call([
-            "split -a 5 -d -n r/" + str(Samples.num_threads) + " K-mer_lists/" +
-            sample + "_mapped.txt " + "K-mer_lists/" + sample + "_mapped_"
-            ], shell=True)
-
-def _splitted_vectors_to_multiple_input():
-    vectors_as_multiple_input = []
-    for i in range(Samples.num_threads):
-        vectors_as_multiple_input.append(["K-mer_lists/" + sample + "_mapped_%05d" %i for sample in process_input.samples])
-    return vectors_as_multiple_input
-
-def get_kmers_tested(
-        checkpoint, k,
-        no_kmers_to_analyse,
-        split_of_kmer_lists
-        ):
-    names_of_samples = process_input.samples.keys()
-    phenotypes_of_samples = [sample_data.phenotypes[k] for sample_data in process_input.samples.values()]
-    pvalues = []
-    counter = 0
-
-    multithreading_code = split_of_kmer_lists[0][-5:]
-    test_results_file = open(test_result_output(
-        k, multithreading_code
-        ), "w")
-    text1_4_stderr = get_text1_4_stderr(k)
-    text2_4_stderr = "tests conducted."
-    for line in izip_longest(*[open(item) for item in split_of_kmer_lists], fillvalue = ''):
-        counter += 1
-        if counter%checkpoint == 0:
-            process_input.lock.acquire()
-            stderr_print.currentKmerNum.value += checkpoint
-            process_input.lock.release()
-            stderr_print.check_progress(
-                no_kmers_to_analyse, text2_4_stderr, text1_4_stderr
-            )
-        kmer = line[0].split()[0]
-        kmer_presence = [j.split()[1].strip() for j in line]
-
-        if Samples.phenotype_scale == "binary":
-            pvalue = conduct_chi_squared_test(
-                phenotypes_of_samples, names_of_samples, kmer, kmer_presence,
-                test_results_file
+    # -------------------------------------------------------------------
+    # Functions for calculating the association test results for kmers.
+    @classmethod
+    def test_kmers_association_with_phenotype(cls):
+        if Samples.phenotype_scale == "continuous":
+            sys.stderr.write("\nConducting the k-mer specific Welch t-tests:\n")
+        else:
+            sys.stderr.write("\nConducting the k-mer specific chi-square tests:\n")
+        cls.get_params_for_kmers_testing()
+        for phenotype in process_input.phenotypes_to_analyse.keys():
+            stderr_print.currentKmerNum.value = 0
+            stderr_print.previousPercent.value = 0
+            pvalues_from_all_threads = process_input.pool.map(partial(
+                    cls.get_kmers_tested, phenotype
+                    ), 
+                cls.vectors_as_multiple_input
                 )
-        elif Samples.phenotype_scale == "continuous":
-            pvalue = conduct_t_test(
-                phenotypes_of_samples, names_of_samples, kmer, kmer_presence,
-                test_results_file
+            process_input.phenotypes_to_analyse[phenotype].pvalues = 
+                append(list(chain(*pvalues_from_all_threads)))
+            sys.stderr.write("\n")
+        cls.concatenate_test_files()
+
+    @classmethod
+    def get_params_for_kmers_testing(cls):
+        cls._split_sample_vectors_for_multithreading()
+        _splitted_vectors_to_multiple_input(cls)
+        cls.kmers_to_analyse = float(
+            check_output(
+                ['wc', '-l', "K-mer_lists/" + process_input.samples.keys()[0] + "_mapped.txt"]
+                ).split()[0]
+            )
+        cls.progress_checkpoint = int(math.ceil(kmers_to_analyse/(100*Samples.num_threads)))
+
+    @staticmethod
+    def _split_sample_vectors_for_multithreading():
+        for sample in process_input.samples:
+            call([
+                "split -a 5 -d -n r/" + str(Samples.num_threads) + " K-mer_lists/" +
+                sample + "_mapped.txt " + "K-mer_lists/" + sample + "_mapped_"
+                ], shell=True)
+
+    @classmethod
+    def _splitted_vectors_to_multiple_input(cls):
+        vectors_as_multiple_input = []
+        for i in range(Samples.num_threads):
+            cls.vectors_as_multiple_input.append(["K-mer_lists/" + sample + "_mapped_%05d" %i for sample in process_input.samples])
+
+    @classmethod
+    def get_kmers_tested(cls, phenotype, split_of_kmer_lists):
+        names_of_samples = process_input.samples.keys()
+        phenotypes_of_samples = [sample_data.phenotypes[k] for sample_data in process_input.samples.values()]
+        pvalues = []
+        counter = 0
+
+        multithreading_code = split_of_kmer_lists[0][-5:]
+        test_results_file = open(cls.test_result_output(
+            phenotype, multithreading_code
+            ), "w")
+        text1_4_stderr = cls.get_text1_4_stderr(phenotype)
+        text2_4_stderr = "tests conducted."
+        for line in izip_longest(*[open(item) for item in split_of_kmer_lists], fillvalue = ''):
+            counter += 1
+            if counter%checkpoint == 0:
+                process_input.lock.acquire()
+                stderr_print.currentKmerNum.value += checkpoint
+                process_input.lock.release()
+                stderr_print.check_progress(
+                    no_kmers_to_analyse, text2_4_stderr, text1_4_stderr
                 )
-        if pvalue:
-            pvalues.append(pvalue)
-    process_input.lock.acquire()
-    stderr_print.currentKmerNum.value += counter%checkpoint
-    process_input.lock.release()
-    stderr_print.check_progress(
-        no_kmers_to_analyse, text2_4_stderr, text1_4_stderr
-    )
-    test_results_file.close()
-    return(pvalues)
+            kmer = line[0].split()[0]
+            kmer_presence = [j.split()[1].strip() for j in line]
 
-def test_result_output(k, code):
-    if Samples.phenotype_scale == "continuous":
-        beginning_text = "t-test_results_"
-    else:
-        beginning_text = "chi-squared_test_results_"
-    if Samples.headerline:
-        outputfile = beginning_text + \
-            Samples.phenotypes[k] + "_" + code + ".txt"
-    elif len(Samples.phenotypes_to_analyse) > 1:
-        outputfile = beginning_text + \
-            Samples.phenotypes[k] + "_" + code + ".txt"
-    else:
-        outputfile = beginning_text + code + ".txt"
-    return outputfile
-
-def get_text1_4_stderr(k):
-    if Samples.headerline:
-        text2_4_stderr = Samples.phenotypes[k] + ": "
-    elif len(Samples.phenotypes_to_analyse) > 1:
-        text2_4_stderr = "phenotype " + Samples.phenotypes[k] + ": "
-    else:
-        text2_4_stderr = ""
-    return text2_4_stderr
-
-def conduct_t_test(
-    phenotypes_of_samples, names_of_samples, kmer, kmer_presence, 
-    test_results_file
-    ):
-    samples_w_kmer = []
-    x = []
-    y = []
-    x_weights = []
-    y_weights = []
-    
-    get_samples_distribution_for_ttest(
-        x, y, x_weights, y_weights, kmer_presence,
-        samples_w_kmer, phenotypes_of_samples, names_of_samples
+            if Samples.phenotype_scale == "binary":
+                pvalue = cls.conduct_chi_squared_test(
+                    phenotypes_of_samples, names_of_samples, kmer, kmer_presence,
+                    test_results_file
+                    )
+            elif Samples.phenotype_scale == "continuous":
+                pvalue = cls.conduct_t_test(
+                    phenotypes_of_samples, names_of_samples, kmer, kmer_presence,
+                    test_results_file
+                    )
+            if pvalue:
+                pvalues.append(pvalue)
+        process_input.lock.acquire()
+        stderr_print.currentKmerNum.value += counter%checkpoint
+        process_input.lock.release()
+        stderr_print.check_progress(
+            no_kmers_to_analyse, text2_4_stderr, text1_4_stderr
         )
+        test_results_file.close()
+        return(pvalues)
 
-    if len(x) < Samples.min_samples or len(y) < 2 or len(x) > Samples.max_samples:
-        return
+    @staticmethod
+    def test_result_output(phenotype, code):
+        if Samples.phenotype_scale == "continuous":
+            beginning_text = "t-test_results_"
+        else:
+            beginning_text = "chi-squared_test_results_"
+        if Samples.headerline:
+            outputfile = beginning_text + \
+                phenotype + "_" + code + ".txt"
+        elif len(Samples.phenotypes_to_analyse) > 1:
+            outputfile = beginning_text + \
+                phenotype + "_" + code + ".txt"
+        else:
+            outputfile = beginning_text + code + ".txt"
+        return outputfile
 
-    t_statistic, pvalue, mean_x, mean_y = t_test(
-        x, y, x_weights, y_weights
-        )
+    @staticmethod
+    def get_text1_4_stderr(phenotype):
+        if Samples.headerline:
+            text1_4_stderr = Samples.phenotypes[k] + ": "
+        elif len(Samples.phenotypes_to_analyse) > 1:
+            text1_4_stderr = "phenotype " + phenotype + ": "
+        else:
+            text1_4_stderr = ""
+        return text1_4_stderr
 
-    test_results_file.write(
-        kmer + "\t" + str(round(t_statistic, 2)) + "\t" + \
-        "%.2E" % pvalue + "\t" + str(round(mean_x, 2)) + "\t" + \
-        str(round(mean_y,2)) + "\t" + str(len(samples_w_kmer)) + "\t| " + \
-        " ".join(samples_w_kmer) + "\n"
-        )
-    return pvalue
-
-def get_samples_distribution_for_ttest(
-        x, y, x_weights, y_weights, list1,
-        samples_w_kmer, phenotypes_of_samples, names_of_samples
+    @classmethod
+    def conduct_t_test(
+        cls, phenotypes_of_samples, names_of_samples, kmer, kmer_presence, 
+        test_results_file
         ):
-    for i, item in enumerate(phenotypes_of_samples):
-        sample_name = names_of_samples[i]
-        if item != "NA":
-            if list1[i] == "0":
-                y.append(float(item))
-                y_weights.append(process_input.samples[sample_name].weight)
-            else:
-                x.append(float(item))
-                x_weights.append(process_input.samples[sample_name].weight)
-                samples_w_kmer.append(sample_name)
+        samples_w_kmer = []
+        x = []
+        y = []
+        x_weights = []
+        y_weights = []
+        
+        cls.get_samples_distribution_for_ttest(
+            x, y, x_weights, y_weights, kmer_presence,
+            samples_w_kmer, phenotypes_of_samples, names_of_samples
+            )
 
-def t_test(x, y, x_weights, y_weights):
-    #Parametes for group containig the k-mer
-    wtd_mean_y = np.average(y, weights=y_weights)
-    sumofweightsy = sum(y_weights)
-    ybar = np.float64(sum([i*j for i,j in zip(y, y_weights)])/sumofweightsy)
-    vary = sum([i*j for i,j in zip(y_weights, (y - ybar)**2)])/(sumofweightsy-1)
-    
-    #Parameters for group not containig the k-mer
-    wtd_mean_x = np.average(x, weights=x_weights)
-    sumofweightsx = sum(x_weights)
-    xbar = np.float64(sum([i*j for i,j in zip(x, x_weights)])/sumofweightsx)
-    varx = sum([i*j for i,j in zip(x_weights, (x - xbar)**2)])/(sumofweightsx-1)
+        if len(x) < Samples.min_samples or len(y) < 2 or len(x) > Samples.max_samples:
+            return
 
-    #Calculating the weighted Welch's t-test results
-    dif = wtd_mean_x-wtd_mean_y
-    sxy = math.sqrt((varx/sumofweightsx)+(vary/sumofweightsy))
-    df = (((varx/sumofweightsx)+(vary/sumofweightsy))**2)/((((varx/sumofweightsx)**2)/(sumofweightsx-1))+((vary/sumofweightsy)**2/(sumofweightsy-1)))
-    t= dif/sxy
-    pvalue = stats.t.sf(abs(t), df)*2
+        t_statistic, pvalue, mean_x, mean_y = t_test(
+            x, y, x_weights, y_weights
+            )
 
-    return t, pvalue, wtd_mean_x, wtd_mean_y
+        test_results_file.write(
+            kmer + "\t" + str(round(t_statistic, 2)) + "\t" + \
+            "%.2E" % pvalue + "\t" + str(round(mean_x, 2)) + "\t" + \
+            str(round(mean_y,2)) + "\t" + str(len(samples_w_kmer)) + "\t| " + \
+            " ".join(samples_w_kmer) + "\n"
+            )
+        return pvalue
 
-def conduct_chi_squared_test(
-    phenotypes_of_samples, names_of_samples, kmer, kmer_presence,
-    test_results_file
-    ):
-    samples_w_kmer = []
-    (
-    w_pheno_w_kmer, w_pheno_wo_kmer, wo_pheno_w_kmer, wo_pheno_wo_kmer
-    ) = get_samples_distribution_for_chisquared(
-        phenotypes_of_samples, names_of_samples, kmer_presence, samples_w_kmer
-        )
-    (w_pheno, wo_pheno, w_kmer, wo_kmer, total) = get_totals_in_classes(
-        w_pheno_w_kmer, w_pheno_wo_kmer, wo_pheno_w_kmer, wo_pheno_wo_kmer
-        )
-    no_samples_w_kmer = len(samples_w_kmer)
-    if no_samples_w_kmer < Samples.min_samples or no_samples_w_kmer > Samples.max_samples:
-        return
-
-    (
-    w_pheno_w_kmer_expected, w_pheno_wo_kmer_expected,
-    wo_pheno_w_kmer_expected, wo_pheno_wo_kmer_expected
-    ) = get_expected_distribution(
-        w_pheno, wo_pheno, w_kmer, wo_kmer, total)
-
-    chisquare_results = stats.chisquare(
-        [
-        w_pheno_w_kmer, w_pheno_wo_kmer,
-        wo_pheno_w_kmer, wo_pheno_wo_kmer
-        ],
-        [
-        w_pheno_w_kmer_expected, w_pheno_wo_kmer_expected, 
-        wo_pheno_w_kmer_expected, wo_pheno_wo_kmer_expected
-        ],
-        1
-        )
-    test_results_file.write(
-        kmer + "\t%.2f\t%.2E\t" % chisquare_results 
-        + str(no_samples_w_kmer)  +"\t| " + " ".join(samples_w_kmer) + "\n"
-        )
-    pvalue = chisquare_results[1]
-    return pvalue
-
-def get_samples_distribution_for_chisquared(
-        phenotypes_of_samples, names_of_samples, list1, samples_w_kmer
-        ):
-    with_pheno_with_kmer = 0
-    with_pheno_without_kmer = 0
-    without_pheno_with_kmer = 0
-    without_pheno_without_kmer = 0
-    for i, item in enumerate(phenotypes_of_samples):
-        sample_name = names_of_samples[i]
-        if item != "NA":
-            if item == "1":
-                if (list1[i] != "0"):
-                    with_pheno_with_kmer += process_input.samples[sample_name].weight 
+    @staticmethod
+    def get_samples_distribution_for_ttest(
+            x, y, x_weights, y_weights, list1,
+            samples_w_kmer, phenotypes_of_samples, names_of_samples
+            ):
+        for i, item in enumerate(phenotypes_of_samples):
+            sample_name = names_of_samples[i]
+            if item != "NA":
+                if list1[i] == "0":
+                    y.append(float(item))
+                    y_weights.append(process_input.samples[sample_name].weight)
+                else:
+                    x.append(float(item))
+                    x_weights.append(process_input.samples[sample_name].weight)
                     samples_w_kmer.append(sample_name)
-                else:
-                    with_pheno_without_kmer += process_input.samples[sample_name].weight
-            else:
-                if (list1[i] != "0"):
-                    without_pheno_with_kmer += process_input.samples[sample_name].weight
-                    samples_w_kmer.append(names_of_samples[i])
-                else:
-                    without_pheno_without_kmer += process_input.samples[sample_name].weight
-    return(
-        with_pheno_with_kmer, with_pheno_without_kmer,
-        without_pheno_with_kmer, without_pheno_without_kmer
-        )
 
-def get_totals_in_classes(
-        w_pheno_w_kmer, w_pheno_wo_kmer, wo_pheno_w_kmer, wo_pheno_wo_kmer
+    @staticmethod
+    def t_test(x, y, x_weights, y_weights):
+        #Parametes for group containig the k-mer
+        wtd_mean_y = np.average(y, weights=y_weights)
+        sumofweightsy = sum(y_weights)
+        ybar = np.float64(sum([i*j for i,j in zip(y, y_weights)])/sumofweightsy)
+        vary = sum([i*j for i,j in zip(y_weights, (y - ybar)**2)])/(sumofweightsy-1)
+        
+        #Parameters for group not containig the k-mer
+        wtd_mean_x = np.average(x, weights=x_weights)
+        sumofweightsx = sum(x_weights)
+        xbar = np.float64(sum([i*j for i,j in zip(x, x_weights)])/sumofweightsx)
+        varx = sum([i*j for i,j in zip(x_weights, (x - xbar)**2)])/(sumofweightsx-1)
+
+        #Calculating the weighted Welch's t-test results
+        dif = wtd_mean_x-wtd_mean_y
+        sxy = math.sqrt((varx/sumofweightsx)+(vary/sumofweightsy))
+        df = (((varx/sumofweightsx)+(vary/sumofweightsy))**2)/((((varx/sumofweightsx)**2)/(sumofweightsx-1))+((vary/sumofweightsy)**2/(sumofweightsy-1)))
+        t= dif/sxy
+        pvalue = stats.t.sf(abs(t), df)*2
+
+        return t, pvalue, wtd_mean_x, wtd_mean_y
+
+    @classmethod
+    def conduct_chi_squared_test(
+        cls, phenotypes_of_samples, names_of_samples, kmer, kmer_presence,
+        test_results_file
         ):
-    w_pheno = (w_pheno_w_kmer + w_pheno_wo_kmer)
-    wo_pheno = (
-        wo_pheno_w_kmer + wo_pheno_wo_kmer
-        )
-    w_kmer = (w_pheno_w_kmer + wo_pheno_w_kmer)
-    wo_kmer = (
-        w_pheno_wo_kmer + wo_pheno_wo_kmer
-        )
-    total = w_pheno + wo_pheno
-    return w_pheno, wo_pheno, w_kmer, wo_kmer, total
+        samples_w_kmer = []
+        (
+        w_pheno_w_kmer, w_pheno_wo_kmer, wo_pheno_w_kmer, wo_pheno_wo_kmer
+        ) = cls.get_samples_distribution_for_chisquared(
+            phenotypes_of_samples, names_of_samples, kmer_presence, samples_w_kmer
+            )
+        (w_pheno, wo_pheno, w_kmer, wo_kmer, total) = cls.get_totals_in_classes(
+            w_pheno_w_kmer, w_pheno_wo_kmer, wo_pheno_w_kmer, wo_pheno_wo_kmer
+            )
+        no_samples_w_kmer = len(samples_w_kmer)
+        if no_samples_w_kmer < Samples.min_samples or no_samples_w_kmer > Samples.max_samples:
+            return
 
-def get_expected_distribution(w_pheno, wo_pheno, w_kmer, wo_kmer, total):
-    w_pheno_w_kmer_expected = ((w_pheno * w_kmer)
-                     / float(total))
-    w_pheno_wo_kmer_expected = ((w_pheno * wo_kmer) 
-                      / float(total))
-    wo_pheno_w_kmer_expected  = ((wo_pheno * w_kmer)
-                      / float(total))
-    wo_pheno_wo_kmer_expected = ((wo_pheno * wo_kmer)
-                       / float(total))
-    return(
+        (
         w_pheno_w_kmer_expected, w_pheno_wo_kmer_expected,
         wo_pheno_w_kmer_expected, wo_pheno_wo_kmer_expected
-        )
+        ) = cls.get_expected_distribution(
+            w_pheno, wo_pheno, w_kmer, wo_kmer, total)
 
-def concatenate_test_files():
-    if Samples.phenotype_scale == "continuous":
-        beginning_text = "t-test_results_"
-    else:
-        beginning_text = "chi-squared_test_results_"
-    if Samples.headerline:
-        for k in Samples.phenotypes_to_analyse:
-            call(
-                [
-                "cat " + beginning_text + Samples.phenotypes[k] + "_* > " +
-                beginning_text + Samples.phenotypes[k] + ".txt"
-                ],
-                shell=True
-                )
-            for l in range(Samples.num_threads):
+        chisquare_results = stats.chisquare(
+            [
+            w_pheno_w_kmer, w_pheno_wo_kmer,
+            wo_pheno_w_kmer, wo_pheno_wo_kmer
+            ],
+            [
+            w_pheno_w_kmer_expected, w_pheno_wo_kmer_expected, 
+            wo_pheno_w_kmer_expected, wo_pheno_wo_kmer_expected
+            ],
+            1
+            )
+        test_results_file.write(
+            kmer + "\t%.2f\t%.2E\t" % chisquare_results 
+            + str(no_samples_w_kmer)  +"\t| " + " ".join(samples_w_kmer) + "\n"
+            )
+        pvalue = chisquare_results[1]
+        return pvalue
+
+    @staticmethod
+    def get_samples_distribution_for_chisquared(
+            phenotypes_of_samples, names_of_samples, list1, samples_w_kmer
+            ):
+        with_pheno_with_kmer = 0
+        with_pheno_without_kmer = 0
+        without_pheno_with_kmer = 0
+        without_pheno_without_kmer = 0
+        for i, item in enumerate(phenotypes_of_samples):
+            sample_name = names_of_samples[i]
+            if item != "NA":
+                if item == "1":
+                    if (list1[i] != "0"):
+                        with_pheno_with_kmer += process_input.samples[sample_name].weight 
+                        samples_w_kmer.append(sample_name)
+                    else:
+                        with_pheno_without_kmer += process_input.samples[sample_name].weight
+                else:
+                    if (list1[i] != "0"):
+                        without_pheno_with_kmer += process_input.samples[sample_name].weight
+                        samples_w_kmer.append(names_of_samples[i])
+                    else:
+                        without_pheno_without_kmer += process_input.samples[sample_name].weight
+        return(
+            with_pheno_with_kmer, with_pheno_without_kmer,
+            without_pheno_with_kmer, without_pheno_without_kmer
+            )
+
+    @staticmethod
+    def get_totals_in_classes(
+            w_pheno_w_kmer, w_pheno_wo_kmer, wo_pheno_w_kmer, wo_pheno_wo_kmer
+            ):
+        w_pheno = (w_pheno_w_kmer + w_pheno_wo_kmer)
+        wo_pheno = (
+            wo_pheno_w_kmer + wo_pheno_wo_kmer
+            )
+        w_kmer = (w_pheno_w_kmer + wo_pheno_w_kmer)
+        wo_kmer = (
+            w_pheno_wo_kmer + wo_pheno_wo_kmer
+            )
+        total = w_pheno + wo_pheno
+        return w_pheno, wo_pheno, w_kmer, wo_kmer, total
+
+    @staticmethod
+    def get_expected_distribution(w_pheno, wo_pheno, w_kmer, wo_kmer, total):
+        w_pheno_w_kmer_expected = ((w_pheno * w_kmer)
+                         / float(total))
+        w_pheno_wo_kmer_expected = ((w_pheno * wo_kmer) 
+                          / float(total))
+        wo_pheno_w_kmer_expected  = ((wo_pheno * w_kmer)
+                          / float(total))
+        wo_pheno_wo_kmer_expected = ((wo_pheno * wo_kmer)
+                           / float(total))
+        return(
+            w_pheno_w_kmer_expected, w_pheno_wo_kmer_expected,
+            wo_pheno_w_kmer_expected, wo_pheno_wo_kmer_expected
+            )
+
+    @staticmethod
+    def concatenate_test_files():
+        if Samples.phenotype_scale == "continuous":
+            beginning_text = "t-test_results_"
+        else:
+            beginning_text = "chi-squared_test_results_"
+        if Samples.headerline:
+            for k in Samples.phenotypes_to_analyse:
                 call(
                     [
-                    "rm " + beginning_text + Samples.phenotypes[k] +
-                    "_%05d.txt" % l
+                    "cat " + beginning_text + Samples.phenotypes[k] + "_* > " +
+                    beginning_text + Samples.phenotypes[k] + ".txt"
                     ],
                     shell=True
                     )
-    elif Samples.no_phenotypes > 1:
-        for k in phenotypes_2_analyse:
+                for l in range(Samples.num_threads):
+                    call(
+                        [
+                        "rm " + beginning_text + Samples.phenotypes[k] +
+                        "_%05d.txt" % l
+                        ],
+                        shell=True
+                        )
+        elif Samples.no_phenotypes > 1:
+            for k in phenotypes_2_analyse:
+                call(
+                    [
+                    "cat " + beginning_text + Samples.phenotypes[k] + "_* > " +
+                    beginning_text + Samples.phenotypes[k] + ".txt"
+                    ],
+                    shell=True
+                    )
+                for l in range(Samples.num_threads):
+                    call(
+                        [
+                        "rm " + beginning_text + Samples.phenotypes[k] + "_%05d.txt" %l
+                        ],
+                        shell=True
+                        )     
+        else:
             call(
                 [
-                "cat " + beginning_text + Samples.phenotypes[k] + "_* > " +
-                beginning_text + Samples.phenotypes[k] + ".txt"
+                "cat " + beginning_text + "* > " + beginning_text[:-1] + 
+                ".txt && rm " + beginning_text + "*"
                 ],
                 shell=True
                 )
-            for l in range(Samples.num_threads):
-                call(
-                    [
-                    "rm " + beginning_text + Samples.phenotypes[k] + "_%05d.txt" %l
-                    ],
-                    shell=True
-                    )     
-    else:
-        call(
-            [
-            "cat " + beginning_text + "* > " + beginning_text[:-1] + 
-            ".txt && rm " + beginning_text + "*"
-            ],
-            shell=True
-            )
 
 def kmer_filtering_by_pvalue(
         pvalue, pvalues_all_phenotypes, kmer_limit,
@@ -1009,7 +1025,7 @@ def linear_regression(
             f1.write("The Pearson correlation coefficient and p-value: " \
                     " %s, %s \n" % (r_value, pval_r))
             f1.write("The plus/minus 1 dilution factor accuracy (for MICs):" \
-                " %s \n\n" % within_1_tier_accuracy(
+                " %s \n\n" % metrics.within_1_tier_accuracy(
                     y_train, train_y_prediction
                     )
                 )
@@ -1028,7 +1044,7 @@ def linear_regression(
             f1.write("The Pearson correlation coefficient and p-value: " \
                     " %s, %s \n" % (r_value, pval_r))
             f1.write("The plus/minus 1 dilution factor accuracy (for MICs):" \
-                " %s \n\n" % within_1_tier_accuracy(
+                " %s \n\n" % metrics.within_1_tier_accuracy(
                     y_test, test_y_prediction
                     )
                 )
@@ -1070,7 +1086,7 @@ def linear_regression(
             f1.write("The Pearson correlation coefficient and p-value: " \
                     " %s, %s \n" % (r_value, pval_r))
             f1.write("The plus/minus 1 dilution factor accuracy (for MICs):" \
-                " %s \n\n" % within_1_tier_accuracy(
+                " %s \n\n" % metrics.within_1_tier_accuracy(
                     dataset.target, y_prediction
                     )
                 )
@@ -1275,9 +1291,9 @@ def logistic_regression(
             f1.write("Cohen kappa: %s\n" %\
                 cohen_kappa_score(y_train, y_train_pred))
             f1.write("Very major error rate: %s\n" %\
-                VME(y_train, y_train_pred))
+                metrics.VME(y_train, y_train_pred))
             f1.write("Major error rate: %s\n" %\
-                ME(y_train, y_train_pred))
+                metrics.ME(y_train, y_train_pred))
             f1.write('Classification report:\n %s\n' % classification_report(
                 y_train, y_train_pred, 
                 target_names=["sensitive", "resistant"]
@@ -1311,9 +1327,9 @@ def logistic_regression(
             f1.write("Cohen kappa: %s\n" %\
                 cohen_kappa_score(y_test, y_test_pred))
             f1.write("Very major error rate: %s\n" %\
-                VME(y_test, y_test_pred))
+                metrics.VME(y_test, y_test_pred))
             f1.write("Major error rate: %s\n" %\
-                ME(y_test, y_test_pred))
+                metrics.ME(y_test, y_test_pred))
             f1.write('Classification report:\n %s\n' % classification_report(
             	y_test, y_test_pred, 
             	target_names=["sensitive", "resistant"]
@@ -1369,9 +1385,9 @@ def logistic_regression(
             f1.write("Cohen kappa: %s\n" %\
                 cohen_kappa_score(dataset.target, y_pred))
             f1.write("Very major error rate: %s\n" %\
-                VME(dataset.target, y_pred))
+                metrics.VME(dataset.target, y_pred))
             f1.write("Major error rate: %s\n" %\
-                ME(dataset.target, y_pred))
+                metrics.ME(dataset.target, y_pred))
             f1.write('Classification report:\n %s\n' % classification_report(
             	dataset.target, y_pred, 
             	target_names=["sensitive", "resistant"]
@@ -1574,9 +1590,9 @@ def support_vector_classifier(
             f1.write("Cohen kappa: %s\n" %\
                 cohen_kappa_score(y_train, y_train_pred))
             f1.write("Very major error rate: %s\n" %\
-                VME(y_train, y_train_pred))
+                metrics.VME(y_train, y_train_pred))
             f1.write("Major error rate: %s\n" %\
-                ME(y_train, y_train_pred))
+                metrics.ME(y_train, y_train_pred))
             f1.write('Classification report:\n %s\n' % classification_report(
                 y_train, y_train_pred, 
                 target_names=["sensitive", "resistant"]
@@ -1610,9 +1626,9 @@ def support_vector_classifier(
             f1.write("Cohen kappa: %s\n" %\
                 cohen_kappa_score(y_test, y_test_pred))
             f1.write("Very major error rate: %s\n" %\
-                VME(y_test, y_test_pred))
+                metrics.VME(y_test, y_test_pred))
             f1.write("Major error rate: %s\n" %\
-                ME(y_test, y_test_pred))
+                metrics.ME(y_test, y_test_pred))
             f1.write('Classification report:\n %s\n' % classification_report(
                 y_test, y_test_pred, 
                 target_names=["sensitive", "resistant"]
@@ -1668,9 +1684,9 @@ def support_vector_classifier(
             f1.write("Cohen kappa: %s\n" %\
                 cohen_kappa_score(dataset.target, y_pred))
             f1.write("Very major error rate: %s\n" %\
-                VME(dataset.target, y_pred))
+                metrics.VME(dataset.target, y_pred))
             f1.write("Major error rate: %s\n" %\
-                ME(dataset.target, y_pred))
+                metrics.ME(dataset.target, y_pred))
             f1.write('Classification report:\n %s\n' % classification_report(
                 dataset.target, y_pred, 
                 target_names=["sensitive", "resistant"]
@@ -1844,9 +1860,9 @@ def random_forest(
             f1.write("Cohen kappa: %s\n" %\
                 cohen_kappa_score(y_train, y_train_pred))
             f1.write("Very major error rate: %s\n" %\
-                VME(y_train, y_train_pred))
+                metrics.VME(y_train, y_train_pred))
             f1.write("Major error rate: %s\n" %\
-                ME(y_train, y_train_pred))
+                metrics.ME(y_train, y_train_pred))
             f1.write('Classification report:\n %s\n' % classification_report(
                 y_train, y_train_pred, 
                 target_names=["sensitive", "resistant"]
@@ -1880,9 +1896,9 @@ def random_forest(
             f1.write("Cohen kappa: %s\n" %\
                 cohen_kappa_score(y_test, y_test_pred))
             f1.write("Very major error rate: %s\n" %\
-                VME(y_test, y_test_pred))
+                metrics.VME(y_test, y_test_pred))
             f1.write("Major error rate: %s\n" %\
-                ME(y_test, y_test_pred))
+                metrics.ME(y_test, y_test_pred))
             f1.write('Classification report:\n %s\n' % classification_report(
             	y_test, y_test_pred, 
             	target_names=["sensitive", "resistant"]
@@ -1938,9 +1954,9 @@ def random_forest(
             f1.write("Cohen kappa: %s\n" %\
                 cohen_kappa_score(dataset.target, y_pred))
             f1.write("Very major error rate: %s\n" %\
-                VME(dataset.target, y_pred))
+                metrics.VME(dataset.target, y_pred))
             f1.write("Major error rate: %s\n" %\
-                ME(dataset.target, y_pred))
+                metrics.ME(dataset.target, y_pred))
             f1.write('Classification report:\n %s\n' % classification_report(
             	dataset.target, y_pred, 
             	target_names=["sensitive", "resistant"]
