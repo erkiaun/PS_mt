@@ -738,10 +738,7 @@ class kmers():
                 )
 
     @classmethod
-    def kmer_filtering_by_pvalue(
-            cls, pvalue, kmer_limit,
-            FDR=False, B=False
-            ):
+    def kmer_filtering_by_pvalue(cls):
         # Filters the k-mers by their p-value achieved in statistical 
         # testing.
         sys.stderr.write("Filtering the k-mers by p-value:\n")
