@@ -85,7 +85,7 @@ class process_input():
         Samples.alphas = cls._get_alphas(alphas, alpha_min, alpha_max, n_alphas)
         Samples.gammas = cls._get_gammas(gammas, gamma_min, gamma_max, n_gammas)
         Samples.min_samples, Samples.max_samples = cls._get_min_max(min_samples, max_samples)
-        Samples.phenotypes_to_analyse = cls._get_phenotypes_to_analyse(mpheno)
+        Samples.phenotypes_to_analyse = cls._get_phenotypes_to_analyse(cls, mpheno)
         Samples.kmer_length = kmer_length
         Samples.cutoff = cutoff
         Samples.num_threads = num_threads
@@ -126,7 +126,7 @@ class process_input():
         return min_samples, max_samples
 
     @classmethod
-    def _get_phenotypes_to_analyse(mpheno):
+    def _get_phenotypes_to_analyse(cls, mpheno):
         if not mpheno:
             phenotypes_to_analyze = range(Samples.no_phenotypes)
         else: 
