@@ -138,7 +138,7 @@ class phenotypes():
 
     def __init__(self, name):
         self.name = name
-        self.pvalues = pvalues
+        self.pvalues = None
 
 class Samples():
 
