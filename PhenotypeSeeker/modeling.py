@@ -780,7 +780,7 @@ class kmers():
                 if float(line_to_list[2]) < cls.pvalue_cutoff:
                     outputfile.write(line)
                     if float(line_to_list[2]) <= max_pvalue_by_limit:
-                            phenotype_instance.kmers_for_ML.append(list1[0])
+                            phenotype_instance.kmers_for_ML.append(line_to_list[0])
                     if counter%checkpoint == 0:
                         process_input.lock.acquire()
                         stderr_print.currentKmerNum.value += checkpoint
