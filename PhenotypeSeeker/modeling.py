@@ -392,8 +392,6 @@ class kmers():
         else:
             sys.stderr.write("\nConducting the k-mer specific chi-square tests:\n")
         cls.get_params_for_kmers_testing()
-        print(cls.progress_checkpoint)
-        print(cls.no_kmers_to_analyse)
         for phenotype in process_input.phenotypes_to_analyse.keys():
             stderr_print.currentKmerNum.value = 0
             stderr_print.previousPercent.value = 0
@@ -447,6 +445,7 @@ class kmers():
         text2_4_stderr = "tests conducted."
         for line in izip_longest(*[open(item) for item in split_of_kmer_lists], fillvalue = ''):
             counter += 1
+            print(cls.progress_checkpoint)
             if counter%cls.progress_checkpoint == 0:
                 process_input.lock.acquire()
                 stderr_print.currentKmerNum.value += cls.progress_checkpoint
