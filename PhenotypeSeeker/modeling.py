@@ -434,8 +434,7 @@ class kmers():
 
     @classmethod
     def get_kmers_tested(cls, phenotype, split_of_kmer_lists):
-        print(cls.progress_checkpoint.value)
-        print(cls.no_kmers_to_analyse.value)
+
         names_of_samples = process_input.samples.keys()
         phenotypes_of_samples = [sample_data.phenotypes[phenotype] for sample_data in process_input.samples.values()]
         pvalues = []
@@ -449,13 +448,12 @@ class kmers():
         text2_4_stderr = "tests conducted."
         for line in izip_longest(*[open(item) for item in split_of_kmer_lists], fillvalue = ''):
             counter += 1
-            print(cls.progress_checkpoint)
-            if counter%cls.progress_checkpoint == 0:
+            if counter%cls.progress_checkpoint.value == 0:
                 process_input.lock.acquire()
-                stderr_print.currentKmerNum.value += cls.progress_checkpoint
+                stderr_print.currentKmerNum.value += cls.progress_checkpoint.value
                 process_input.lock.release()
                 stderr_print.check_progress(
-                    no_kmers_to_analyse, text2_4_stderr, text1_4_stderr
+                    cls.no_kmers_to_analyse.value, text2_4_stderr, text1_4_stderr
                 )
             kmer = line[0].split()[0]
             kmer_presence = [j.split()[1].strip() for j in line]
@@ -473,10 +471,10 @@ class kmers():
             if pvalue:
                 pvalues.append(pvalue)
         process_input.lock.acquire()
-        stderr_print.currentKmerNum.value += counter%cls.progress_checkpoint
+        stderr_print.currentKmerNum.value += counter%cls.progress_checkpoint.value
         process_input.lock.release()
         stderr_print.check_progress(
-            no_kmers_to_analyse, text2_4_stderr, text1_4_stderr
+            cls.no_kmers_to_analyse.value, text2_4_stderr, text1_4_stderr
         )
         test_results_file.close()
         return(pvalues)
