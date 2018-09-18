@@ -380,8 +380,8 @@ class kmers():
     phenotype_instances  = OrderedDict()
 
     vectors_as_multiple_input = []
-    progress_checkpoint = None
-    no_kmers_to_analyse = None
+    progress_checkpoint = Value("i", 0)
+    no_kmers_to_analyse = Value("i", 0)
 
     # -------------------------------------------------------------------
     # Functions for calculating the association test results for kmers.
@@ -392,8 +392,8 @@ class kmers():
         else:
             sys.stderr.write("\nConducting the k-mer specific chi-square tests:\n")
         cls.get_params_for_kmers_testing()
-        print(cls.progress_checkpoint)
-        print(cls.no_kmers_to_analyse)
+        print(cls.progress_checkpoint.value)
+        print(cls.no_kmers_to_analyse.value)
         for phenotype in process_input.phenotypes_to_analyse.keys():
             stderr_print.currentKmerNum.value = 0
             stderr_print.previousPercent.value = 0
@@ -411,12 +411,12 @@ class kmers():
     def get_params_for_kmers_testing(cls):
         cls._split_sample_vectors_for_multithreading()
         cls._splitted_vectors_to_multiple_input()
-        cls.no_kmers_to_analyse = float(
+        cls.no_kmers_to_analyse.value = float(
             check_output(
                 ['wc', '-l', "K-mer_lists/" + process_input.samples.keys()[0] + "_mapped.txt"]
                 ).split()[0]
             )
-        cls.progress_checkpoint = int(math.ceil(cls.no_kmers_to_analyse/(100*Samples.num_threads)))
+        cls.progress_checkpoint.value = int(math.ceil(cls.no_kmers_to_analyse/(100*Samples.num_threads)))
 
     @staticmethod
     def _split_sample_vectors_for_multithreading():
@@ -434,8 +434,8 @@ class kmers():
 
     @classmethod
     def get_kmers_tested(cls, phenotype, split_of_kmer_lists):
-        print(cls.progress_checkpoint)
-        print(cls.no_kmers_to_analyse)
+        print(cls.progress_checkpoint.value)
+        print(cls.no_kmers_to_analyse.value)
         names_of_samples = process_input.samples.keys()
         phenotypes_of_samples = [sample_data.phenotypes[phenotype] for sample_data in process_input.samples.values()]
         pvalues = []
