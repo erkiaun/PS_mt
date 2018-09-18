@@ -743,6 +743,7 @@ class kmers():
         for phenotype_instance in process_input.phenotypes_to_analyse.values():
             pvalues = phenotype_instance.pvalues
             nr_of_kmers_tested = float(len(pvalues))
+            print(nr_of_kmers_tested)
             stderr_print.currentKmerNum.value = 0
             stderr_print.previousPercent.value = 0
             checkpoint = int(math.ceil(nr_of_kmers_tested/100))
