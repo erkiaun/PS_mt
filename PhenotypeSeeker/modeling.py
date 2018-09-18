@@ -404,7 +404,7 @@ class kmers():
             process_input.phenotypes_to_analyse[phenotype].pvalues = \
                 list(chain(*pvalues_from_all_threads))
             sys.stderr.write("\n")
-        cls.concatenate_test_files()
+            cls.concatenate_test_files(phenotype)
 
     @classmethod
     def get_params_for_kmers_testing(cls):
@@ -681,38 +681,36 @@ class kmers():
         else:
             beginning_text = "chi-squared_test_results_"
         if Samples.headerline:
-            for k in Samples.phenotypes_to_analyse:
+            call(
+                [
+                "cat " + beginning_text + phenotype + "_* > " +
+                beginning_text + phenotype + ".txt"
+                ],
+                shell=True
+                )
+            for l in range(Samples.num_threads):
                 call(
                     [
-                    "cat " + beginning_text + Samples.phenotypes[k] + "_* > " +
-                    beginning_text + Samples.phenotypes[k] + ".txt"
+                    "rm " + beginning_text + phenotype +
+                    "_%05d.txt" % l
                     ],
                     shell=True
                     )
-                for l in range(Samples.num_threads):
-                    call(
-                        [
-                        "rm " + beginning_text + Samples.phenotypes[k] +
-                        "_%05d.txt" % l
-                        ],
-                        shell=True
-                        )
         elif Samples.no_phenotypes > 1:
-            for k in phenotypes_2_analyse:
+            call(
+                [
+                "cat " + beginning_text + phenotype + "_* > " +
+                beginning_text + phenotype + ".txt"
+                ],
+                shell=True
+                )
+            for l in range(Samples.num_threads):
                 call(
                     [
-                    "cat " + beginning_text + Samples.phenotypes[k] + "_* > " +
-                    beginning_text + Samples.phenotypes[k] + ".txt"
+                    "rm " + beginning_text + phenotype + "_%05d.txt" %l
                     ],
                     shell=True
-                    )
-                for l in range(Samples.num_threads):
-                    call(
-                        [
-                        "rm " + beginning_text + Samples.phenotypes[k] + "_%05d.txt" %l
-                        ],
-                        shell=True
-                        )     
+                    )     
         else:
             call(
                 [
