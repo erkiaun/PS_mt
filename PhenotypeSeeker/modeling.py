@@ -380,8 +380,8 @@ class kmers():
     phenotype_instances  = OrderedDict()
 
     vectors_as_multiple_input = []
-    progress_checkpoint = 0
-    no_kmers_to_analyse = 0
+    progress_checkpoint = None
+    no_kmers_to_analyse = None
 
     # -------------------------------------------------------------------
     # Functions for calculating the association test results for kmers.
@@ -392,6 +392,8 @@ class kmers():
         else:
             sys.stderr.write("\nConducting the k-mer specific chi-square tests:\n")
         cls.get_params_for_kmers_testing()
+        print(cls.progress_checkpoint)
+        print(cls.no_kmers_to_analyse)
         for phenotype in process_input.phenotypes_to_analyse.keys():
             stderr_print.currentKmerNum.value = 0
             stderr_print.previousPercent.value = 0
@@ -409,12 +411,12 @@ class kmers():
     def get_params_for_kmers_testing(cls):
         cls._split_sample_vectors_for_multithreading()
         cls._splitted_vectors_to_multiple_input()
-        cls.kmers_to_analyse = float(
+        cls.no_kmers_to_analyse = float(
             check_output(
                 ['wc', '-l', "K-mer_lists/" + process_input.samples.keys()[0] + "_mapped.txt"]
                 ).split()[0]
             )
-        cls.progress_checkpoint = int(math.ceil(cls.kmers_to_analyse/(100*Samples.num_threads)))
+        cls.progress_checkpoint = int(math.ceil(cls.no_kmers_to_analyse/(100*Samples.num_threads)))
 
     @staticmethod
     def _split_sample_vectors_for_multithreading():
