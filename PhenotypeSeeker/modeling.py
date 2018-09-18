@@ -803,12 +803,11 @@ class kmers():
     @staticmethod
     def kmers_filtered_output(phenotype):
         if Samples.headerline:
-            outputfile = open(
-                "k-mers_filtered_by_pvalue_" + phenotype + ".txt", "w+")
+            outputfile = "k-mers_filtered_by_pvalue_" + phenotype + ".txt"
         elif Samples.no_phenotypes > 1:
-            outputfile = open("k-mers_filtered_by_pvalue_" + phenotype + ".txt", "w+")
+            outputfile = "k-mers_filtered_by_pvalue_" + phenotype + ".txt"
         else:
-            outputfile = open("k-mers_filtered_by_pvalue.txt", "w+")
+            outputfile = "k-mers_filtered_by_pvalue.txt"
         return outputfile
 
     @staticmethod
