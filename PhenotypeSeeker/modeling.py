@@ -377,7 +377,7 @@ class kmers():
 
     phenotype_instances  = OrderedDict()
 
-    vectors_as_multiple_input = None
+    vectors_as_multiple_input = []
     progress_checkpoint = None
     no_kmers_to_analyse = None
 
