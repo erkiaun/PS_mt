@@ -2101,7 +2101,7 @@ def modeling(args):
         args.gammas, args.gamma_min, args.gamma_max, args.n_gammas,
         args.min, args.max, args.mpheno, args.length, args.cutoff,
         args.num_threads, args.pvalue, args.n_kmers, args.FDR, 
-        args.Bonferonni
+        args.Bonferroni
         )
     process_input.get_multithreading_parameters()
     sys.stderr.write("Generating the k-mer lists for input samples:\n")
