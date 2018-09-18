@@ -85,7 +85,7 @@ class process_input():
         Samples.alphas = cls._get_alphas(alphas, alpha_min, alpha_max, n_alphas)
         Samples.gammas = cls._get_gammas(gammas, gamma_min, gamma_max, n_gammas)
         Samples.min_samples, Samples.max_samples = cls._get_min_max(min_samples, max_samples)
-        Samples.phenotypes_to_analyse = cls._get_phenotypes_to_analyse(mpheno)
+        cls._get_phenotypes_to_analyse(mpheno)
         Samples.kmer_length = kmer_length
         Samples.cutoff = cutoff
         Samples.num_threads = num_threads
@@ -150,7 +150,6 @@ class Samples():
 
     kmer_length = None
     cutoff = None
-    phenotypes_to_analyse = None
     alphas = None
     gammas = None
     min_samples = None
@@ -402,7 +401,7 @@ class kmers():
                 cls.vectors_as_multiple_input
                 )
             process_input.phenotypes_to_analyse[phenotype].pvalues = \
-                append(list(chain(*pvalues_from_all_threads)))
+                list(chain(*pvalues_from_all_threads))
             sys.stderr.write("\n")
         cls.concatenate_test_files()
 
@@ -486,7 +485,7 @@ class kmers():
         if Samples.headerline:
             outputfile = beginning_text + \
                 phenotype + "_" + code + ".txt"
-        elif len(Samples.phenotypes_to_analyse) > 1:
+        elif len(process_input.phenotypes_to_analyse) > 1:
             outputfile = beginning_text + \
                 phenotype + "_" + code + ".txt"
         else:
@@ -497,7 +496,7 @@ class kmers():
     def get_text1_4_stderr(phenotype):
         if Samples.headerline:
             text1_4_stderr = phenotype + ": "
-        elif len(Samples.phenotypes_to_analyse) > 1:
+        elif len(process_input.phenotypes_to_analyse) > 1:
             text1_4_stderr = "phenotype " + phenotype + ": "
         else:
             text1_4_stderr = ""
