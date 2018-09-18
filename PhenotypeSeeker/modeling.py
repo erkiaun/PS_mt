@@ -412,7 +412,7 @@ class kmers():
                 ['wc', '-l', "K-mer_lists/" + process_input.samples.keys()[0] + "_mapped.txt"]
                 ).split()[0]
             )
-        cls.progress_checkpoint = int(math.ceil(kmers_to_analyse/(100*Samples.num_threads)))
+        cls.progress_checkpoint = int(math.ceil(cls.kmers_to_analyse/(100*Samples.num_threads)))
 
     @staticmethod
     def _split_sample_vectors_for_multithreading():
