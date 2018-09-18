@@ -201,12 +201,15 @@ class Samples():
 
     @classmethod
     def from_inputfile(cls, line):
-        name, address, phenotypes = \
+        phenotypes = {}
+        name, address, phenotype_list = \
             line.split()[0], line.split()[1], line.split()[2:]
         if not all(x == "0" or x == "1" or x == "NA" for x in phenotypes):
             cls.phenotype_scale = "continuous"
         if cls.take_logs:
-            phenotypes = map(lambda x: math.log(x, 2), phenotypes)
+            phenotype_list = map(lambda x: math.log(x, 2), phenotypes)
+        for i,j in zip(cls.phenotypes, phenotype_list):
+            phenotypes[i] = j 
         return cls(name, address, phenotypes)
 
     @classmethod
@@ -493,7 +496,7 @@ class kmers():
     @staticmethod
     def get_text1_4_stderr(phenotype):
         if Samples.headerline:
-            text1_4_stderr = Samples.phenotypes[k] + ": "
+            text1_4_stderr = phenotype + ": "
         elif len(Samples.phenotypes_to_analyse) > 1:
             text1_4_stderr = "phenotype " + phenotype + ": "
         else:
