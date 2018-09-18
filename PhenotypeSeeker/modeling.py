@@ -434,7 +434,7 @@ class kmers():
     @classmethod
     def get_kmers_tested(cls, phenotype, split_of_kmer_lists):
         names_of_samples = process_input.samples.keys()
-        phenotypes_of_samples = [sample_data.phenotypes[k] for sample_data in process_input.samples.values()]
+        phenotypes_of_samples = [sample_data.phenotypes[phenotype] for sample_data in process_input.samples.values()]
         pvalues = []
         counter = 0
 
