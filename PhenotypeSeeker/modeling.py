@@ -755,7 +755,7 @@ class kmers():
             inputfile = open(cls.test_outputfiles[phenotype])
             outputfile = open(cls.kmers_filtered_output(phenotype), "w")
             cls.write_headerline(outputfile)      
-            get_pvalue_cutoff(pvalues)
+            cls.get_pvalue_cutoff(pvalues, nr_of_kmers_tested)
             max_pvalue_by_limit = float('%.2E' % pvalues[cls.kmer_limit-1])
             
             for line in inputfile:
@@ -782,7 +782,7 @@ class kmers():
             outputfile.close()
 
     @classmethod
-    def get_pvalue_cutoff(cls, pvalues):
+    def get_pvalue_cutoff(cls, pvalues, nr_of_kmers_tested):
         if cls.B:
             cls.pvalue_cutoff = (cls.pvalue_cutoff/nr_of_kmers_tested)
         elif cls.FDR:
