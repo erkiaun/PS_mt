@@ -2128,9 +2128,7 @@ def modeling(args):
     #call(["rm -r K-mer_lists/"], shell = True)
     if args.weights == "+":
         Samples.get_weights()
-    (
-    pvalues_all_phenotypes, vectors_as_multiple_input
-    ) = test_kmers_association_with_phenotype()
+    kmers.test_kmers_association_with_phenotype()
     kmers_passed_all_phenotypes = kmer_filtering_by_pvalue(
         args.pvalue, pvalues_all_phenotypes, args.n_kmers, 
         args.FDR, args.Bonferroni
