@@ -2135,6 +2135,7 @@ def modeling(args):
     kmers.test_kmers_association_with_phenotype()
     for key, value in process_input.phenotypes_to_analyse.iteritems():
         print(len(value.pvalues))
+        '''
     kmers_passed_all_phenotypes = kmer_filtering_by_pvalue(
         args.pvalue, pvalues_all_phenotypes, args.n_kmers, 
         args.FDR, args.Bonferroni
@@ -2174,3 +2175,4 @@ def modeling(args):
 
     if args.assembly == "+":
         assembling(kmers_passed_all_phenotypes, args.mpheno)
+        '''
