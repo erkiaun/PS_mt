@@ -755,23 +755,9 @@ class kmers():
             inputfile = open(cls.test_outputfiles[phenotype])
             outputfile = open(cls.kmers_filtered_output(phenotype), "w")
             cls.write_headerline(outputfile)      
-
+            get_pvalue_cutoff(pvalues)
             max_pvalue_by_limit = float('%.2E' % pvalues[cls.kmer_limit-1])
-
-            if cls.B:
-                cls.pvalue_cutoff = (cls.pvalue_cutoff/nr_of_kmers_tested)
-            elif cls.FDR:
-                pvalue_cutoff_by_FDR = 0
-                for index, pvalue in enumerate(pvalues):
-                    if  (pvalue  < (
-                            (index+1) 
-                            / nr_of_kmers_tested) * cls.pvalue_cutoff
-                            ):
-                        pvalue_cutoff_by_FDR = pvalue
-                    elif item > pvalue:
-                        break
-                cls.pvalue_cutoff = pvalue_cutoff_by_FDR
-
+            
             for line in inputfile:
                 counter += 1
                 line_to_list = line.split()
@@ -780,16 +766,12 @@ class kmers():
                     if float(line_to_list[2]) <= max_pvalue_by_limit:
                             phenotype_instance.kmers_for_ML.append(line_to_list[0])
                 if counter%checkpoint == 0:
-                    process_input.lock.acquire()
                     stderr_print.currentKmerNum.value += checkpoint
-                    process_input.lock.release()
                     stderr_print.check_progress(
                         nr_of_kmers_tested, text2_4_stderr, text1_4_stderr
                     )
 
-            process_input.lock.acquire()
             stderr_print.currentKmerNum.value += counter%checkpoint
-            process_input.lock.release()
             stderr_print.check_progress(
                 nr_of_kmers_tested, text2_4_stderr, text1_4_stderr
                 )
@@ -798,6 +780,22 @@ class kmers():
                 outputfile.write("\nNo k-mers passed the filtration by p-value.\n")
             inputfile.close()
             outputfile.close()
+
+    @classmethod
+    def get_pvalue_cutoff(cls, pvalues):
+        if cls.B:
+            cls.pvalue_cutoff = (cls.pvalue_cutoff/nr_of_kmers_tested)
+        elif cls.FDR:
+            pvalue_cutoff_by_FDR = 0
+            for index, pvalue in enumerate(pvalues):
+                if  (pvalue  < (
+                        (index+1) 
+                        / nr_of_kmers_tested) * cls.pvalue_cutoff
+                        ):
+                    pvalue_cutoff_by_FDR = pvalue
+                elif item > pvalue:
+                    break
+            cls.pvalue_cutoff = pvalue_cutoff_by_FDR
 
     @staticmethod
     def kmers_filtered_output(phenotype):
@@ -2114,7 +2112,7 @@ def modeling(args):
     kmers.test_kmers_association_with_phenotype()
     kmers.kmer_filtering_by_pvalue()
     for i, j in process_input.phenotypes_to_analyse.iteritems():
-        print(len(j.kmers_for_ML))
+        print(j.kmers_for_ML)
     '''
     if Samples.phenotype_scale == "continuous":
         linear_regression(
