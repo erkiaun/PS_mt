@@ -392,8 +392,6 @@ class kmers():
         else:
             sys.stderr.write("\nConducting the k-mer specific chi-square tests:\n")
         cls.get_params_for_kmers_testing()
-        print(cls.progress_checkpoint.value)
-        print(cls.no_kmers_to_analyse.value)
         for phenotype in process_input.phenotypes_to_analyse.keys():
             stderr_print.currentKmerNum.value = 0
             stderr_print.previousPercent.value = 0
@@ -2134,6 +2132,8 @@ def modeling(args):
     if args.weights == "+":
         Samples.get_weights()
     kmers.test_kmers_association_with_phenotype()
+    for key, value in process_input.phenotypes_to_analyse:
+        print(len(value.pvalues))
     kmers_passed_all_phenotypes = kmer_filtering_by_pvalue(
         args.pvalue, pvalues_all_phenotypes, args.n_kmers, 
         args.FDR, args.Bonferroni
