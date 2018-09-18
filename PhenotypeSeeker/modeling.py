@@ -749,7 +749,6 @@ class kmers():
             counter = 0    
 
             phenotype = phenotype_instance.name
-            continue
             text1_4_stderr = cls.get_text1_4_stderr(phenotype)
             text2_4_stderr = "k-mers filtered."
 
