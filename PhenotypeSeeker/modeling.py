@@ -756,7 +756,7 @@ class kmers():
 
             inputfile = open(cls.test_outputfiles[phenotype])
             outputfile = open(cls.kmers_filtered_output(phenotype), "w")
-            cls.write_headerline(oututfile)      
+            cls.write_headerline(outputfile)      
 
             max_pvalue_by_limit = float('%.2E' % pvalues[kmer_limit-1])
 
