@@ -398,7 +398,7 @@ class kmers():
                     ), 
                 cls.vectors_as_multiple_input
                 )
-            process_input.phenotypes_to_analyse[phenotype].pvalues = 
+            process_input.phenotypes_to_analyse[phenotype].pvalues = \
                 append(list(chain(*pvalues_from_all_threads)))
             sys.stderr.write("\n")
         cls.concatenate_test_files()
