@@ -411,7 +411,7 @@ class kmers():
     def get_params_for_kmers_testing(cls):
         cls._split_sample_vectors_for_multithreading()
         cls._splitted_vectors_to_multiple_input()
-        cls.no_kmers_to_analyse.value = float(
+        cls.no_kmers_to_analyse.value = int(
             check_output(
                 ['wc', '-l', "K-mer_lists/" + process_input.samples.keys()[0] + "_mapped.txt"]
                 ).split()[0]
