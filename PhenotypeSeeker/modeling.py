@@ -380,8 +380,8 @@ class kmers():
     phenotype_instances  = OrderedDict()
 
     vectors_as_multiple_input = []
-    progress_checkpoint = int
-    no_kmers_to_analyse = int
+    progress_checkpoint = 0
+    no_kmers_to_analyse = 0
 
     # -------------------------------------------------------------------
     # Functions for calculating the association test results for kmers.
