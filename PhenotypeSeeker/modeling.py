@@ -675,7 +675,7 @@ class kmers():
             )
 
     @staticmethod
-    def concatenate_test_files():
+    def concatenate_test_files(phenotype):
         if Samples.phenotype_scale == "continuous":
             beginning_text = "t-test_results_"
         else:
