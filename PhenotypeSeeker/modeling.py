@@ -2140,12 +2140,12 @@ def modeling(args):
         lambda x:  x.get_kmers_filtered(), 
         Input.phenotypes_to_analyse.values()
         )
+    preparations_for_modeling()
     map(
         lambda x:  x.get_dataframe_for_machine_learning(),
         Input.phenotypes_to_analyse.values()
         )
     map(lambda x:  print(x.ML_df), Input.phenotypes_to_analyse.values())
-    preparations_for_modeling()
 
     '''
     if Samples.phenotype_scale == "continuous":
