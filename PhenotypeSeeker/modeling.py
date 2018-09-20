@@ -2162,13 +2162,13 @@ def modeling(args):
     kmers.kmer_filtering_by_pvalue()
     for i, j in process_input.phenotypes_to_analyse.iteritems():
         print(len(j.kmers_for_ML))
-    for phenotype_instance in process_input.phenotypes_to_analyse.values():
-        ML_dfs_from_threads = process_input.pool.map(
-            lambda x: phenotype_instance.get_ML_df(x),
-            kmers.vectors_as_multiple_input
-            )
-        phenotype_instance.ML_df = pd.concat(ML_dfs_from_threads, join_axes=[df1.index])
-    #map(lambda x:  x.get_ML_df_uni, process_input.phenotypes_to_analyse.values())
+    # for phenotype_instance in process_input.phenotypes_to_analyse.values():
+    #     ML_dfs_from_threads = process_input.pool.map(
+    #         lambda x: phenotype_instance.get_ML_df(x),
+    #         kmers.vectors_as_multiple_input
+    #         )
+    #     phenotype_instance.ML_df = pd.concat(ML_dfs_from_threads, join_axes=[ML_dfs_from_threads[0].index])
+    map(lambda x:  x.get_ML_df_uni, process_input.phenotypes_to_analyse.values())
 
     # map(lambda x: process_input.pool.map(lambda y: x.get_ML_df(y), kmers.vectors_as_multiple_input), process_input.phenotypes_to_analyse.values())
 
