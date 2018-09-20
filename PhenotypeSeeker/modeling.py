@@ -397,14 +397,8 @@ class phenotypes():
         self.kmers_for_ML = set()
         self.ML_df = pd.DataFrame()
 
-    def get_ML_df(self):
-        kmer_lists = ["K-mer_lists/" + sample + "_mapped.txt" for sample in process_input.samples]
-        for line in izip_longest(*[open(item) for item in kmer_lists], fillvalue = ''):
-            if line[0].split()[0] in self.kmers_for_ML:
-                self.ML_df[line[0].split()[0]] = [int(j.split()[1].strip()) for j in line]
-        self.ML_df = self.ML_df.astype(bool).astype(int)
-        self.ML_df.index.names = process_input.samples.keys()
-
+    # -------------------------------------------------------------------
+    # Functions for calculating the association test results for kmers.
     @classmethod
     def preparations_for_kmer_testing(cls):
         if Samples.phenotype_scale == "continuous":
@@ -413,8 +407,6 @@ class phenotypes():
             sys.stderr.write("\nConducting the k-mer specific chi-square tests:\n")
         cls.get_params_for_kmers_testing()
 
-    # -------------------------------------------------------------------
-    # Functions for calculating the association test results for kmers.
     def test_kmers_association_with_phenotype(self):
         stderr_print.currentKmerNum.value = 0
         stderr_print.previousPercent.value = 0
@@ -426,7 +418,7 @@ class phenotypes():
         self.pvalues = \
             sorted(list(chain(*pvalues_from_all_threads)))
         sys.stderr.write("\n")
-        self.concatenate_test_files(phenotype)
+        self.concatenate_test_files(self.name)
 
     @classmethod
     def get_params_for_kmers_testing(cls):
@@ -747,6 +739,9 @@ class phenotypes():
                 shell=True
                 )
 
+    # -------------------------------------------------------------------
+    # Functions for filtering the k-mers based on the p-values of
+    # conducted tests.
     def get_kmers_filtered(self):
         # Filters the k-mers by their p-value achieved in statistical 
         # testing.
@@ -828,6 +823,14 @@ class phenotypes():
                 "K-mer\tChi-square_statistic\tp-value\
                 \tNo._of_samples_with_k-mer\tSamples_with_k-mer\n"
                 )
+
+    def get_ML_df(self):
+        kmer_lists = ["K-mer_lists/" + sample + "_mapped.txt" for sample in process_input.samples]
+        for line in izip_longest(*[open(item) for item in kmer_lists], fillvalue = ''):
+            if line[0].split()[0] in self.kmers_for_ML:
+                self.ML_df[line[0].split()[0]] = [int(j.split()[1].strip()) for j in line]
+        self.ML_df = self.ML_df.astype(bool).astype(int)
+        self.ML_df.index.names = process_input.samples.keys()
 
 def linear_regression(
 	    kmer_lists_splitted,
