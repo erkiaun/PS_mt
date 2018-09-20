@@ -443,7 +443,7 @@ class phenotypes():
     def _splitted_vectors_to_multiple_input(cls):
         vectors_as_multiple_input = []
         for i in range(Samples.num_threads):
-            cls.vectors_as_multiple_Input.append(["K-mer_lists/" + sample + "_mapped_%05d" %i for sample in Input.samples])
+            cls.vectors_as_multiple_input.append(["K-mer_lists/" + sample + "_mapped_%05d" %i for sample in Input.samples])
         
 
     @classmethod
@@ -824,7 +824,31 @@ class phenotypes():
                 \tNo._of_samples_with_k-mer\tSamples_with_k-mer\n"
                 )
 
-    def get_ML_df(self):
+    # -------------------------------------------------------------------
+    # Functions for generating the machine learning model.  
+
+    @staticmethod
+    def preparations_for_modeling():
+
+        if Samples.phenotype_scale == "continuous":
+            model_name = "linear regression"
+        elif Samples.phenotype_scale == "binary":
+            if args.binary_classifier == "log":
+                model_name = "logistic regression"
+            elif args.binary_classifier == "SVM":
+                model_name = "support vector machine"
+            elif args.binary_classifier == "RF":
+                model_name = "random forest"
+
+        if len(Samples.phenotypes_to_analyse) > 1:
+            sys.stderr.write("Generating the " + model_name + " model:\n")
+        elif Samples.headerline:
+            sys.stderr.write("Generating the " + model_name + " model of " 
+                +  Samples.phenotypes[0] + " data...\n")
+        else:
+            sys.stderr.write("Generating the " + model_name + " model...\n")
+
+    def get_dataframe_for_machine_learning(self):
         kmer_lists = ["K-mer_lists/" + sample + "_mapped.txt" for sample in Input.samples]
         for line in izip_longest(*[open(item) for item in kmer_lists], fillvalue = ''):
             if line[0].split()[0] in self.kmers_for_ML:
@@ -832,6 +856,8 @@ class phenotypes():
         self.ML_df = self.ML_df.astype(bool).astype(int)
         self.ML_df.index.names = Input.samples.keys()
 
+    def model(self):
+        pass
 
 
 def linear_regression(
@@ -847,13 +873,6 @@ def linear_regression(
     # presence/absence (0/1) in samples are used as independent
     # parameters, resistance value (continuous) is used as dependent
     # parameter.
-    if len(Samples.phenotypes_to_analyse) > 1:
-        sys.stderr.write("Conducting the linear regression analysis:\n")
-    elif Samples.headerline:
-        sys.stderr.write("Conducting the linear regression analysis of " 
-            +  Samples.phenotypes[0] + " data...\n")
-    else:
-        sys.stderr.write("Conducting the linear regression analysis...\n")
 
     for j, k in enumerate(Samples.phenotypes_to_analyse):
         #Open files to write results of linear regression
@@ -2121,8 +2140,12 @@ def modeling(args):
         lambda x:  x.get_kmers_filtered(), 
         Input.phenotypes_to_analyse.values()
         )
-    map(lambda x:  x.get_ML_df(), Input.phenotypes_to_analyse.values())
+    map(
+        lambda x:  x.get_dataframe_for_machine_learning(),
+        Input.phenotypes_to_analyse.values()
+        )
     map(lambda x:  print(x.ML_df), Input.phenotypes_to_analyse.values())
+    preparations_for_modeling()
 
     '''
     if Samples.phenotype_scale == "continuous":
