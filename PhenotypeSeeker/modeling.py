@@ -604,7 +604,9 @@ class phenotypes():
         #Calculating the weighted Welch's t-test results
         dif = wtd_mean_x-wtd_mean_y
         sxy = math.sqrt((varx/sumofweightsx)+(vary/sumofweightsy))
-        df = (((varx/sumofweightsx)+(vary/sumofweightsy))**2)/((((varx/sumofweightsx)**2)/(sumofweightsx-1))+((vary/sumofweightsy)**2/(sumofweightsy-1)))
+        df = (((varx/sumofweightsx)+(vary/sumofweightsy))**2) / \
+            ((((varx/sumofweightsx)**2)/(sumofweightsx-1)) + \
+                ((vary/sumofweightsy)**2/(sumofweightsy-1)))
         t= dif/sxy
         pvalue = stats.t.sf(abs(t), df)*2
 
@@ -849,7 +851,7 @@ class phenotypes():
 
     @staticmethod
     def preparations_for_modeling():
-        if len(Samples.phenotypes_to_analyse) > 1:
+        if len(Input.phenotypes_to_analyse) > 1:
             sys.stderr.write("Generating the " + model_name_printing + " model:\n")
         elif Samples.headerline:
             sys.stderr.write("Generating the " + model_name_printing + " model of " 
@@ -866,11 +868,14 @@ class phenotypes():
         self.ML_df.index.names = Input.samples.keys()
 
     def machine_learning_modelling(self):
+
+        if len(Input.phenotypes_to_analyse) > 1::
+            sys.stderr.write("\tregression analysis of " 
+                +  self.name + " data...\n")
         summary_file, ceoff_file, model_file = self.get_outputfile_names()
         summary_file = open(summary_file, "w")
         coeff_file = open(coeff_file, "w")
         model_file = open(model_file, "w")
-        self.progress_to_stderr()
         if len(self.kmers_for_ML) == 0:
             summary_file.write("No k-mers passed the step of k-mer filtering for " \
                 "machine learning modelling.\n")
@@ -886,7 +891,7 @@ class phenotypes():
             if len(Samples.phenotypes_to_analyse) > 1:
                 sys.stderr.write("\tregression analysis of " 
                     +  self.name + " data...\n")
-        elif Samples.no_phenotypes > 1:
+        elif len(Input.phenotypes_to_analyse) > 1:
             summary_file = "summary_of_" + model_name_file + "_analysis" \
                 + self.name + ".txt"
             coeff_file = "k-mers_and_coefficients_in_" + model_name_file \
@@ -901,15 +906,6 @@ class phenotypes():
             model_filename = model_name_file + "_model.txt"
         
         return summary_file, ceoff_file, model_file       
-
-    def progress_to_stderr(self):
-        if Samples.headerline:
-            if len(Samples.phenotypes_to_analyse) > 1:
-                sys.stderr.write("\tregression analysis of " 
-                    +  self.name + " data...\n")
-        elif Samples.no_phenotypes > 1:
-            sys.stderr.write("\tregression analysis of " 
-                +  self.name + " data...\n")
 
 
 def linear_regression(
