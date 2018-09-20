@@ -864,8 +864,10 @@ class phenotypes():
                 self.ML_df[line[0].split()[0]] = [int(j.split()[1].strip()) for j in line]
         self.ML_df = self.ML_df.astype(bool).astype(int)
         self.ML_df.index = Input.samples.keys()
-        for sample in Input.samples.values():
-            if sample.phenotype 
+        self.ML_df.drop(filter(
+            lambda x: Input.samples[x].phenotypes[self.name] == 'NA',
+            Input.samples.keys())
+            )
 
 
     def machine_learning_modelling(self):
