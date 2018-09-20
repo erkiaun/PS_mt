@@ -822,12 +822,11 @@ class phenotypes():
                     break
             cls.pvalue_cutoff = pvalue_cutoff_by_FDR
 
-    @staticmethod
-    def kmers_filtered_output(phenotype):
+    def kmers_filtered_output(self, phenotype):
         if Samples.headerline:
-            outputfile = "k-mers_filtered_by_pvalue_" + phenotype + ".txt"
+            outputfile = "k-mers_filtered_by_pvalue_" + self.phenotype + ".txt"
         elif Samples.no_phenotypes > 1:
-            outputfile = "k-mers_filtered_by_pvalue_" + phenotype + ".txt"
+            outputfile = "k-mers_filtered_by_pvalue_" + self.phenotype + ".txt"
         else:
             outputfile = "k-mers_filtered_by_pvalue.txt"
         return outputfile
@@ -852,12 +851,12 @@ class phenotypes():
     @staticmethod
     def preparations_for_modeling():
         if len(Input.phenotypes_to_analyse) > 1:
-            sys.stderr.write("Generating the " + model_name_printing + " model:\n")
+            sys.stderr.write("Generating the " + phenotypes.model_name_printing + " model:\n")
         elif Samples.headerline:
-            sys.stderr.write("Generating the " + model_name_printing + " model of " 
+            sys.stderr.write("Generating the " + phenotypes.model_name_printing + " model of " 
                 +  Samples.phenotypes[0] + " data...\n")
         else:
-            sys.stderr.write("Generating the " + model_name_printing + " model...\n")
+            sys.stderr.write("Generating the " + phenotypes.model_name_printing + " model...\n")
 
     def get_dataframe_for_machine_learning(self):
         kmer_lists = ["K-mer_lists/" + sample + "_mapped.txt" for sample in Input.samples]
@@ -883,27 +882,27 @@ class phenotypes():
 
     def get_outputfile_names(self):
         if Samples.headerline:
-            summary_file = "summary_of_" + model_name_file + "_analysis" \
+            summary_file = "summary_of_" + self.model_name_file + "_analysis" \
                 + self.name + ".txt"
-            coeff_file = "k-mers_and_coefficients_in_" + model_name_file \
+            coeff_file = "k-mers_and_coefficients_in_" + self.model_name_file \
                 + "_model_" + self.name + ".txt"
-            model_file = model_name_file + "_model_" + self.name + ".pkl"
+            model_file = self.model_name_file + "_model_" + self.name + ".pkl"
             if len(Samples.phenotypes_to_analyse) > 1:
                 sys.stderr.write("\tregression analysis of " 
                     +  self.name + " data...\n")
         elif len(Input.phenotypes_to_analyse) > 1:
-            summary_file = "summary_of_" + model_name_file + "_analysis" \
+            summary_file = "summary_of_" + self.model_name_file + "_analysis" \
                 + self.name + ".txt"
-            coeff_file = "k-mers_and_coefficients_in_" + model_name_file \
+            coeff_file = "k-mers_and_coefficients_in_" + self.model_name_file \
                 + "_model_" + self.name + ".txt"
-            model_filename = model_name_file +"_model_" + self.name + ".pkl"
+            model_file = self.model_name_file +"_model_" + self.name + ".pkl"
             sys.stderr.write("\tregression analysis of " 
                 + self.name + " data...\n")
         else:
-            summary_file = "summary_of_" + model_name_file + "_analysis.txt"
-            coeff_file = "k-mers_and_coefficients_in_" + model_name_file \
+            summary_file = "summary_of_" + self.model_name_file + "_analysis.txt"
+            coeff_file = "k-mers_and_coefficients_in_" + self.model_name_file \
                 + "_model.txt"
-            model_filename = model_name_file + "_model.txt"
+            model_file = self.model_name_file + "_model.txt"
         
         return summary_file, ceoff_file, model_file       
 
@@ -913,41 +912,6 @@ def linear_regression(
 	    kmers_passed_all_phenotypes, penalty, n_splits, testset_size,
 	    l1_ratio, max_iter, tol
 	    ):
-
-    names_of_samples = Input.samples.keys()
-
-    # Applies linear regression with on k-mers
-    # that passed the filtering by p-value of statistical test. K-mers
-    # presence/absence (0/1) in samples are used as independent
-    # parameters, resistance value (continuous) is used as dependent
-    # parameter.
-
-    for j, k in enumerate(Samples.phenotypes_to_analyse):
-        #Open files to write results of linear regression
-        phenotype = Samples.phenotypes[k]
-
-
-        # Generating a binary k-mer presence/absence matrix and a list
-        # of k-mer names based on information in k-mer_matrix.txt 
-        matrix_and_features = map(
-            list, zip(
-                *Input.pool.map(
-                    partial(
-                        get_kmer_presence_matrix,
-                        set(kmers_passed_all_phenotypes[j])
-                        ),
-                    kmer_lists_splitted
-                    )
-                )
-            )
-        kmers_presence_matrix = [
-            item for sublist in matrix_and_features[0] for item in sublist
-            ]
-        features = [
-            item for sublist in matrix_and_features[1] for item in sublist
-            ]
-        Phenotypes = [item.phenotypes[k] for item in Input.samples.values()]
-
 
         # Converting data into Python array formats suitable to use in
         # sklearn modeling. Also, deleting information associated with
