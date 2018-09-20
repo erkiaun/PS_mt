@@ -152,10 +152,11 @@ class phenotypes():
 
     def get_ML_df(self):
         kmer_lists = ["K-mer_lists/" + sample + "_mapped.txt" for sample in process_input.samples]
-        for line in izip_longest(*[open(item) for item in kmers_lists], fillvalue = ''):
+        for line in izip_longest(*[open(item) for item in kmer_lists], fillvalue = ''):
             if line[0].split()[0] in self.kmers_for_ML:
                 self.ML_df[line[0].split()[0]] = [int(j.split()[1].strip()) for j in line]
         self.ML_df = self.ML_df.astype(bool).astype(int)
+        self.ML_df.index.names = process_input.sampels.keys()
  
 
 class Samples():
@@ -2089,6 +2090,7 @@ def assembling(kmers_passed_all_phenotypes, phenotypes_to_analyze):
 
 def modeling(args):
     # The main function of "phenotypeseeker modeling"
+
     process_input.get_input_data(args.inputfile, args.take_logs)
     process_input.process_input_args(
         args.alphas, args.alpha_min, args.alpha_max, args.n_alphas,
@@ -2098,6 +2100,7 @@ def modeling(args):
         args.Bonferroni
         )
     process_input.get_multithreading_parameters()
+
     sys.stderr.write("Generating the k-mer lists for input samples:\n")
     process_input.pool.map(
         lambda x: x.get_kmer_lists(), process_input.samples.values()
@@ -2107,9 +2110,9 @@ def modeling(args):
     sys.stderr.write("Mapping samples to the feature vector space:\n")
     stderr_print.currentSampleNum.value = 0
     process_input.pool.map(lambda x: x.map_samples(), process_input.samples.values())
-    #call(["rm -r K-mer_lists/"], shell = True)
     if args.weights == "+":
         Samples.get_weights()
+
     kmers.test_kmers_association_with_phenotype()
     kmers.kmer_filtering_by_pvalue()
     map(lambda x:  x.get_ML_df(), process_input.phenotypes_to_analyse.values())
