@@ -503,7 +503,7 @@ class kmers():
         vectors_as_multiple_input = []
         for i in range(Samples.num_threads):
             cls.vectors_as_multiple_input.append(["K-mer_lists/" + sample + "_mapped_%05d" %i for sample in process_input.samples])
-            cls.vectors_as_input.append(["K-mer_lists/" + sample + "_mapped.txt" %i for sample in process_input.samples])
+        cls.vectors_as_input.append(["K-mer_lists/" + sample + "_mapped.txt" for sample in process_input.samples])
 
     @classmethod
     def get_kmers_tested(cls, phenotype, split_of_kmer_lists):
