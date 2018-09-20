@@ -84,7 +84,7 @@ class Input():
             gammas, gamma_min, gamma_max, n_gammas, 
             min_samples, max_samples, mpheno, kmer_length,
             cutoff, num_threads, pvalue_cutoff, kmer_limit,
-            FDR, B
+            FDR, B, binary_classifier
             ):
         cls._get_phenotypes_to_analyse(mpheno)
         Samples.alphas = cls._get_alphas(alphas, alpha_min, alpha_max, n_alphas)
@@ -97,6 +97,23 @@ class Input():
         phenotypes.kmer_limit = kmer_limit
         phenotypes.FDR = FDR
         phenotypes.B = B
+        cls.get_model_name()
+
+    @staticmethod
+    def get_model_name(binary_classifier):
+        if Samples.phenotype_scale == "continuous":
+            phenotypes.model_name_printing = "linear regression"
+            phenotypes.model_name_file = "lin_reg"
+        elif Samples.phenotype_scale == "binary":
+            if args.binary_classifier == "log":
+                phenotypes.model_name_printing = "logistic regression"
+                phenotypes.model_name_file = "log_reg"
+            elif args.binary_classifier == "SVM":
+                phenotypes.model_name_printing = "support vector machine"
+                phenotypes.model_name_file = "SVM"
+            elif args.binary_classifier == "RF":
+                phenotypes.model_name_printing = "random forest"
+                phenotypes.model_name_file = "RF"
         
     @staticmethod
     def _get_alphas(alphas, alpha_min, alpha_max, n_alphas):       
@@ -390,6 +407,9 @@ class phenotypes():
     kmer_limit = None
     FDR = None
     B = None
+
+    model_name_printing = None
+    model_name_file = None
 
     def __init__(self, name):
         self.name = name
@@ -829,24 +849,13 @@ class phenotypes():
 
     @staticmethod
     def preparations_for_modeling():
-
-        if Samples.phenotype_scale == "continuous":
-            model_name = "linear regression"
-        elif Samples.phenotype_scale == "binary":
-            if args.binary_classifier == "log":
-                model_name = "logistic regression"
-            elif args.binary_classifier == "SVM":
-                model_name = "support vector machine"
-            elif args.binary_classifier == "RF":
-                model_name = "random forest"
-
         if len(Samples.phenotypes_to_analyse) > 1:
-            sys.stderr.write("Generating the " + model_name + " model:\n")
+            sys.stderr.write("Generating the " + model_name_printing + " model:\n")
         elif Samples.headerline:
-            sys.stderr.write("Generating the " + model_name + " model of " 
+            sys.stderr.write("Generating the " + model_name_printing + " model of " 
                 +  Samples.phenotypes[0] + " data...\n")
         else:
-            sys.stderr.write("Generating the " + model_name + " model...\n")
+            sys.stderr.write("Generating the " + model_name_printing + " model...\n")
 
     def get_dataframe_for_machine_learning(self):
         kmer_lists = ["K-mer_lists/" + sample + "_mapped.txt" for sample in Input.samples]
@@ -857,7 +866,48 @@ class phenotypes():
         self.ML_df.index.names = Input.samples.keys()
 
     def machine_learning_modelling(self):
-        pass
+        summary_file, ceoff_file, model_file = self.get_outputfile_names()
+        summary_file = open(summary_file, "w")
+        coeff_file = open(coeff_file, "w")
+        model_file = open(model_file, "w")
+        self.progress_to_stderr()
+        if len(self.kmers_for_ML) == 0:
+            summary_file.write("No k-mers passed the step of k-mer filtering for " \
+                "machine learning modelling.\n")
+            return
+
+    def get_outputfile_names(self):
+        if Samples.headerline:
+            summary_file = "summary_of_" + model_name_file + "_analysis" 
+                     + self.name + ".txt"
+            coeff_file = "k-mers_and_coefficients_in_" + model_name_file + "_model_" 
+                     + self.name + ".txt"
+            model_file = model_name_file + "_model_" + self.name + ".pkl"
+            if len(Samples.phenotypes_to_analyse) > 1:
+                sys.stderr.write("\tregression analysis of " 
+                    +  self.name + " data...\n")
+        elif Samples.no_phenotypes > 1:
+            summary_file = "summary_of_" + model_name_file + "_analysis" + self.name + ".txt"
+            coeff_file = "k-mers_and_coefficients_in_" + model_name_file + "_model_" 
+                     + self.name + ".txt"
+            model_filename = model_name_file +"_model_" + self.name + ".pkl"
+            sys.stderr.write("\tregression analysis of " 
+                +  self.name + " data...\n")
+        else:
+            summary_file = "summary_of_" + model_name_file + "_analysis.txt"
+            coeff_file = "k-mers_and_coefficients_in_" + model_name_file + "_model.txt"
+            model_filename = model_name_file + "_model.txt"
+        
+        return summary_file, ceoff_file, model_file       
+
+    def progress_to_stderr(self):
+        if Samples.headerline:
+            if len(Samples.phenotypes_to_analyse) > 1:
+                sys.stderr.write("\tregression analysis of " 
+                    +  self.name + " data...\n")
+        elif Samples.no_phenotypes > 1:
+            sys.stderr.write("\tregression analysis of " 
+                +  self.name + " data...\n")
 
 
 def linear_regression(
@@ -877,31 +927,7 @@ def linear_regression(
     for j, k in enumerate(Samples.phenotypes_to_analyse):
         #Open files to write results of linear regression
         phenotype = Samples.phenotypes[k]
-        if Samples.headerline:
-            f1 = open("summary_of_lin_reg_analysis" 
-                     + phenotype + ".txt", "w+")
-            f2 = open("k-mers_and_coefficients_in_lin_reg_model_" 
-                     + phenotype + ".txt", "w+")
-            model_filename = "lin_reg_model_" + phenotype + ".pkl"
-            if len(Samples.phenotypes_to_analyse) > 1:
-                sys.stderr.write("\tregression analysis of " 
-                    +  phenotype + " data...\n")
-        elif Samples.no_phenotypes > 1:
-            f1 = open("summary_of_lin_reg_analysis" + phenotype + ".txt", "w+")
-            f2 = open("k-mers_and_coefficients_in_lin_reg_model_" 
-                     + phenotype + ".txt", "w+")
-            model_filename = "lin_reg_model_" + phenotype + ".pkl"
-            sys.stderr.write("\tregression analysis of phenotype " 
-                +  phenotype + " data...\n")
-        else:
-            f1 = open("summary_of_lin_reg_analysis.txt", "w+")
-            f2 = open("k-mers_and_coefficients_in_lin_reg_model.txt", "w+")
-            model_filename = "lin_reg_model.txt"
 
-        if len(kmers_passed_all_phenotypes[j]) == 0:
-            f1.write("No k-mers passed the step of k-mer selection for " \
-                "regression analysis.\n")
-            continue
 
         # Generating a binary k-mer presence/absence matrix and a list
         # of k-mer names based on information in k-mer_matrix.txt 
@@ -2115,7 +2141,7 @@ def modeling(args):
         args.gammas, args.gamma_min, args.gamma_max, args.n_gammas,
         args.min, args.max, args.mpheno, args.length, args.cutoff,
         args.num_threads, args.pvalue, args.n_kmers, args.FDR, 
-        args.Bonferroni
+        args.Bonferroni, args.binary_classifier
         )
     Input.get_multithreading_parameters()
 
