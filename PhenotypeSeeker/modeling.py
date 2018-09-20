@@ -39,7 +39,6 @@ import numpy as np
 import pandas as pd
 
 
-
 class process_input():
 
     samples = OrderedDict()
@@ -151,17 +150,16 @@ class phenotypes():
         self.kmers_for_ML = set()
         self.ML_df = pd.DataFrame()
 
-    def get_ML_df(self, vectors_as_multiple_input):
-        for line in izip_longest(*[open(item) for item in vectors_as_multiple_input], fillvalue = ''):
+    def get_ML_df(self, kmer_lists_splitted):
+        for line in izip_longest(*[open(item) for item in kmer_lists_splitted], fillvalue = ''):
             if line[0].split()[0] in self.kmers_for_ML:
-                process_input.lock.acquire()
                 self.ML_df[line[0]] = [j.split()[1].strip() for j in line]
-                process_input.lock.release()
                 #  .append(line[0].split()[0])
                 # kmers_presence_matrix.append(map(
                 #     lambda x: 0 if x == 0 else 1,
                 #     map(int, [j.split()[1].strip() for j in line])
                 #     ))
+        print(self.ML_df)
 
 class Samples():
 
