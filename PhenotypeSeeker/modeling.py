@@ -405,8 +405,8 @@ class phenotypes():
         self.ML_df = self.ML_df.astype(bool).astype(int)
         self.ML_df.index.names = process_input.samples.keys()
 
-    @staticmethod
-    def preparations_for_kmer_testing():
+    @classmethod
+    def preparations_for_kmer_testing(cls):
         if Samples.phenotype_scale == "continuous":
             sys.stderr.write("\nConducting the k-mer specific Welch t-tests:\n")
         else:
