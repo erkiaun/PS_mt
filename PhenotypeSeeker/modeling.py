@@ -36,6 +36,7 @@ import sklearn.datasets
 import numpy as np
 import pandas as pd
 
+from __future__ import print_function
 
 class process_input():
 
