@@ -870,7 +870,7 @@ class phenotypes():
         if len(Input.phenotypes_to_analyse) > 1:
             sys.stderr.write("\tof " 
                 +  self.name + " data...\n")
-        summary_file, ceoff_file, model_file = self.get_outputfile_names()
+        summary_file, coeff_file, model_file = self.get_outputfile_names()
         summary_file = open(summary_file, "w")
         summary_file.write("sum")
         coeff_file = open(coeff_file, "w")
@@ -906,7 +906,7 @@ class phenotypes():
                 + "_model.txt"
             model_file = self.model_name_file + "_model.txt"
         
-        return summary_file, ceoff_file, model_file       
+        return summary_file, coeff_file, model_file       
 
 
 def linear_regression(
@@ -2109,7 +2109,7 @@ def modeling(args):
         )
     Input.get_multithreading_parameters()
 
-    # Operations with input sample
+    # Operations with samples
     sys.stderr.write("Generating the k-mer lists for input samples:\n")
     Input.pool.map(
         lambda x: x.get_kmer_lists(), Input.samples.values()
@@ -2122,7 +2122,7 @@ def modeling(args):
     if args.weights == "+":
         Samples.get_weights()
 
-    # Operations with input phenotypes
+    # Analyses of phenotypes
     phenotypes.preparations_for_kmer_testing()
     map(
         lambda x:  x.test_kmers_association_with_phenotype(), 
@@ -2133,7 +2133,6 @@ def modeling(args):
         lambda x:  x.get_kmers_filtered(), 
         Input.phenotypes_to_analyse.values()
         )
-
     phenotypes.preparations_for_modeling()
     map(
         lambda x:  x.get_dataframe_for_machine_learning(),
