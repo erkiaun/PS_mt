@@ -39,7 +39,7 @@ import numpy as np
 import pandas as pd
 
 
-class input():
+class Input():
 
     samples = OrderedDict()
     phenotypes_to_analyse = OrderedDict()
@@ -831,6 +831,8 @@ class phenotypes():
                 self.ML_df[line[0].split()[0]] = [int(j.split()[1].strip()) for j in line]
         self.ML_df = self.ML_df.astype(bool).astype(int)
         self.ML_df.index.names = Input.samples.keys()
+
+
 
 def linear_regression(
 	    kmer_lists_splitted,
