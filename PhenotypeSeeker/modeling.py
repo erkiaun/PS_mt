@@ -449,37 +449,53 @@ class phenotypes():
                 ['wc', '-l', "K-mer_lists/" + Input.samples.keys()[0] + "_mapped.txt"]
                 ).split()[0]
             )
-        cls.progress_checkpoint.value = int(math.ceil(cls.no_kmers_to_analyse.value/(100*Samples.num_threads)))
+        cls.progress_checkpoint.value = int(
+            math.ceil(cls.no_kmers_to_analyse.value/(100*Samples.num_threads))
+            )
 
     @staticmethod
     def _split_sample_vectors_for_multithreading():
         for sample in Input.samples:
-            call([
-                "split -a 5 -d -n r/" + str(Samples.num_threads) + " K-mer_lists/" +
-                sample + "_mapped.txt " + "K-mer_lists/" + sample + "_mapped_"
-                ], shell=True)
+            call(
+                [
+                "split -a 5 -d -n r/" + str(Samples.num_threads) + \
+                " K-mer_lists/" + sample + "_mapped.txt " + \
+                "K-mer_lists/" + sample + "_mapped_"
+                ],
+                shell=True
+                )
 
     @classmethod
     def _splitted_vectors_to_multiple_input(cls):
         vectors_as_multiple_input = []
         for i in range(Samples.num_threads):
-            cls.vectors_as_multiple_input.append(["K-mer_lists/" + sample + "_mapped_%05d" %i for sample in Input.samples])
+            cls.vectors_as_multiple_input.append(
+                [
+                "K-mer_lists/" + sample + "_mapped_%05d" %i \
+                for sample in Input.samples
+                ]
+                )
         
 
     def get_kmers_tested(self, phenotype, split_of_kmer_lists):
 
         names_of_samples = Input.samples.keys()
-        phenotypes_of_samples = [sample_data.phenotypes[phenotype] for sample_data in Input.samples.values()]
+        phenotypes_of_samples = [
+            sample_data.phenotypes[phenotype] for sample_data in \
+            Input.samples.values()
+            ]
         pvalues = []
         counter = 0
 
         multithreading_code = split_of_kmer_lists[0][-5:]
         test_results_file = open(self.test_result_output(
-            phenotype, multithreading_code
+            multithreading_code
             ), "w")
         text1_4_stderr = self.get_text1_4_stderr(phenotype)
         text2_4_stderr = "tests conducted."
-        for line in izip_longest(*[open(item) for item in split_of_kmer_lists], fillvalue = ''):
+        for line in izip_longest(
+                *[open(item) for item in split_of_kmer_lists], fillvalue = ''
+            ):
             counter += 1
             if counter%self.progress_checkpoint.value == 0:
                 Input.lock.acquire()
