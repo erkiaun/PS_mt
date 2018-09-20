@@ -151,9 +151,10 @@ class phenotypes():
         self.ML_df = pd.DataFrame()
 
     def get_ML_df(self):
-        for line in izip_longest(*[open(item) for item in kmers.vectors_as_input], fillvalue = ''):
+        kmer_lists = ["K-mer_lists/" + sample + "_mapped.txt" for sample in process_input.samples]
+        for line in izip_longest(*[open(item) for item in kmers_lists], fillvalue = ''):
             if line[0].split()[0] in self.kmers_for_ML:
-                self.ML_df[line[0]] = [j.split()[1].strip() for j in line]
+                self.ML_df[line[0]] = [int(j.split()[1].strip()) for j in line]
         self.ML_df = self.ML_df.astype(bool).astype(int)
  
 
@@ -395,7 +396,6 @@ class metrics():
 
 class kmers():
 
-    vectors_as_input = None
     vectors_as_multiple_input = []
     progress_checkpoint = Value("i", 0)
     no_kmers_to_analyse = Value("i", 0)
@@ -455,7 +455,7 @@ class kmers():
         vectors_as_multiple_input = []
         for i in range(Samples.num_threads):
             cls.vectors_as_multiple_input.append(["K-mer_lists/" + sample + "_mapped_%05d" %i for sample in process_input.samples])
-        cls.vectors_as_input = ["K-mer_lists/" + sample + "_mapped.txt" for sample in process_input.samples]
+        
 
     @classmethod
     def get_kmers_tested(cls, phenotype, split_of_kmer_lists):
