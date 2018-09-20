@@ -150,16 +150,18 @@ class phenotypes():
         self.kmers_for_ML = set()
         self.ML_df = pd.DataFrame()
 
-    def get_ML_df(kmer_lists_splitted):
+    def get_ML_df(self, kmer_lists_splitted):
+        ML_df = pd.DataFrame()
         for line in izip_longest(*[open(item) for item in kmer_lists_splitted], fillvalue = ''):
             if line[0].split()[0] in self.kmers_for_ML:
-                self.ML_df[line[0]] = [j.split()[1].strip() for j in line]
+                ML_df[line[0]] = [j.split()[1].strip() for j in line]
                 #  .append(line[0].split()[0])
                 # kmers_presence_matrix.append(map(
                 #     lambda x: 0 if x == 0 else 1,
                 #     map(int, [j.split()[1].strip() for j in line])
                 #     ))
-        print(self.ML_df)
+        print(ML_df)
+        return ML_df
 
 class Samples():
 
