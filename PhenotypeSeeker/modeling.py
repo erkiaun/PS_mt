@@ -39,7 +39,7 @@ import numpy as np
 import pandas as pd
 
 
-class process_input():
+class input():
 
     samples = OrderedDict()
     phenotypes_to_analyse = OrderedDict()
@@ -79,7 +79,7 @@ class process_input():
     # Functions for processing the command line input arguments
 
     @classmethod
-    def process_input_args(
+    def Input_args(
             cls, alphas, alpha_min, alpha_max, n_alphas,
             gammas, gamma_min, gamma_max, n_gammas, 
             min_samples, max_samples, mpheno, kmer_length,
@@ -177,9 +177,9 @@ class Samples():
             + self.name + " -w " + self.kmer_length + " -c " + self.cutoff], 
             shell=True
             )
-        process_input.lock.acquire()
+        Input.lock.acquire()
         stderr_print.currentSampleNum.value += 1
-        process_input.lock.release()
+        Input.lock.release()
         stderr_print.print_progress()
 
     def map_samples(self):
@@ -196,9 +196,9 @@ class Samples():
                 ".list"
                 ]
                 , stdout=outputfile)
-        process_input.lock.acquire()
+        Input.lock.acquire()
         stderr_print.currentSampleNum.value += 1
-        process_input.lock.release()
+        Input.lock.release()
         stderr_print.print_progress()
 
     @classmethod
@@ -217,7 +217,7 @@ class Samples():
     @classmethod
     def get_feature_vector(cls):
         glistmaker_args = ["glistmaker"] + \
-            [sample.address for sample in process_input.samples.values()] + \
+            [sample.address for sample in Input.samples.values()] + \
             [
             '-c', cls.cutoff, '-w', cls.kmer_length, '-o', 'K-mer_lists/feature_vector'
             ]
@@ -231,22 +231,22 @@ class Samples():
     @classmethod
     def get_weights(cls):
         cls._mash_caller()
-        cls._mash_output_to_distance_matrix(process_input.samples.keys(), "mash_distances.mat")
+        cls._mash_output_to_distance_matrix(Input.samples.keys(), "mash_distances.mat")
         dist_mat = cls._distance_matrix_modifier("distances.mat")
-        cls._distance_matrix_to_phyloxml(process_input.samples.keys(), dist_mat)   
+        cls._distance_matrix_to_phyloxml(Input.samples.keys(), dist_mat)   
         cls._phyloxml_to_newick("tree_xml.txt")
         sys.stderr.write("Calculating the Gerstein Sonnhammer Coathia " \
             "weights from mash distance matrix...")
         weights = cls._newick_to_GSC_weights("tree_newick.txt")
         for key, value in weights.iteritems():
-            process_input.samples[key].weight = value
+            Input.samples[key].weight = value
     
     @classmethod
     def _mash_caller(cls):
         #Estimating phylogenetic distances between samples using mash
         sys.stderr.write("\nEstimating the Mash distances between samples...\n")
         mash_args = ["mash", "sketch", "-o", "reference", "-m", cls.cutoff]
-        for sample_data in process_input.samples.values():
+        for sample_data in Input.samples.values():
             mash_args.append(sample_data.address)
         process = Popen(mash_args, stderr=PIPE)
         for line in iter(process.stderr.readline, ''):
@@ -410,7 +410,7 @@ class phenotypes():
     def test_kmers_association_with_phenotype(self):
         stderr_print.currentKmerNum.value = 0
         stderr_print.previousPercent.value = 0
-        pvalues_from_all_threads = process_input.pool.map(partial(
+        pvalues_from_all_threads = Input.pool.map(partial(
                 self.get_kmers_tested, self.name
                 ), 
             self.vectors_as_multiple_input
@@ -426,14 +426,14 @@ class phenotypes():
         cls._splitted_vectors_to_multiple_input()
         cls.no_kmers_to_analyse.value = int(
             check_output(
-                ['wc', '-l', "K-mer_lists/" + process_input.samples.keys()[0] + "_mapped.txt"]
+                ['wc', '-l', "K-mer_lists/" + Input.samples.keys()[0] + "_mapped.txt"]
                 ).split()[0]
             )
         cls.progress_checkpoint.value = int(math.ceil(cls.no_kmers_to_analyse.value/(100*Samples.num_threads)))
 
     @staticmethod
     def _split_sample_vectors_for_multithreading():
-        for sample in process_input.samples:
+        for sample in Input.samples:
             call([
                 "split -a 5 -d -n r/" + str(Samples.num_threads) + " K-mer_lists/" +
                 sample + "_mapped.txt " + "K-mer_lists/" + sample + "_mapped_"
@@ -443,14 +443,14 @@ class phenotypes():
     def _splitted_vectors_to_multiple_input(cls):
         vectors_as_multiple_input = []
         for i in range(Samples.num_threads):
-            cls.vectors_as_multiple_input.append(["K-mer_lists/" + sample + "_mapped_%05d" %i for sample in process_input.samples])
+            cls.vectors_as_multiple_Input.append(["K-mer_lists/" + sample + "_mapped_%05d" %i for sample in Input.samples])
         
 
     @classmethod
     def get_kmers_tested(cls, phenotype, split_of_kmer_lists):
 
-        names_of_samples = process_input.samples.keys()
-        phenotypes_of_samples = [sample_data.phenotypes[phenotype] for sample_data in process_input.samples.values()]
+        names_of_samples = Input.samples.keys()
+        phenotypes_of_samples = [sample_data.phenotypes[phenotype] for sample_data in Input.samples.values()]
         pvalues = []
         counter = 0
 
@@ -463,9 +463,9 @@ class phenotypes():
         for line in izip_longest(*[open(item) for item in split_of_kmer_lists], fillvalue = ''):
             counter += 1
             if counter%cls.progress_checkpoint.value == 0:
-                process_input.lock.acquire()
+                Input.lock.acquire()
                 stderr_print.currentKmerNum.value += cls.progress_checkpoint.value
-                process_input.lock.release()
+                Input.lock.release()
                 stderr_print.check_progress(
                     cls.no_kmers_to_analyse.value, text2_4_stderr, text1_4_stderr
                 )
@@ -484,9 +484,9 @@ class phenotypes():
                     )
             if pvalue:
                 pvalues.append(pvalue)
-        process_input.lock.acquire()
+        Input.lock.acquire()
         stderr_print.currentKmerNum.value += counter%cls.progress_checkpoint.value
-        process_input.lock.release()
+        Input.lock.release()
         stderr_print.check_progress(
             cls.no_kmers_to_analyse.value, text2_4_stderr, text1_4_stderr
         )
@@ -503,7 +503,7 @@ class phenotypes():
         if Samples.headerline:
             outputfile = beginning_text + \
                 phenotype + "_" + code + ".txt"
-        elif len(process_input.phenotypes_to_analyse) > 1:
+        elif len(Input.phenotypes_to_analyse) > 1:
             outputfile = beginning_text + \
                 phenotype + "_" + code + ".txt"
         else:
@@ -514,7 +514,7 @@ class phenotypes():
     def get_text1_4_stderr(phenotype):
         if Samples.headerline:
             text1_4_stderr = phenotype + ": "
-        elif len(process_input.phenotypes_to_analyse) > 1:
+        elif len(Input.phenotypes_to_analyse) > 1:
             text1_4_stderr = "phenotype " + phenotype + ": "
         else:
             text1_4_stderr = ""
@@ -561,10 +561,10 @@ class phenotypes():
             if item != "NA":
                 if list1[i] == "0":
                     y.append(float(item))
-                    y_weights.append(process_input.samples[sample_name].weight)
+                    y_weights.append(Input.samples[sample_name].weight)
                 else:
                     x.append(float(item))
-                    x_weights.append(process_input.samples[sample_name].weight)
+                    x_weights.append(Input.samples[sample_name].weight)
                     samples_w_kmer.append(sample_name)
 
     @staticmethod
@@ -645,16 +645,16 @@ class phenotypes():
             if item != "NA":
                 if item == "1":
                     if (list1[i] != "0"):
-                        with_pheno_with_kmer += process_input.samples[sample_name].weight 
+                        with_pheno_with_kmer += Input.samples[sample_name].weight 
                         samples_w_kmer.append(sample_name)
                     else:
-                        with_pheno_without_kmer += process_input.samples[sample_name].weight
+                        with_pheno_without_kmer += Input.samples[sample_name].weight
                 else:
                     if (list1[i] != "0"):
-                        without_pheno_with_kmer += process_input.samples[sample_name].weight
+                        without_pheno_with_kmer += Input.samples[sample_name].weight
                         samples_w_kmer.append(names_of_samples[i])
                     else:
-                        without_pheno_without_kmer += process_input.samples[sample_name].weight
+                        without_pheno_without_kmer += Input.samples[sample_name].weight
         return(
             with_pheno_with_kmer, with_pheno_without_kmer,
             without_pheno_with_kmer, without_pheno_without_kmer
@@ -825,12 +825,12 @@ class phenotypes():
                 )
 
     def get_ML_df(self):
-        kmer_lists = ["K-mer_lists/" + sample + "_mapped.txt" for sample in process_input.samples]
+        kmer_lists = ["K-mer_lists/" + sample + "_mapped.txt" for sample in Input.samples]
         for line in izip_longest(*[open(item) for item in kmer_lists], fillvalue = ''):
             if line[0].split()[0] in self.kmers_for_ML:
                 self.ML_df[line[0].split()[0]] = [int(j.split()[1].strip()) for j in line]
         self.ML_df = self.ML_df.astype(bool).astype(int)
-        self.ML_df.index.names = process_input.samples.keys()
+        self.ML_df.index.names = Input.samples.keys()
 
 def linear_regression(
 	    kmer_lists_splitted,
@@ -838,7 +838,7 @@ def linear_regression(
 	    l1_ratio, max_iter, tol
 	    ):
 
-    names_of_samples = process_input.samples.keys()
+    names_of_samples = Input.samples.keys()
 
     # Applies linear regression with on k-mers
     # that passed the filtering by p-value of statistical test. K-mers
@@ -886,7 +886,7 @@ def linear_regression(
         # of k-mer names based on information in k-mer_matrix.txt 
         matrix_and_features = map(
             list, zip(
-                *process_input.pool.map(
+                *Input.pool.map(
                     partial(
                         get_kmer_presence_matrix,
                         set(kmers_passed_all_phenotypes[j])
@@ -901,7 +901,7 @@ def linear_regression(
         features = [
             item for sublist in matrix_and_features[1] for item in sublist
             ]
-        Phenotypes = [item.phenotypes[k] for item in process_input.samples.values()]
+        Phenotypes = [item.phenotypes[k] for item in Input.samples.values()]
 
 
         # Converting data into Python array formats suitable to use in
@@ -957,7 +957,7 @@ def linear_regression(
                 model = clf.fit(X_train, y_train)
             else:
                 array_weights = np.array(
-                    [process_input.samples[item].weight for item in samples_in_analyze]
+                    [Input.samples[item].weight for item in samples_in_analyze]
                     )
                 (
                 X_train, X_test, sample_weights_train, sample_weights_test,
@@ -1031,7 +1031,7 @@ def linear_regression(
                 model = clf.fit(dataset.data, dataset.target)
             else:
                 array_weights = np.array(
-                    [process_input.samples[item].weight for item in samples_in_analyze]
+                    [Input.samples[item].weight for item in samples_in_analyze]
                     )
                 model = clf.fit(
                     dataset.data, dataset.target, sample_weight=array_weights
@@ -1094,7 +1094,7 @@ def logistic_regression(
     # presence/absence (0/1) in samples are used as independent
     # parameters, resistance value (0/1) is used as dependent 
     # parameter.
-    names_of_samples = process_input.samples.keys()
+    names_of_samples = Input.samples.keys()
     if len(Samples.phenotypes_to_analyse) > 1:
         sys.stderr.write("Conducting the logistic regression analysis:\n")
     elif Samples.headerline:
@@ -1137,7 +1137,7 @@ def logistic_regression(
         # of k-mer names based on information in k-mer_matrix.txt
         matrix_and_features = map(
             list, zip(
-                *process_input.pool.map(
+                *Input.pool.map(
                     partial(
                         get_kmer_presence_matrix,
                         set(kmers_passed_all_phenotypes[j])
@@ -1152,7 +1152,7 @@ def logistic_regression(
         features = [
             item for sublist in matrix_and_features[1] for item in sublist
             ]
-        Phenotypes = [item.phenotypes[k] for item in process_input.samples.values()]
+        Phenotypes = [item.phenotypes[k] for item in Input.samples.values()]
 
         # Converting data into Python array formats suitable to use in
         # sklearn modeling. Also, deleting information associated with
@@ -1212,7 +1212,7 @@ def logistic_regression(
         # regression results into corresponding files.
         if testset_size != 0.0:
             array_weights = np.array(
-            	[process_input.samples[item].weight for item in samples_in_analyze]
+            	[Input.samples[item].weight for item in samples_in_analyze]
             	)
             (
                 X_train, X_test, sample_weights_train, sample_weights_test,
@@ -1320,7 +1320,7 @@ def logistic_regression(
             f1.write("1\t\t%s\t%s\n\n" % tuple(cm[1])) 
         else:
             array_weights = np.array(
-            	[process_input.samples[item].weight for item in samples_in_analyze])
+            	[Input.samples[item].weight for item in samples_in_analyze])
             model = clf.fit(
             	dataset.data, dataset.target, 
             	fit_params={'sample_weight': array_weights}
@@ -1402,7 +1402,7 @@ def support_vector_classifier(
     # presence/absence (0/1) in samples are used as independent
     # parameters, resistance value (0/1) is used as dependent 
     # parameter.
-    names_of_samples = process_input.samples.keys()
+    names_of_samples = Input.samples.keys()
     if len(Samples.phenotypes_to_analyse) > 1:
         sys.stderr.write("Conducting the SVM classifier analysis:\n")
     elif Samples.headerline:
@@ -1448,7 +1448,7 @@ def support_vector_classifier(
         # of k-mer names based on information in k-mer_matrix.txt 
         matrix_and_features = map(
             list, zip(
-                *process_input.pool.map(
+                *Input.pool.map(
                     partial(
                         get_kmer_presence_matrix,
                         set(kmers_passed_all_phenotypes[j])
@@ -1463,7 +1463,7 @@ def support_vector_classifier(
         features = [
             item for sublist in matrix_and_features[1] for item in sublist
             ]
-        Phenotypes = [item.phenotypes[k] for item in process_input.samples.values()]
+        Phenotypes = [item.phenotypes[k] for item in Input.samples.values()]
 
         # Converting data into Python array formats suitable to use in
         # sklearn modeling. Also, deleting information associated with
@@ -1511,7 +1511,7 @@ def support_vector_classifier(
         # regression results into corresponding files.
         if testset_size != 0.0:
             array_weights = np.array(
-                [process_input.samples[item].weight for item in samples_in_analyze]
+                [Input.samples[item].weight for item in samples_in_analyze]
                 )
             (
                 X_train, X_test, sample_weights_train, sample_weights_test,
@@ -1619,7 +1619,7 @@ def support_vector_classifier(
             f1.write("1\t\t%s\t%s\n\n" % tuple(cm[1])) 
         else:
             array_weights = np.array(
-                [process_input.samples[item].weight for item in samples_in_analyze])
+                [Input.samples[item].weight for item in samples_in_analyze])
             model = clf.fit(
                 dataset.data, dataset.target, 
                 fit_params={'sample_weight': array_weights}
@@ -1745,7 +1745,7 @@ def random_forest(
         # of k-mer names based on information in k-mer_matrix.txt
         matrix_and_features = map(
             list, zip(
-                *process_input.pool.map(
+                *Input.pool.map(
                     partial(
                         get_kmer_presence_matrix,
                         set(kmers_passed_all_phenotypes[j])
@@ -1760,7 +1760,7 @@ def random_forest(
         features = [
             item for sublist in matrix_and_features[1] for item in sublist
             ]
-        Phenotypes = [item.phenotypes[k] for item in process_input.samples.values()]
+        Phenotypes = [item.phenotypes[k] for item in Input.samples.values()]
 
         # Converting data into Python array formats suitable to use in
         # sklearn modeling. Also, deleting information associated with
@@ -1794,7 +1794,7 @@ def random_forest(
         # regression results into corresponding files.
         if testset_size != 0.0:
             array_weights = np.array(
-            	[process_input.samples[item].weight for item in samples_in_analyze]
+            	[Input.samples[item].weight for item in samples_in_analyze]
             	)
             (
                 X_train, X_test, sample_weights_train, sample_weights_test,
@@ -1889,7 +1889,7 @@ def random_forest(
             f1.write("1\t\t%s\t%s\n\n" % tuple(cm[1])) 
         else:
             array_weights = np.array(
-            	[process_input.samples[item].weight for item in samples_in_analyze])
+            	[Input.samples[item].weight for item in samples_in_analyze])
             model = clf.fit(
             	dataset.data, dataset.target, 
             	fit_params={'sample_weight': array_weights}
@@ -1985,7 +1985,7 @@ def overlap(a, b, min_length=3):
         start += 1
 
 def pick_overlaps(reads, min_olap):
-    # Takes kmer_list as an input. Generates pairwise permutations of 
+    # Takes kmer_list as an Input. Generates pairwise permutations of 
     # the kmers in kmer list. Finds the overlap of each pair. Returns 
     # the lists of kmers and overlap lengths of the pairs which overlap
     # by min_olap or more nucleotides.
@@ -2087,41 +2087,40 @@ def assembling(kmers_passed_all_phenotypes, phenotypes_to_analyze):
 def modeling(args):
     # The main function of "phenotypeseeker modeling"
 
-    process_input.get_input_data(args.inputfile, args.take_logs)
-    process_input.process_input_args(
+    Input.get_input_data(args.inputfile, args.take_logs)
+    Input.Input_args(
         args.alphas, args.alpha_min, args.alpha_max, args.n_alphas,
         args.gammas, args.gamma_min, args.gamma_max, args.n_gammas,
         args.min, args.max, args.mpheno, args.length, args.cutoff,
         args.num_threads, args.pvalue, args.n_kmers, args.FDR, 
         args.Bonferroni
         )
-    process_input.get_multithreading_parameters()
+    Input.get_multithreading_parameters()
 
     sys.stderr.write("Generating the k-mer lists for input samples:\n")
-    process_input.pool.map(
-        lambda x: x.get_kmer_lists(), process_input.samples.values()
+    Input.pool.map(
+        lambda x: x.get_kmer_lists(), .samples.values()
         )
     sys.stderr.write("\nGenerating the k-mer feature vector.\n")
     Samples.get_feature_vector()
     sys.stderr.write("Mapping samples to the feature vector space:\n")
     stderr_print.currentSampleNum.value = 0
-    process_input.pool.map(lambda x: x.map_samples(), process_input.samples.values())
+    Input.pool.map(lambda x: x.map_samples(), Input.samples.values())
     if args.weights == "+":
         Samples.get_weights()
 
     phenotypes.preparations_for_kmer_testing()
     map(
         lambda x:  x.test_kmers_association_with_phenotype(), 
-        process_input.phenotypes_to_analyse.values()
+        Input.phenotypes_to_analyse.values()
         )
     sys.stderr.write("Filtering the k-mers by p-value:\n")
     map(
         lambda x:  x.get_kmers_filtered(), 
-        process_input.phenotypes_to_analyse.values()
+        Input.phenotypes_to_analyse.values()
         )
-    # kmers.kmer_filtering_by_pvalue()
-    # map(lambda x:  x.get_ML_df(), process_input.phenotypes_to_analyse.values())
-    # map(lambda x:  print(x.ML_df), process_input.phenotypes_to_analyse.values())
+    map(lambda x:  x.get_ML_df(), Input.phenotypes_to_analyse.values())
+    map(lambda x:  print(x.ML_df), Input.phenotypes_to_analyse.values())
 
     '''
     if Samples.phenotype_scale == "continuous":
