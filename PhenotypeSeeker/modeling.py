@@ -157,7 +157,7 @@ class phenotypes():
                 #     lambda x: 0 if x == 0 else 1,
                 #     map(int, [j.split()[1].strip() for j in line])
                 #     ))
-        print(ML_df)
+        print(self.ML_df)
 
 class Samples():
 
@@ -775,7 +775,7 @@ class kmers():
                 line_to_list = line.split()
                 if float(line_to_list[2]) < cls.pvalue_cutoff:
                     outputfile.write(line)
-                    if float(line_to_list[2]) <= max_pvalue_by_limit:
+                    if float(line_to_list[2]) < max_pvalue_by_limit:
                             phenotype_instance.kmers_for_ML.add(line_to_list[0])
                 if counter%checkpoint == 0:
                     stderr_print.currentKmerNum.value += checkpoint
@@ -2112,7 +2112,11 @@ def modeling(args):
     kmers.kmer_filtering_by_pvalue()
     for i, j in process_input.phenotypes_to_analyse.iteritems():
         print(len(j.kmers_for_ML))
-    map(lambda x: process_input.pool.map(lambda y: x.get_ML_df(y), kmers.vectors_as_multiple_input), process_input.phenotypes_to_analyse.values())
+    map(
+        lambda x: process_input.pool.map(
+            lambda y: x.get_ML_df(y), kmers.vectors_as_multiple_input
+            ), process_input.phenotypes_to_analyse.values()
+        )
     '''
     if Samples.phenotype_scale == "continuous":
         linear_regression(
