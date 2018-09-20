@@ -162,8 +162,8 @@ class phenotypes():
         print(ML_df.shape)
         return ML_df
 
-    def get_ML_df_uni(self, kmer_lists_splitted):
-        for line in izip_longest(*[open(item) for item in kmer_lists_splitted], fillvalue = ''):
+    def get_ML_df_uni(self):
+        for line in izip_longest(*[open(item) for item in kmers.vectors_as_input], fillvalue = ''):
             if line[0].split()[0] in self.kmers_for_ML:
                 self.ML_df[line[0]] = [j.split()[1].strip() for j in line]
                 # kmers_presence_matrix.append(map(
