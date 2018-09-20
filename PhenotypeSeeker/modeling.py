@@ -160,7 +160,7 @@ class phenotypes():
                 #     lambda x: 0 if x == 0 else 1,
                 #     map(int, [j.split()[1].strip() for j in line])
                 #     ))
-        print(ML_df)
+        print(ML_df.size)
         return ML_df
 
     def get_ML_df_classic_way(self, kmer_lists_splitted):
@@ -168,8 +168,8 @@ class phenotypes():
             list, zip(
                 *process_input.pool.map(
                     partial(
-                        get_kmer_presence_matrix,
-                        set(kmers_passed_all_phenotypes[j])
+                        self.get_kmer_presence_matrix,
+                        self.kmers_for_ML
                         ),
                     kmer_lists_splitted
                     )
@@ -2151,16 +2151,20 @@ def modeling(args):
         print(len(j.kmers_for_ML))
     for phenotype_instance in process_input.phenotypes_to_analyse.values():
         ML_dfs_from_threads = process_input.pool.map(
-            lambda x: phenotype_instance.get_ML_df(x), kmers.vectors_as_multiple_input
+            lambda x: phenotype_instance.get_ML_df(x),
+            kmers.vectors_as_multiple_input
             )
-        phenotype_instance.ML_df = pd.concat(ML_dfs_from_threads)
+        phenotype_instance.ML_df = pd.concat(ML_dfs_from_threads, join_axes=[df1.index])
 
+    # map(lambda x: process_input.pool.map(lambda y: x.get_ML_df(y), kmers.vectors_as_multiple_input), process_input.phenotypes_to_analyse.values())
+
+    
     # map(
     #     lambda x: process_input.pool.map(
     #         lambda y: x.get_ML_df(y), kmers.vectors_as_multiple_input
     #         ), process_input.phenotypes_to_analyse.values()
     #     )
-    map(lambda x: print(x.ML_df), process_input.phenotypes_to_analyse.values())
+    map(lambda x: print(x.ML_df.size), process_input.phenotypes_to_analyse.values())
     '''
     if Samples.phenotype_scale == "continuous":
         linear_regression(
