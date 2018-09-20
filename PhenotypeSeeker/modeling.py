@@ -105,13 +105,13 @@ class Input():
             phenotypes.model_name_printing = "linear regression"
             phenotypes.model_name_file = "lin_reg"
         elif Samples.phenotype_scale == "binary":
-            if args.binary_classifier == "log":
+            if binary_classifier == "log":
                 phenotypes.model_name_printing = "logistic regression"
                 phenotypes.model_name_file = "log_reg"
-            elif args.binary_classifier == "SVM":
+            elif binary_classifier == "SVM":
                 phenotypes.model_name_printing = "support vector machine"
                 phenotypes.model_name_file = "SVM"
-            elif args.binary_classifier == "RF":
+            elif binary_classifier == "RF":
                 phenotypes.model_name_printing = "random forest"
                 phenotypes.model_name_file = "RF"
         
