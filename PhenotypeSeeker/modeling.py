@@ -712,8 +712,7 @@ class phenotypes():
             wo_pheno_w_kmer_expected, wo_pheno_wo_kmer_expected
             )
 
-    @classmethod
-    def concatenate_test_files(cls, phenotype):
+    def concatenate_test_files(self, phenotype):
         if Samples.phenotype_scale == "continuous":
             beginning_text = "t-test_results_"
         else:
@@ -722,7 +721,7 @@ class phenotypes():
             outputfile = beginning_text + phenotype + ".txt"
         else:
             outputfile = beginning_text[:-1] + ".txt"
-        cls.test_outputfiles[phenotype] = outputfile
+        self.test_outputfiles[phenotype] = outputfile
         if Samples.headerline:
             call(
                 [
@@ -806,27 +805,26 @@ class phenotypes():
         inputfile.close()
         outputfile.close()
 
-    @classmethod
-    def get_pvalue_cutoff(cls, pvalues, nr_of_kmers_tested):
-        if cls.B:
-            cls.pvalue_cutoff = (cls.pvalue_cutoff/nr_of_kmers_tested)
-        elif cls.FDR:
+    def get_pvalue_cutoff(self, pvalues, nr_of_kmers_tested):
+        if self.B:
+            self.pvalue_cutoff = (cls.pvalue_cutoff/nr_of_kmers_tested)
+        elif self.FDR:
             pvalue_cutoff_by_FDR = 0
             for index, pvalue in enumerate(pvalues):
                 if  (pvalue  < (
                         (index+1) 
-                        / nr_of_kmers_tested) * cls.pvalue_cutoff
+                        / nr_of_kmers_tested) * self.pvalue_cutoff
                         ):
                     pvalue_cutoff_by_FDR = pvalue
                 elif item > pvalue:
                     break
-            cls.pvalue_cutoff = pvalue_cutoff_by_FDR
+            self.pvalue_cutoff = pvalue_cutoff_by_FDR
 
     def kmers_filtered_output(self, phenotype):
         if Samples.headerline:
-            outputfile = "k-mers_filtered_by_pvalue_" + self.phenotype + ".txt"
+            outputfile = "k-mers_filtered_by_pvalue_" + self.name + ".txt"
         elif Samples.no_phenotypes > 1:
-            outputfile = "k-mers_filtered_by_pvalue_" + self.phenotype + ".txt"
+            outputfile = "k-mers_filtered_by_pvalue_" + self.name + ".txt"
         else:
             outputfile = "k-mers_filtered_by_pvalue.txt"
         return outputfile
@@ -869,9 +867,7 @@ class phenotypes():
             Input.samples.keys())
             )
 
-
     def machine_learning_modelling(self):
-
         if len(Input.phenotypes_to_analyse) > 1:
             sys.stderr.write("\tof " 
                 +  self.name + " data...\n")
@@ -883,6 +879,7 @@ class phenotypes():
             summary_file.write("No k-mers passed the step of k-mer filtering for " \
                 "machine learning modelling.\n")
             return
+        self.get_dataframe_for_machine_learning()
 
     def get_outputfile_names(self):
         if Samples.headerline:
@@ -916,21 +913,6 @@ def linear_regression(
 	    kmers_passed_all_phenotypes, penalty, n_splits, testset_size,
 	    l1_ratio, max_iter, tol
 	    ):
-
-        # Converting data into Python array formats suitable to use in
-        # sklearn modeling. Also, deleting information associated with
-        # stains missing the phenotype data
-        features = np.array(features)
-        Phenotypes = np.array(Phenotypes)
-        kmers_presence_matrix = np.array(kmers_presence_matrix).transpose()
-        samples_in_analyze = np.array(names_of_samples)
-        to_del = []
-        for i, item in enumerate(Phenotypes):
-            if item == "NA":
-                to_del.append(i)
-        kmers_presence_matrix = np.delete(kmers_presence_matrix, to_del, 0)
-        Phenotypes = map(float, np.delete(Phenotypes, to_del, 0))            
-        samples_in_analyze = np.delete(samples_in_analyze, to_del, 0)
 
         # Insert data into linear regression dataset 
         dataset = sklearn.datasets.base.Bunch(
@@ -2124,9 +2106,6 @@ def modeling(args):
     if args.weights == "+":
         Samples.get_weights()
 
-    for sampleinst in Input.samples.values():
-        print(sampleinst.phenotypes)
-
     # Analyses of phenotypes
     phenotypes.preparations_for_kmer_testing()
     map(
@@ -2139,10 +2118,6 @@ def modeling(args):
         Input.phenotypes_to_analyse.values()
         )
     phenotypes.preparations_for_modeling()
-    map(
-        lambda x:  x.get_dataframe_for_machine_learning(),
-        Input.phenotypes_to_analyse.values()
-        )
     map(lambda x: print(x.ML_df), Input.phenotypes_to_analyse.values())
     map(
         lambda x: x.machine_learning_modelling(),
