@@ -880,22 +880,25 @@ class phenotypes():
         if Samples.headerline:
             summary_file = "summary_of_" + model_name_file + "_analysis" 
                      + self.name + ".txt"
-            coeff_file = "k-mers_and_coefficients_in_" + model_name_file + "_model_" 
+            coeff_file = "k-mers_and_coefficients_in_" + model_name_file \
+                + "_model_" 
                      + self.name + ".txt"
             model_file = model_name_file + "_model_" + self.name + ".pkl"
             if len(Samples.phenotypes_to_analyse) > 1:
                 sys.stderr.write("\tregression analysis of " 
                     +  self.name + " data...\n")
         elif Samples.no_phenotypes > 1:
-            summary_file = "summary_of_" + model_name_file + "_analysis" + self.name + ".txt"
-            coeff_file = "k-mers_and_coefficients_in_" + model_name_file + "_model_" 
-                     + self.name + ".txt"
+            summary_file = "summary_of_" + model_name_file + "_analysis" \
+                + self.name + ".txt"
+            coeff_file = "k-mers_and_coefficients_in_" + model_name_file \
+                + "_model_" + self.name + ".txt"
             model_filename = model_name_file +"_model_" + self.name + ".pkl"
             sys.stderr.write("\tregression analysis of " 
                 +  self.name + " data...\n")
         else:
             summary_file = "summary_of_" + model_name_file + "_analysis.txt"
-            coeff_file = "k-mers_and_coefficients_in_" + model_name_file + "_model.txt"
+            coeff_file = "k-mers_and_coefficients_in_" + model_name_file \
+                + "_model.txt"
             model_filename = model_name_file + "_model.txt"
         
         return summary_file, ceoff_file, model_file       
