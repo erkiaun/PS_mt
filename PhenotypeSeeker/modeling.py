@@ -2112,7 +2112,7 @@ def modeling(args):
     kmers.kmer_filtering_by_pvalue()
     for i, j in process_input.phenotypes_to_analyse.iteritems():
         print(len(j.kmers_for_ML))
-    map(lambda x: process_input.pool.map(lambda y: x.get_ML_df(y), kmer.vectors_as_multiple_input), process_input.phenotypes_to_analyse.values())
+    map(lambda x: process_input.pool.map(lambda y: x.get_ML_df(y), kmers.vectors_as_multiple_input), process_input.phenotypes_to_analyse.values())
     '''
     if Samples.phenotype_scale == "continuous":
         linear_regression(
