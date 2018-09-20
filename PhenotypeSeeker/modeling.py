@@ -155,13 +155,22 @@ class phenotypes():
         for line in izip_longest(*[open(item) for item in kmer_lists_splitted], fillvalue = ''):
             if line[0].split()[0] in self.kmers_for_ML:
                 ML_df[line[0]] = [j.split()[1].strip() for j in line]
-                #  .append(line[0].split()[0])
                 # kmers_presence_matrix.append(map(
                 #     lambda x: 0 if x == 0 else 1,
                 #     map(int, [j.split()[1].strip() for j in line])
                 #     ))
-        print(ML_df.size)
+        print(ML_df.shape)
         return ML_df
+
+    def get_ML_df_uni(self, kmer_lists_splitted):
+        for line in izip_longest(*[open(item) for item in kmer_lists_splitted], fillvalue = ''):
+            if line[0].split()[0] in self.kmers_for_ML:
+                self.ML_df[line[0]] = [j.split()[1].strip() for j in line]
+                # kmers_presence_matrix.append(map(
+                #     lambda x: 0 if x == 0 else 1,
+                #     map(int, [j.split()[1].strip() for j in line])
+                #     ))
+        print(ML_df.shape)
 
     def get_ML_df_classic_way(self, kmer_lists_splitted):
         matrix_and_features = map(
@@ -434,6 +443,7 @@ class metrics():
 
 class kmers():
 
+    vectors_as_input = [] ##########
     vectors_as_multiple_input = []
     progress_checkpoint = Value("i", 0)
     no_kmers_to_analyse = Value("i", 0)
@@ -444,6 +454,8 @@ class kmers():
     kmer_limit = None
     FDR = None
     B = None
+
+
 
     # -------------------------------------------------------------------
     # Functions for calculating the association test results for kmers.
@@ -491,6 +503,7 @@ class kmers():
         vectors_as_multiple_input = []
         for i in range(Samples.num_threads):
             cls.vectors_as_multiple_input.append(["K-mer_lists/" + sample + "_mapped_%05d" %i for sample in process_input.samples])
+            cls.vectors_as_input.append(["K-mer_lists/" + sample + "_mapped.txt" %i for sample in process_input.samples])
 
     @classmethod
     def get_kmers_tested(cls, phenotype, split_of_kmer_lists):
@@ -2155,6 +2168,7 @@ def modeling(args):
             kmers.vectors_as_multiple_input
             )
         phenotype_instance.ML_df = pd.concat(ML_dfs_from_threads, join_axes=[df1.index])
+    #map(lambda x:  x.get_ML_df_uni, process_input.phenotypes_to_analyse.values())
 
     # map(lambda x: process_input.pool.map(lambda y: x.get_ML_df(y), kmers.vectors_as_multiple_input), process_input.phenotypes_to_analyse.values())
 
@@ -2164,7 +2178,7 @@ def modeling(args):
     #         lambda y: x.get_ML_df(y), kmers.vectors_as_multiple_input
     #         ), process_input.phenotypes_to_analyse.values()
     #     )
-    map(lambda x: print(x.ML_df.size), process_input.phenotypes_to_analyse.values())
+    map(lambda x: print(x.ML_df.shape), process_input.phenotypes_to_analyse.values())
     '''
     if Samples.phenotype_scale == "continuous":
         linear_regression(
