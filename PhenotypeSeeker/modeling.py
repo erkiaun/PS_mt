@@ -97,7 +97,7 @@ class Input():
         phenotypes.kmer_limit = kmer_limit
         phenotypes.FDR = FDR
         phenotypes.B = B
-        cls.get_model_name()
+        cls.get_model_name(binary_classifier)
 
     @staticmethod
     def get_model_name(binary_classifier):
