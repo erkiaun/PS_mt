@@ -878,7 +878,7 @@ class phenotypes():
 
     def get_outputfile_names(self):
         if Samples.headerline:
-            summary_file = "summary_of_" + model_name_file + "_analysis" 
+            summary_file = "summary_of_" + model_name_file + "_analysis" \
                      + self.name + ".txt"
             coeff_file = "k-mers_and_coefficients_in_" + model_name_file \
                 + "_model_" 
@@ -894,7 +894,7 @@ class phenotypes():
                 + "_model_" + self.name + ".txt"
             model_filename = model_name_file +"_model_" + self.name + ".pkl"
             sys.stderr.write("\tregression analysis of " 
-                +  self.name + " data...\n")
+                + self.name + " data...\n")
         else:
             summary_file = "summary_of_" + model_name_file + "_analysis.txt"
             coeff_file = "k-mers_and_coefficients_in_" + model_name_file \
