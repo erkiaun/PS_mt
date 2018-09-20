@@ -34,6 +34,7 @@ from functools import partial
 import Bio
 import sklearn.datasets
 import numpy as np
+import pandas as pd
 
 
 class process_input():
@@ -144,7 +145,19 @@ class phenotypes():
     def __init__(self, name):
         self.name = name
         self.pvalues = None
-        self.kmers_for_ML = []
+        self.kmers_for_ML = set()
+        self.ML_df = pd.DataFrame()
+
+    def get_ML_df(self, vectors_as_multiple_input):
+        for line in izip_longest(*[open(item) for item in vectors_as_multiple_input], fillvalue = ''):
+            if line[0].split()[0] in self.kmers_for_ML:
+                self.ML_df[line[0]] = [j.split()[1].strip() for j in line]
+                #  .append(line[0].split()[0])
+                # kmers_presence_matrix.append(map(
+                #     lambda x: 0 if x == 0 else 1,
+                #     map(int, [j.split()[1].strip() for j in line])
+                #     ))
+        print(ML_df)
 
 class Samples():
 
@@ -742,30 +755,28 @@ class kmers():
         sys.stderr.write("Filtering the k-mers by p-value:\n")
         for phenotype_instance in process_input.phenotypes_to_analyse.values():
             pvalues = phenotype_instance.pvalues
-            nr_of_kmers_tested = float(len(pvalues))
-            stderr_print.currentKmerNum.value = 0
-            stderr_print.previousPercent.value = 0
-            checkpoint = int(math.ceil(nr_of_kmers_tested/100))
-            counter = 0    
-
             phenotype = phenotype_instance.name
-            text1_4_stderr = cls.get_text1_4_stderr(phenotype)
-            text2_4_stderr = "k-mers filtered."
-
-            inputfile = open(cls.test_outputfiles[phenotype])
-            outputfile = open(cls.kmers_filtered_output(phenotype), "w")
-            cls.write_headerline(outputfile)      
+            nr_of_kmers_tested = float(len(pvalues))
             cls.get_pvalue_cutoff(pvalues, nr_of_kmers_tested)
             max_pvalue_by_limit = float('%.2E' % pvalues[cls.kmer_limit-1])
-            print(max_pvalue_by_limit)
-            
+
+            stderr_print.currentKmerNum.value = 0
+            stderr_print.previousPercent.value = 0
+            text1_4_stderr = cls.get_text1_4_stderr(phenotype)
+            text2_4_stderr = "k-mers filtered."
+            checkpoint = int(math.ceil(nr_of_kmers_tested/100))
+            inputfile = open(cls.test_outputfiles[phenotype])
+            outputfile = open(cls.kmers_filtered_output(phenotype), "w")
+            cls.write_headerline(outputfile)
+
+            counter = 0
             for line in inputfile:
                 counter += 1
                 line_to_list = line.split()
                 if float(line_to_list[2]) < cls.pvalue_cutoff:
                     outputfile.write(line)
                     if float(line_to_list[2]) <= max_pvalue_by_limit:
-                            phenotype_instance.kmers_for_ML.append(line_to_list[0])
+                            phenotype_instance.kmers_for_ML.add(line_to_list[0])
                 if counter%checkpoint == 0:
                     stderr_print.currentKmerNum.value += checkpoint
                     stderr_print.check_progress(
@@ -821,19 +832,6 @@ class kmers():
                 "K-mer\tChi-square_statistic\tp-value\
                 \tNo._of_samples_with_k-mer\tSamples_with_k-mer\n"
                 )
-
-def get_kmer_presence_matrix(kmers_passed, split_of_kmer_lists):
-    kmers_presence_matrix = []
-    features = []
-    
-    for line in izip_longest(*[open(item) for item in split_of_kmer_lists], fillvalue = ''):
-        if line[0].split()[0] in kmers_passed:
-            features.append(line[0].split()[0])
-            kmers_presence_matrix.append(map(
-                lambda x: 0 if x == 0 else 1,
-                map(int, [j.split()[1].strip() for j in line])
-                ))
-    return(kmers_presence_matrix, features)
 
 def linear_regression(
 	    kmer_lists_splitted,
@@ -2113,7 +2111,8 @@ def modeling(args):
     kmers.test_kmers_association_with_phenotype()
     kmers.kmer_filtering_by_pvalue()
     for i, j in process_input.phenotypes_to_analyse.iteritems():
-        print(j.kmers_for_ML)
+        print(len(j.kmers_for_ML))
+    map(lambda x: process_input.pool.map(lambda y: x.get_ML_df(y), kmer.vectors_as_multiple_input), process_input.phenotypes_to_analyse.values())
     '''
     if Samples.phenotype_scale == "continuous":
         linear_regression(
