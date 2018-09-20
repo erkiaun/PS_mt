@@ -864,6 +864,9 @@ class phenotypes():
                 self.ML_df[line[0].split()[0]] = [int(j.split()[1].strip()) for j in line]
         self.ML_df = self.ML_df.astype(bool).astype(int)
         self.ML_df.index = Input.samples.keys()
+        for sample in Input.samples.values():
+            if sample.phenotype 
+
 
     def machine_learning_modelling(self):
 
@@ -872,11 +875,8 @@ class phenotypes():
                 +  self.name + " data...\n")
         summary_file, coeff_file, model_file = self.get_outputfile_names()
         summary_file = open(summary_file, "w")
-        summary_file.write("sum")
         coeff_file = open(coeff_file, "w")
-        coeff_file.write("coeff")
         model_file = open(model_file, "w")
-        model_file.write("model")
         if len(self.kmers_for_ML) == 0:
             summary_file.write("No k-mers passed the step of k-mer filtering for " \
                 "machine learning modelling.\n")
@@ -2121,6 +2121,9 @@ def modeling(args):
     Input.pool.map(lambda x: x.map_samples(), Input.samples.values())
     if args.weights == "+":
         Samples.get_weights()
+
+    for sampleinst in Input.Samples.values():
+        print(sampleinst.phenotypes)
 
     # Analyses of phenotypes
     phenotypes.preparations_for_kmer_testing()
