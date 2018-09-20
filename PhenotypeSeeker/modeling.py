@@ -2168,7 +2168,7 @@ def modeling(args):
     #         kmers.vectors_as_multiple_input
     #         )
     #     phenotype_instance.ML_df = pd.concat(ML_dfs_from_threads, join_axes=[ML_dfs_from_threads[0].index])
-    map(lambda x:  x.get_ML_df_uni, process_input.phenotypes_to_analyse.values())
+    map(lambda x:  x.get_ML_df_uni(), process_input.phenotypes_to_analyse.values())
 
     # map(lambda x: process_input.pool.map(lambda y: x.get_ML_df(y), kmers.vectors_as_multiple_input), process_input.phenotypes_to_analyse.values())
 
