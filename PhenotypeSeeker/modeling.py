@@ -2124,7 +2124,7 @@ def modeling(args):
     if args.weights == "+":
         Samples.get_weights()
 
-    for sampleinst in Input.Samples.values():
+    for sampleinst in Input.samples.values():
         print(sampleinst.phenotypes)
 
     # Analyses of phenotypes
