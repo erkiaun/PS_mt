@@ -1,5 +1,7 @@
 #!/usr/bin/python2.7
 
+from __future__ import print_function
+
 __author__ = "Erki Aun"
 __version__ = "0.3.0"
 __maintainer__ = "Erki Aun"
@@ -36,7 +38,7 @@ import sklearn.datasets
 import numpy as np
 import pandas as pd
 
-from __future__ import print_function
+
 
 class process_input():
 
