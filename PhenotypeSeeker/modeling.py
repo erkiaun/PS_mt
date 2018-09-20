@@ -93,10 +93,10 @@ class process_input():
         Samples.kmer_length = kmer_length
         Samples.cutoff = cutoff
         Samples.num_threads = num_threads
-        kmers.pvalue_cutoff = pvalue_cutoff
-        kmers.kmer_limit = kmer_limit
-        kmers.FDR = FDR
-        kmers.B = B
+        phenotypes.pvalue_cutoff = pvalue_cutoff
+        phenotypes.kmer_limit = kmer_limit
+        phenotypes.FDR = FDR
+        phenotypes.B = B
         
     @staticmethod
     def _get_alphas(alphas, alpha_min, alpha_max, n_alphas):       
@@ -141,23 +141,6 @@ class process_input():
             phenotypes_to_analyze = map(lambda x: x-1, mpheno)
         for item in phenotypes_to_analyze:
             cls.phenotypes_to_analyse[Samples.phenotypes[item]] = phenotypes(Samples.phenotypes[item])
-
-class phenotypes():
-
-    def __init__(self, name):
-        self.name = name
-        self.pvalues = None
-        self.kmers_for_ML = set()
-        self.ML_df = pd.DataFrame()
-
-    def get_ML_df(self):
-        kmer_lists = ["K-mer_lists/" + sample + "_mapped.txt" for sample in process_input.samples]
-        for line in izip_longest(*[open(item) for item in kmer_lists], fillvalue = ''):
-            if line[0].split()[0] in self.kmers_for_ML:
-                self.ML_df[line[0].split()[0]] = [int(j.split()[1].strip()) for j in line]
-        self.ML_df = self.ML_df.astype(bool).astype(int)
-        self.ML_df.index.names = process_input.sampels.keys()
- 
 
 class Samples():
 
@@ -395,7 +378,8 @@ class metrics():
         accuracy = float(within_1_tier)/len(targets)
         return accuracy
 
-class kmers():
+
+class phenotypes():
 
     vectors_as_multiple_input = []
     progress_checkpoint = Value("i", 0)
@@ -408,29 +392,43 @@ class kmers():
     FDR = None
     B = None
 
+    def __init__(self, name):
+        self.name = name
+        self.pvalues = None
+        self.kmers_for_ML = set()
+        self.ML_df = pd.DataFrame()
 
+    def get_ML_df(self):
+        kmer_lists = ["K-mer_lists/" + sample + "_mapped.txt" for sample in process_input.samples]
+        for line in izip_longest(*[open(item) for item in kmer_lists], fillvalue = ''):
+            if line[0].split()[0] in self.kmers_for_ML:
+                self.ML_df[line[0].split()[0]] = [int(j.split()[1].strip()) for j in line]
+        self.ML_df = self.ML_df.astype(bool).astype(int)
+        self.ML_df.index.names = process_input.samples.keys()
 
-    # -------------------------------------------------------------------
-    # Functions for calculating the association test results for kmers.
-    @classmethod
-    def test_kmers_association_with_phenotype(cls):
+    @staticmethod
+    def preparations_for_kmer_testing():
         if Samples.phenotype_scale == "continuous":
             sys.stderr.write("\nConducting the k-mer specific Welch t-tests:\n")
         else:
             sys.stderr.write("\nConducting the k-mer specific chi-square tests:\n")
         cls.get_params_for_kmers_testing()
-        for phenotype in process_input.phenotypes_to_analyse.keys():
-            stderr_print.currentKmerNum.value = 0
-            stderr_print.previousPercent.value = 0
-            pvalues_from_all_threads = process_input.pool.map(partial(
-                    cls.get_kmers_tested, phenotype
-                    ), 
-                cls.vectors_as_multiple_input
-                )
-            process_input.phenotypes_to_analyse[phenotype].pvalues = \
-                sorted(list(chain(*pvalues_from_all_threads)))
-            sys.stderr.write("\n")
-            cls.concatenate_test_files(phenotype)
+
+    # -------------------------------------------------------------------
+    # Functions for calculating the association test results for kmers.
+    @classmethod
+    def test_kmers_association_with_phenotype(cls):
+        stderr_print.currentKmerNum.value = 0
+        stderr_print.previousPercent.value = 0
+        pvalues_from_all_threads = process_input.pool.map(partial(
+                cls.get_kmers_tested, phenotype
+                ), 
+            cls.vectors_as_multiple_input
+            )
+        process_input.phenotypes_to_analyse[phenotype].pvalues = \
+            sorted(list(chain(*pvalues_from_all_threads)))
+        sys.stderr.write("\n")
+        cls.concatenate_test_files(phenotype)
 
     @classmethod
     def get_params_for_kmers_testing(cls):
@@ -2113,11 +2111,14 @@ def modeling(args):
     if args.weights == "+":
         Samples.get_weights()
 
-    kmers.test_kmers_association_with_phenotype()
-    kmers.kmer_filtering_by_pvalue()
-    map(lambda x:  x.get_ML_df(), process_input.phenotypes_to_analyse.values())
-    map(lambda x:  print(x.ML_df), process_input.phenotypes_to_analyse.values())
-
+    preparations_for_kmer_testing()
+    map(
+        lambda x:  x.test_kmers_association_with_phenotype(), 
+        process_input.phenotypes_to_analyse.values()
+        )
+    # kmers.kmer_filtering_by_pvalue()
+    # map(lambda x:  x.get_ML_df(), process_input.phenotypes_to_analyse.values())
+    # map(lambda x:  print(x.ML_df), process_input.phenotypes_to_analyse.values())
 
     '''
     if Samples.phenotype_scale == "continuous":
