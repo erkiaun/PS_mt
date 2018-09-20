@@ -780,10 +780,12 @@ class phenotypes():
         # Filters the k-mers by their p-value achieved in statistical 
         # testing.
         pvalues = self.pvalues
+        print(pvalues)
         phenotype = self.name
         nr_of_kmers_tested = float(len(pvalues))
         self.get_pvalue_cutoff(pvalues, nr_of_kmers_tested)
         max_pvalue_by_limit = float('%.2E' % pvalues[self.kmer_limit-1])
+        print(max_pvalue_by_limit)
 
         stderr_print.currentKmerNum.value = 0
         stderr_print.previousPercent.value = 0
@@ -817,7 +819,6 @@ class phenotypes():
             outputfile.write("\nNo k-mers passed the filtration by p-value.\n")
         inputfile.close()
         outputfile.close()
-        print(len(self.kmers_for_ML))
 
     def get_pvalue_cutoff(self, pvalues, nr_of_kmers_tested):
         if self.B:
