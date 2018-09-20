@@ -869,7 +869,7 @@ class phenotypes():
 
     def machine_learning_modelling(self):
 
-        if len(Input.phenotypes_to_analyse) > 1::
+        if len(Input.phenotypes_to_analyse) > 1:
             sys.stderr.write("\tregression analysis of " 
                 +  self.name + " data...\n")
         summary_file, ceoff_file, model_file = self.get_outputfile_names()
