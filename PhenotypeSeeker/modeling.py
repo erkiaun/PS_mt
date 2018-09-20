@@ -420,7 +420,7 @@ class phenotypes():
         stderr_print.currentKmerNum.value = 0
         stderr_print.previousPercent.value = 0
         pvalues_from_all_threads = process_input.pool.map(partial(
-                self.get_kmers_tested, phenotype
+                self.get_kmers_tested, self.name
                 ), 
             self.vectors_as_multiple_input
             )
@@ -748,50 +748,47 @@ class phenotypes():
                 shell=True
                 )
 
-    @classmethod
-    def kmer_filtering_by_pvalue(cls):
+    def get_kmers_filtered(self):
         # Filters the k-mers by their p-value achieved in statistical 
         # testing.
-        sys.stderr.write("Filtering the k-mers by p-value:\n")
-        for phenotype_instance in process_input.phenotypes_to_analyse.values():
-            pvalues = phenotype_instance.pvalues
-            phenotype = phenotype_instance.name
-            nr_of_kmers_tested = float(len(pvalues))
-            cls.get_pvalue_cutoff(pvalues, nr_of_kmers_tested)
-            max_pvalue_by_limit = float('%.2E' % pvalues[cls.kmer_limit-1])
+        pvalues = self.pvalues
+        phenotype = self.name
+        nr_of_kmers_tested = float(len(pvalues))
+        cls.get_pvalue_cutoff(pvalues, nr_of_kmers_tested)
+        max_pvalue_by_limit = float('%.2E' % pvalues[cls.kmer_limit-1])
 
-            stderr_print.currentKmerNum.value = 0
-            stderr_print.previousPercent.value = 0
-            text1_4_stderr = cls.get_text1_4_stderr(phenotype)
-            text2_4_stderr = "k-mers filtered."
-            checkpoint = int(math.ceil(nr_of_kmers_tested/100))
-            inputfile = open(cls.test_outputfiles[phenotype])
-            outputfile = open(cls.kmers_filtered_output(phenotype), "w")
-            cls.write_headerline(outputfile)
+        stderr_print.currentKmerNum.value = 0
+        stderr_print.previousPercent.value = 0
+        text1_4_stderr = cls.get_text1_4_stderr(phenotype)
+        text2_4_stderr = "k-mers filtered."
+        checkpoint = int(math.ceil(nr_of_kmers_tested/100))
+        inputfile = open(cls.test_outputfiles[phenotype])
+        outputfile = open(cls.kmers_filtered_output(phenotype), "w")
+        cls.write_headerline(outputfile)
 
-            counter = 0
-            for line in inputfile:
-                counter += 1
-                line_to_list = line.split()
-                if float(line_to_list[2]) < cls.pvalue_cutoff:
-                    outputfile.write(line)
-                    if float(line_to_list[2]) < max_pvalue_by_limit:
-                            phenotype_instance.kmers_for_ML.add(line_to_list[0])
-                if counter%checkpoint == 0:
-                    stderr_print.currentKmerNum.value += checkpoint
-                    stderr_print.check_progress(
-                        nr_of_kmers_tested, text2_4_stderr, text1_4_stderr
-                    )
-
-            stderr_print.currentKmerNum.value += counter%checkpoint
-            stderr_print.check_progress(
-                nr_of_kmers_tested, text2_4_stderr, text1_4_stderr
+        counter = 0
+        for line in inputfile:
+            counter += 1
+            line_to_list = line.split()
+            if float(line_to_list[2]) < cls.pvalue_cutoff:
+                outputfile.write(line)
+                if float(line_to_list[2]) < max_pvalue_by_limit:
+                        self.kmers_for_ML.add(line_to_list[0])
+            if counter%checkpoint == 0:
+                stderr_print.currentKmerNum.value += checkpoint
+                stderr_print.check_progress(
+                    nr_of_kmers_tested, text2_4_stderr, text1_4_stderr
                 )
-            sys.stderr.write("\n")
-            if len(phenotype_instance.kmers_for_ML) == 0:
-                outputfile.write("\nNo k-mers passed the filtration by p-value.\n")
-            inputfile.close()
-            outputfile.close()
+
+        stderr_print.currentKmerNum.value += counter%checkpoint
+        stderr_print.check_progress(
+            nr_of_kmers_tested, text2_4_stderr, text1_4_stderr
+            )
+        sys.stderr.write("\n")
+        if len(self.kmers_for_ML) == 0:
+            outputfile.write("\nNo k-mers passed the filtration by p-value.\n")
+        inputfile.close()
+        outputfile.close()
 
     @classmethod
     def get_pvalue_cutoff(cls, pvalues, nr_of_kmers_tested):
@@ -2113,6 +2110,11 @@ def modeling(args):
     phenotypes.preparations_for_kmer_testing()
     map(
         lambda x:  x.test_kmers_association_with_phenotype(), 
+        process_input.phenotypes_to_analyse.values()
+        )
+    sys.stderr.write("Filtering the k-mers by p-value:\n")
+    map(
+        lambda x:  x.get_kmers_filtered(), 
         process_input.phenotypes_to_analyse.values()
         )
     # kmers.kmer_filtering_by_pvalue()
