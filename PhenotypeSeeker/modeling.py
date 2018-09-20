@@ -466,8 +466,7 @@ class phenotypes():
             cls.vectors_as_multiple_input.append(["K-mer_lists/" + sample + "_mapped_%05d" %i for sample in Input.samples])
         
 
-    @classmethod
-    def get_kmers_tested(cls, phenotype, split_of_kmer_lists):
+    def get_kmers_tested(self, phenotype, split_of_kmer_lists):
 
         names_of_samples = Input.samples.keys()
         phenotypes_of_samples = [sample_data.phenotypes[phenotype] for sample_data in Input.samples.values()]
@@ -475,46 +474,45 @@ class phenotypes():
         counter = 0
 
         multithreading_code = split_of_kmer_lists[0][-5:]
-        test_results_file = open(cls.test_result_output(
+        test_results_file = open(self.test_result_output(
             phenotype, multithreading_code
             ), "w")
-        text1_4_stderr = cls.get_text1_4_stderr(phenotype)
+        text1_4_stderr = self.get_text1_4_stderr(phenotype)
         text2_4_stderr = "tests conducted."
         for line in izip_longest(*[open(item) for item in split_of_kmer_lists], fillvalue = ''):
             counter += 1
-            if counter%cls.progress_checkpoint.value == 0:
+            if counter%self.progress_checkpoint.value == 0:
                 Input.lock.acquire()
-                stderr_print.currentKmerNum.value += cls.progress_checkpoint.value
+                stderr_print.currentKmerNum.value += self.progress_checkpoint.value
                 Input.lock.release()
                 stderr_print.check_progress(
-                    cls.no_kmers_to_analyse.value, text2_4_stderr, text1_4_stderr
+                    self.no_kmers_to_analyse.value, text2_4_stderr, text1_4_stderr
                 )
             kmer = line[0].split()[0]
             kmer_presence = [j.split()[1].strip() for j in line]
 
             if Samples.phenotype_scale == "binary":
-                pvalue = cls.conduct_chi_squared_test(
+                pvalue = self.conduct_chi_squared_test(
                     phenotypes_of_samples, names_of_samples, kmer, kmer_presence,
                     test_results_file
                     )
             elif Samples.phenotype_scale == "continuous":
-                pvalue = cls.conduct_t_test(
+                pvalue = self.conduct_t_test(
                     phenotypes_of_samples, names_of_samples, kmer, kmer_presence,
                     test_results_file
                     )
             if pvalue:
                 pvalues.append(pvalue)
         Input.lock.acquire()
-        stderr_print.currentKmerNum.value += counter%cls.progress_checkpoint.value
+        stderr_print.currentKmerNum.value += counter%self.progress_checkpoint.value
         Input.lock.release()
         stderr_print.check_progress(
-            cls.no_kmers_to_analyse.value, text2_4_stderr, text1_4_stderr
+            self.no_kmers_to_analyse.value, text2_4_stderr, text1_4_stderr
         )
         test_results_file.close()
         return(pvalues)
 
-    @classmethod
-    def test_result_output(cls, phenotype, code):
+    def test_result_output(self, code):
         if Samples.phenotype_scale == "continuous":
             beginning_text = "t-test_results_"
         else:
@@ -522,10 +520,10 @@ class phenotypes():
 
         if Samples.headerline:
             outputfile = beginning_text + \
-                phenotype + "_" + code + ".txt"
+                self.name + "_" + code + ".txt"
         elif len(Input.phenotypes_to_analyse) > 1:
             outputfile = beginning_text + \
-                phenotype + "_" + code + ".txt"
+                self.name + "_" + code + ".txt"
         else:
             outputfile = beginning_text + code + ".txt"
         return outputfile
@@ -612,18 +610,17 @@ class phenotypes():
 
         return t, pvalue, wtd_mean_x, wtd_mean_y
 
-    @classmethod
     def conduct_chi_squared_test(
-        cls, phenotypes_of_samples, names_of_samples, kmer, kmer_presence,
+        self, phenotypes_of_samples, names_of_samples, kmer, kmer_presence,
         test_results_file
         ):
         samples_w_kmer = []
         (
         w_pheno_w_kmer, w_pheno_wo_kmer, wo_pheno_w_kmer, wo_pheno_wo_kmer
-        ) = cls.get_samples_distribution_for_chisquared(
+        ) = self.get_samples_distribution_for_chisquared(
             phenotypes_of_samples, names_of_samples, kmer_presence, samples_w_kmer
             )
-        (w_pheno, wo_pheno, w_kmer, wo_kmer, total) = cls.get_totals_in_classes(
+        (w_pheno, wo_pheno, w_kmer, wo_kmer, total) = self.get_totals_in_classes(
             w_pheno_w_kmer, w_pheno_wo_kmer, wo_pheno_w_kmer, wo_pheno_wo_kmer
             )
         no_samples_w_kmer = len(samples_w_kmer)
@@ -633,7 +630,7 @@ class phenotypes():
         (
         w_pheno_w_kmer_expected, w_pheno_wo_kmer_expected,
         wo_pheno_w_kmer_expected, wo_pheno_wo_kmer_expected
-        ) = cls.get_expected_distribution(
+        ) = self.get_expected_distribution(
             w_pheno, wo_pheno, w_kmer, wo_kmer, total)
 
         chisquare_results = stats.chisquare(
@@ -888,17 +885,12 @@ class phenotypes():
             coeff_file = "k-mers_and_coefficients_in_" + self.model_name_file \
                 + "_model_" + self.name + ".txt"
             model_file = self.model_name_file + "_model_" + self.name + ".pkl"
-            if len(Samples.phenotypes_to_analyse) > 1:
-                sys.stderr.write("\tregression analysis of " 
-                    +  self.name + " data...\n")
         elif len(Input.phenotypes_to_analyse) > 1:
             summary_file = "summary_of_" + self.model_name_file + "_analysis" \
                 + self.name + ".txt"
             coeff_file = "k-mers_and_coefficients_in_" + self.model_name_file \
                 + "_model_" + self.name + ".txt"
             model_file = self.model_name_file +"_model_" + self.name + ".pkl"
-            sys.stderr.write("\tregression analysis of " 
-                + self.name + " data...\n")
         else:
             summary_file = "summary_of_" + self.model_name_file + "_analysis.txt"
             coeff_file = "k-mers_and_coefficients_in_" + self.model_name_file \
@@ -2118,11 +2110,11 @@ def modeling(args):
         Input.phenotypes_to_analyse.values()
         )
     phenotypes.preparations_for_modeling()
-    map(lambda x: print(x.ML_df), Input.phenotypes_to_analyse.values())
     map(
         lambda x: x.machine_learning_modelling(),
         Input.phenotypes_to_analyse.values()
         )
+    map(lambda x: print(x.ML_df), Input.phenotypes_to_analyse.values())
     '''
     if Samples.phenotype_scale == "continuous":
         linear_regression(
