@@ -150,7 +150,7 @@ class phenotypes():
         self.kmers_for_ML = set()
         self.ML_df = pd.DataFrame()
 
-    def get_ML_df(self, kmer_lists_splitted):
+    def get_ML_df(kmer_lists_splitted):
         for line in izip_longest(*[open(item) for item in kmer_lists_splitted], fillvalue = ''):
             if line[0].split()[0] in self.kmers_for_ML:
                 self.ML_df[line[0]] = [j.split()[1].strip() for j in line]
@@ -2114,11 +2114,17 @@ def modeling(args):
     kmers.kmer_filtering_by_pvalue()
     for i, j in process_input.phenotypes_to_analyse.iteritems():
         print(len(j.kmers_for_ML))
-    map(
-        lambda x: process_input.pool.map(
-            lambda y: x.get_ML_df(y), kmers.vectors_as_multiple_input
-            ), process_input.phenotypes_to_analyse.values()
-        )
+    for phenotype_instance in process_input.phenotypes_to_analyse.values():
+        ML_dfs_from_threads = process_input.pool.map(
+            lambda x: phenotype.get_ML_df(x), kmers.vectors_as_multiple_input
+            )
+        phenotype_instance.ML_df = pd.concat(ML_dfs_from_threads)
+
+    # map(
+    #     lambda x: process_input.pool.map(
+    #         lambda y: x.get_ML_df(y), kmers.vectors_as_multiple_input
+    #         ), process_input.phenotypes_to_analyse.values()
+    #     )
     map(lambda x: print(x.ML_df), process_input.phenotypes_to_analyse.values())
     '''
     if Samples.phenotype_scale == "continuous":
