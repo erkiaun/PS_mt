@@ -151,13 +151,14 @@ class phenotypes():
     def get_ML_df(self, vectors_as_multiple_input):
         for line in izip_longest(*[open(item) for item in vectors_as_multiple_input], fillvalue = ''):
             if line[0].split()[0] in self.kmers_for_ML:
+                process_input.lock.acquire()
                 self.ML_df[line[0]] = [j.split()[1].strip() for j in line]
+                process_input.lock.release()
                 #  .append(line[0].split()[0])
                 # kmers_presence_matrix.append(map(
                 #     lambda x: 0 if x == 0 else 1,
                 #     map(int, [j.split()[1].strip() for j in line])
                 #     ))
-        print(self.ML_df)
 
 class Samples():
 
@@ -2117,6 +2118,7 @@ def modeling(args):
             lambda y: x.get_ML_df(y), kmers.vectors_as_multiple_input
             ), process_input.phenotypes_to_analyse.values()
         )
+    map(lambda x: print(x.ML_df), process_input.phenotypes_to_analyse.values())
     '''
     if Samples.phenotype_scale == "continuous":
         linear_regression(
