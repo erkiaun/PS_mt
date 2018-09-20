@@ -2099,7 +2099,7 @@ def modeling(args):
 
     sys.stderr.write("Generating the k-mer lists for input samples:\n")
     Input.pool.map(
-        lambda x: x.get_kmer_lists(), .samples.values()
+        lambda x: x.get_kmer_lists(), Input.samples.values()
         )
     sys.stderr.write("\nGenerating the k-mer feature vector.\n")
     Samples.get_feature_vector()
