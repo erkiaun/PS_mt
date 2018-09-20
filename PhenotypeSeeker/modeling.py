@@ -163,6 +163,39 @@ class phenotypes():
         print(ML_df)
         return ML_df
 
+    def get_ML_df_classic_way(self, kmer_lists_splitted):
+        matrix_and_features = map(
+            list, zip(
+                *process_input.pool.map(
+                    partial(
+                        get_kmer_presence_matrix,
+                        set(kmers_passed_all_phenotypes[j])
+                        ),
+                    kmer_lists_splitted
+                    )
+                )
+            )
+        kmers_presence_matrix = [
+            item for sublist in matrix_and_features[0] for item in sublist
+            ]
+        features = [
+            item for sublist in matrix_and_features[1] for item in sublist
+            ]
+        Phenotypes = [item.phenotypes[k] for item in process_input.samples.values()]
+
+    def get_kmer_presence_matrix(kmers_passed, split_of_kmer_lists):
+        kmers_presence_matrix = []
+        features = []
+        
+        for line in izip_longest(*[open(item) for item in split_of_kmer_lists], fillvalue = ''):
+            if line[0].split()[0] in kmers_passed:
+                features.append(line[0].split()[0])
+                kmers_presence_matrix.append(map(
+                    lambda x: 0 if x == 0 else 1,
+                    map(int, [j.split()[1].strip() for j in line])
+                    ))
+        return(kmers_presence_matrix, features)
+
 class Samples():
 
     phenotype_scale = "binary"
@@ -2118,7 +2151,7 @@ def modeling(args):
         print(len(j.kmers_for_ML))
     for phenotype_instance in process_input.phenotypes_to_analyse.values():
         ML_dfs_from_threads = process_input.pool.map(
-            lambda x: phenotype.get_ML_df(x), kmers.vectors_as_multiple_input
+            lambda x: phenotype_instance.get_ML_df(x), kmers.vectors_as_multiple_input
             )
         phenotype_instance.ML_df = pd.concat(ML_dfs_from_threads)
 
