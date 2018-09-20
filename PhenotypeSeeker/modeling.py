@@ -856,7 +856,7 @@ class phenotypes():
         self.ML_df = self.ML_df.astype(bool).astype(int)
         self.ML_df.index.names = Input.samples.keys()
 
-    def model(self):
+    def machine_learning_modelling(self):
         pass
 
 
@@ -2108,6 +2108,7 @@ def assembling(kmers_passed_all_phenotypes, phenotypes_to_analyze):
 def modeling(args):
     # The main function of "phenotypeseeker modeling"
 
+    # Processing the input data
     Input.get_input_data(args.inputfile, args.take_logs)
     Input.Input_args(
         args.alphas, args.alpha_min, args.alpha_max, args.n_alphas,
@@ -2118,6 +2119,7 @@ def modeling(args):
         )
     Input.get_multithreading_parameters()
 
+    # Operations with input sample
     sys.stderr.write("Generating the k-mer lists for input samples:\n")
     Input.pool.map(
         lambda x: x.get_kmer_lists(), Input.samples.values()
@@ -2130,6 +2132,7 @@ def modeling(args):
     if args.weights == "+":
         Samples.get_weights()
 
+    # Operations with input phenotypes
     phenotypes.preparations_for_kmer_testing()
     map(
         lambda x:  x.test_kmers_association_with_phenotype(), 
@@ -2140,13 +2143,17 @@ def modeling(args):
         lambda x:  x.get_kmers_filtered(), 
         Input.phenotypes_to_analyse.values()
         )
-    preparations_for_modeling()
+
+    phenotypes.preparations_for_modeling()
     map(
         lambda x:  x.get_dataframe_for_machine_learning(),
         Input.phenotypes_to_analyse.values()
         )
-    map(lambda x:  print(x.ML_df), Input.phenotypes_to_analyse.values())
-
+    map(lambda x: print(x.ML_df), Input.phenotypes_to_analyse.values())
+    map(
+        lambda x: x.machine_learning_modelling(),
+        Input.phenotypes_to_analyse.values()
+        )
     '''
     if Samples.phenotype_scale == "continuous":
         linear_regression(
