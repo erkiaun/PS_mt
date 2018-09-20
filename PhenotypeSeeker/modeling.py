@@ -423,7 +423,7 @@ class phenotypes():
                 ), 
             self.vectors_as_multiple_input
             )
-        process_input.phenotypes_to_analyse[phenotype].pvalues = \
+        self.pvalues = \
             sorted(list(chain(*pvalues_from_all_threads)))
         sys.stderr.write("\n")
         self.concatenate_test_files(phenotype)
@@ -753,23 +753,23 @@ class phenotypes():
         pvalues = self.pvalues
         phenotype = self.name
         nr_of_kmers_tested = float(len(pvalues))
-        cls.get_pvalue_cutoff(pvalues, nr_of_kmers_tested)
-        max_pvalue_by_limit = float('%.2E' % pvalues[cls.kmer_limit-1])
+        self.get_pvalue_cutoff(pvalues, nr_of_kmers_tested)
+        max_pvalue_by_limit = float('%.2E' % pvalues[self.kmer_limit-1])
 
         stderr_print.currentKmerNum.value = 0
         stderr_print.previousPercent.value = 0
-        text1_4_stderr = cls.get_text1_4_stderr(phenotype)
+        text1_4_stderr = self.get_text1_4_stderr(phenotype)
         text2_4_stderr = "k-mers filtered."
         checkpoint = int(math.ceil(nr_of_kmers_tested/100))
-        inputfile = open(cls.test_outputfiles[phenotype])
-        outputfile = open(cls.kmers_filtered_output(phenotype), "w")
-        cls.write_headerline(outputfile)
+        inputfile = open(self.test_outputfiles[phenotype])
+        outputfile = open(self.kmers_filtered_output(phenotype), "w")
+        self.write_headerline(outputfile)
 
         counter = 0
         for line in inputfile:
             counter += 1
             line_to_list = line.split()
-            if float(line_to_list[2]) < cls.pvalue_cutoff:
+            if float(line_to_list[2]) < self.pvalue_cutoff:
                 outputfile.write(line)
                 if float(line_to_list[2]) < max_pvalue_by_limit:
                         self.kmers_for_ML.add(line_to_list[0])
