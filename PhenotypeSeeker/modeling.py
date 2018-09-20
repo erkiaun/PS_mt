@@ -170,7 +170,7 @@ class phenotypes():
                 #     lambda x: 0 if x == 0 else 1,
                 #     map(int, [j.split()[1].strip() for j in line])
                 #     ))
-        print(ML_df.shape)
+        print(self.ML_df.shape)
 
     def get_ML_df_classic_way(self, kmer_lists_splitted):
         matrix_and_features = map(
