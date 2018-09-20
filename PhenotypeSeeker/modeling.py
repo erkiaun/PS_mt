@@ -384,7 +384,6 @@ class phenotypes():
     vectors_as_multiple_input = []
     progress_checkpoint = Value("i", 0)
     no_kmers_to_analyse = Value("i", 0)
-
     test_outputfiles = dict()
 
     pvalue_cutoff = None
@@ -417,18 +416,18 @@ class phenotypes():
     # -------------------------------------------------------------------
     # Functions for calculating the association test results for kmers.
     @classmethod
-    def test_kmers_association_with_phenotype(cls):
+    def test_kmers_association_with_phenotype(self):
         stderr_print.currentKmerNum.value = 0
         stderr_print.previousPercent.value = 0
         pvalues_from_all_threads = process_input.pool.map(partial(
-                cls.get_kmers_tested, phenotype
+                self.get_kmers_tested, phenotype
                 ), 
-            cls.vectors_as_multiple_input
+            self.vectors_as_multiple_input
             )
         process_input.phenotypes_to_analyse[phenotype].pvalues = \
             sorted(list(chain(*pvalues_from_all_threads)))
         sys.stderr.write("\n")
-        cls.concatenate_test_files(phenotype)
+        self.concatenate_test_files(phenotype)
 
     @classmethod
     def get_params_for_kmers_testing(cls):
@@ -2111,7 +2110,7 @@ def modeling(args):
     if args.weights == "+":
         Samples.get_weights()
 
-    preparations_for_kmer_testing()
+    phenotypes.preparations_for_kmer_testing()
     map(
         lambda x:  x.test_kmers_association_with_phenotype(), 
         process_input.phenotypes_to_analyse.values()
