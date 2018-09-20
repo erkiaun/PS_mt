@@ -847,16 +847,15 @@ class phenotypes():
 
     # -------------------------------------------------------------------
     # Functions for generating the machine learning model.  
-
-    @staticmethod
-    def preparations_for_modeling():
+    @classmethod
+    def preparations_for_modeling(cls):
         if len(Input.phenotypes_to_analyse) > 1:
-            sys.stderr.write("Generating the " + phenotypes.model_name_printing + " model:\n")
+            sys.stderr.write("Generating the " + cls.model_name_printing + " model:\n")
         elif Samples.headerline:
-            sys.stderr.write("Generating the " + phenotypes.model_name_printing + " model of " 
+            sys.stderr.write("Generating the " + cls.model_name_printing + " model of " 
                 +  Samples.phenotypes[0] + " data...\n")
         else:
-            sys.stderr.write("Generating the " + phenotypes.model_name_printing + " model...\n")
+            sys.stderr.write("Generating the " + cls.model_name_printing + " model...\n")
 
     def get_dataframe_for_machine_learning(self):
         kmer_lists = ["K-mer_lists/" + sample + "_mapped.txt" for sample in Input.samples]
@@ -864,17 +863,20 @@ class phenotypes():
             if line[0].split()[0] in self.kmers_for_ML:
                 self.ML_df[line[0].split()[0]] = [int(j.split()[1].strip()) for j in line]
         self.ML_df = self.ML_df.astype(bool).astype(int)
-        self.ML_df.index.names = Input.samples.keys()
+        self.ML_df.index = Input.samples.keys()
 
     def machine_learning_modelling(self):
 
         if len(Input.phenotypes_to_analyse) > 1:
-            sys.stderr.write("\tregression analysis of " 
+            sys.stderr.write("\tof " 
                 +  self.name + " data...\n")
         summary_file, ceoff_file, model_file = self.get_outputfile_names()
         summary_file = open(summary_file, "w")
+        summary_file.write("sum")
         coeff_file = open(coeff_file, "w")
+        coeff_file.write("coeff")
         model_file = open(model_file, "w")
+        model_file.write("model")
         if len(self.kmers_for_ML) == 0:
             summary_file.write("No k-mers passed the step of k-mer filtering for " \
                 "machine learning modelling.\n")
