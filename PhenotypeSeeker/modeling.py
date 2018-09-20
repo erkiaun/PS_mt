@@ -154,7 +154,7 @@ class phenotypes():
         for line in izip_longest(*[open(item) for item in kmers.vectors_as_input], fillvalue = ''):
             if line[0].split()[0] in self.kmers_for_ML:
                 self.ML_df[line[0]] = [j.split()[1].strip() for j in line]
-        self.ML_df.astype(bool).astype(int)
+        self.ML_df = self.ML_df.astype(bool).astype(int)
  
 
 class Samples():
