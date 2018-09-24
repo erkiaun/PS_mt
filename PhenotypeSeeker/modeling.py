@@ -691,7 +691,7 @@ class phenotypes():
                     no_samples_wo_kmer += 1
         return(
             with_pheno_with_kmer, with_pheno_without_kmer,
-            without_pheno_with_kmer, without_pheno_without_kmer
+            without_pheno_with_kmer, without_pheno_without_kmer,
             no_samples_wo_kmer
             )
 
