@@ -784,6 +784,7 @@ class phenotypes():
         nr_of_kmers_tested = float(len(pvalues))
         self.get_pvalue_cutoff(pvalues, nr_of_kmers_tested)
         max_pvalue_by_limit = float('%.2E' % pvalues[self.kmer_limit-1])
+        print(max_pvalue_by_limit)
 
         stderr_print.currentKmerNum.value = 0
         stderr_print.previousPercent.value = 0
@@ -877,12 +878,13 @@ class phenotypes():
         self.ML_df['phenotype'] = [
             sample.phenotypes[self.name] for sample in Input.samples.values()
             ]
-        print(self.ML_df.shape)
         self.ML_df['weight'] = [
             sample.weight for sample in Input.samples.values()
             ]
+        print(self.ML_df.shape)
         self.ML_df = self.ML_df.loc[self.ML_df.phenotype != 'NA']
         print(self.ML_df.shape)
+
 
     def machine_learning_modelling(self):
         if len(Input.phenotypes_to_analyse) > 1:
