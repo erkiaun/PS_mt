@@ -423,15 +423,15 @@ class phenotypes():
         self.name = name
         self.pvalues = None
         self.kmers_for_ML = set()
-        self.ML_df = None
+        self.ML_df = pd.DataFrame()
         self.ML_df_train = None
         self.ML_df_test = None
         self.X_train = None
         self.y_train = None
         self.X_test = None
         self.y_test = None
-        self.X_weights = None
-        self.y_weights = None
+        self.train_weights = None
+        self.test_weights = None
 
 
     # -------------------------------------------------------------------
@@ -891,7 +891,13 @@ class phenotypes():
         print(self.ML_df.shape)
         self.ML_df = self.ML_df.loc[self.ML_df.phenotype != 'NA']
         print(self.ML_df.shape)
-        self.ML_df_train, self.ML_df_test = train_test_split(ML_df, test_size=0.25, random_state=0) 
+        self.ML_df_train, self.ML_df_test = train_test_split(ML_df, test_size=0.25, random_state=0)
+        self.X_train = self.ML_df_train.iloc[:,0:-2]
+        self.y_train = self.ML_df_train.iloc[:,-2:-1]
+        self.weights_train = self.ML_df_train.iloc[:,-1:]
+        self.X_test = self.ML_df_test.iloc[:,0:-2]
+        self.y_test = self.ML_df_test.iloc[:,-2:-1]
+        self.sweights_test = self.ML_df_test.iloc[:,-1:]
 
 
     def machine_learning_modelling(self):
