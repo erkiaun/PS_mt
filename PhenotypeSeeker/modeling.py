@@ -897,7 +897,7 @@ class phenotypes():
         self.weights_train = self.ML_df_train.iloc[:,-1:]
         self.X_test = self.ML_df_test.iloc[:,0:-2]
         self.y_test = self.ML_df_test.iloc[:,-2:-1]
-        self.sweights_test = self.ML_df_test.iloc[:,-1:]
+        self.weights_test = self.ML_df_test.iloc[:,-1:]
 
 
     def machine_learning_modelling(self):
