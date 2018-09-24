@@ -667,7 +667,6 @@ class phenotypes():
         pvalue = chisquare_results[1]
         return pvalue
 
-    @staticmethod
     def get_samples_distribution_for_chisquared(
             self, kmers_presence_vector, samples_w_kmer
             ):
