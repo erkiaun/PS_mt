@@ -431,11 +431,8 @@ class phenotypes():
     def test_kmers_association_with_phenotype(self):
         stderr_print.currentKmerNum.value = 0
         stderr_print.previousPercent.value = 0
-        pvalues_from_all_threads = Input.pool.map(partial(
-                self.get_kmers_tested
-                ), 
-            self.vectors_as_multiple_input
-            )
+        pvalues_from_all_threads = Input.pool.map(
+                self.get_kmers_tested, self.vectors_as_multiple_input)
         self.pvalues = \
             sorted(list(chain(*pvalues_from_all_threads)))
         sys.stderr.write("\n")
@@ -667,8 +664,8 @@ class phenotypes():
         return pvalue
 
     @staticmethod
-    def get_samples_distribution_for_chisquared(self,
-            kmers_presence_vector, samples_w_kmer
+    def get_samples_distribution_for_chisquared(
+            self, kmers_presence_vector, samples_w_kmer
             ):
         with_pheno_with_kmer = 0
         with_pheno_without_kmer = 0
