@@ -62,7 +62,7 @@ class Input():
                         continue
                     else:
                         for j in xrange(1, Samples.no_phenotypes + 1):
-                            Samples.phenotypes.append("phenotype%s" %j)
+                            Samples.phenotypes.append("phenotype_%s" %j)
                 sample_name = line.split()[0]
                 cls.samples[sample_name] = (
                     Samples.from_inputfile(line)
@@ -84,7 +84,8 @@ class Input():
             gammas, gamma_min, gamma_max, n_gammas, 
             min_samples, max_samples, mpheno, kmer_length,
             cutoff, num_threads, pvalue_cutoff, kmer_limit,
-            FDR, B, binary_classifier
+            FDR, B, binary_classifier, penalty, max_iter,
+            tol, l1_ratio
             ):
         cls._get_phenotypes_to_analyse(mpheno)
         Samples.alphas = cls._get_alphas(
@@ -103,23 +104,28 @@ class Input():
         phenotypes.kmer_limit = kmer_limit
         phenotypes.FDR = FDR
         phenotypes.B = B
+        phenotypes.penalty = penalty
+        phenotypes.max_iter = max_iter
+        phenotypes.tol = tol
+        phenotypes.l1_ratio = l1_ratio
+
         cls.get_model_name(binary_classifier)
 
     @staticmethod
     def get_model_name(binary_classifier):
-        if Samples.phenotype_scale == "continuous":
-            phenotypes.model_name_printing = "linear regression"
-            phenotypes.model_name_file = "lin_reg"
-        elif Samples.phenotype_scale == "binary":
+        if phenotypes.scale == "continuous":
+            phenotypes.model_name_long = "linear regression"
+            phenotypes.model_name_short = "lin_reg"
+        elif phenotypes.scale == "binary":
             if binary_classifier == "log":
-                phenotypes.model_name_printing = "logistic regression"
-                phenotypes.model_name_file = "log_reg"
+                phenotypes.model_name_long = "logistic regression"
+                phenotypes.model_name_short = "log_reg"
             elif binary_classifier == "SVM":
-                phenotypes.model_name_printing = "support vector machine"
-                phenotypes.model_name_file = "SVM"
+                phenotypes.model_name_long = "support vector machine"
+                phenotypes.model_name_short = "SVM"
             elif binary_classifier == "RF":
-                phenotypes.model_name_printing = "random forest"
-                phenotypes.model_name_file = "RF"
+                phenotypes.model_name_long = "random forest"
+                phenotypes.model_name_short = "RF"
         
     @staticmethod
     def _get_alphas(alphas, alpha_min, alpha_max, n_alphas):       
@@ -169,7 +175,6 @@ class Input():
 
 class Samples():
 
-    phenotype_scale = "binary"
     no_samples = 0
     no_phenoypes = 0
     phenotypes = []
@@ -232,7 +237,7 @@ class Samples():
         name, address, phenotype_list = \
             line.split()[0], line.split()[1], line.split()[2:]
         if not all(x == "0" or x == "1" or x == "NA" for x in phenotypes):
-            cls.phenotype_scale = "continuous"
+            phenotypes.scale = "continuous"
         if cls.take_logs:
             phenotype_list = map(lambda x: math.log(x, 2), phenotypes)
         for i,j in zip(cls.phenotypes, phenotype_list):
@@ -406,6 +411,8 @@ class metrics():
 
 class phenotypes():
 
+    scale = None
+
     vectors_as_multiple_input = []
     progress_checkpoint = Value("i", 0)
     no_kmers_to_analyse = Value("i", 0)
@@ -416,8 +423,14 @@ class phenotypes():
     FDR = None
     B = None
 
-    model_name_printing = None
-    model_name_file = None
+    model_name_long = None
+    model_name_short = None
+
+    model = None
+    penalty = None
+    max_iter = None
+    tol = None
+    l1_ratio = None
 
     def __init__(self, name):
         self.name = name
@@ -439,7 +452,7 @@ class phenotypes():
     # Functions for calculating the association test results for kmers.
     @classmethod
     def preparations_for_kmer_testing(cls):
-        if Samples.phenotype_scale == "continuous":
+        if phenotypes.scale == "continuous":
             sys.stderr.write("\nConducting the k-mer specific Welch t-tests:\n")
         else:
             sys.stderr.write("\nConducting the k-mer specific chi-square tests:\n")
@@ -518,12 +531,12 @@ class phenotypes():
             kmer = line[0].split()[0]
             kmer_presence_vector = [j.split()[1].strip() for j in line]
 
-            if Samples.phenotype_scale == "binary":
+            if phenotypes.scale == "binary":
                 pvalue = self.conduct_chi_squared_test(
                     kmer, kmer_presence_vector,
                     test_results_file
                     )
-            elif Samples.phenotype_scale == "continuous":
+            elif phenotypes.scale == "continuous":
                 pvalue = self.conduct_t_test(
                     kmer, kmer_presence,
                     test_results_file
@@ -540,7 +553,7 @@ class phenotypes():
         return(pvalues)
 
     def test_result_output(self, code):
-        if Samples.phenotype_scale == "continuous":
+        if phenotypes.scale == "continuous":
             beginning_text = "t-test_results_"
         else:
             beginning_text = "chi-squared_test_results_"
@@ -735,7 +748,7 @@ class phenotypes():
             )
 
     def concatenate_test_files(self, phenotype):
-        if Samples.phenotype_scale == "continuous":
+        if phenotypes.scale == "continuous":
             beginning_text = "t-test_results_"
         else:
             beginning_text = "chi-squared_test_results_"
@@ -853,13 +866,13 @@ class phenotypes():
 
     @staticmethod
     def write_headerline(outputfile):
-        if Samples.phenotype_scale == "continuous":
+        if phenotypes.scale == "continuous":
             outputfile.write(
                 "K-mer\tWelch's_t-statistic\tp-value\t+_group_mean\
                 \t-_group_mean\tNo._of_samples_with_k-mer\
                 \tSamples_with_k-mer\n"
                 )
-        elif Samples.phenotype_scale == "binary":
+        elif phenotypes.scale == "binary":
             outputfile.write(
                 "K-mer\tChi-square_statistic\tp-value\
                 \tNo._of_samples_with_k-mer\tSamples_with_k-mer\n"
@@ -870,12 +883,67 @@ class phenotypes():
     @classmethod
     def preparations_for_modeling(cls):
         if len(Input.phenotypes_to_analyse) > 1:
-            sys.stderr.write("Generating the " + cls.model_name_printing + " model:\n")
+            sys.stderr.write("Generating the " + cls.model_name_long + " model:\n")
         elif Samples.headerline:
-            sys.stderr.write("Generating the " + cls.model_name_printing + " model of " 
+            sys.stderr.write("Generating the " + cls.model_name_long + " model of " 
                 +  Samples.phenotypes[0] + " data...\n")
         else:
-            sys.stderr.write("Generating the " + cls.model_name_printing + " model...\n")
+            sys.stderr.write("Generating the " + cls.model_name_long + " model...\n")
+        cls.get_model()
+
+    @classmethod
+    def get_model(cls):
+        if cls.scale == "continuous":
+            # Defining linear regression parameters    
+            if cls.penalty == 'l1' or "L1":
+                cls.model = Lasso(max_iter=cls.max_iter, tol=cls.tol)        
+            if cls.penalty == 'l2' or "L2":
+                cls.model = Ridge(max_iter=cls.max_iter, tol=cls.tol)
+            if cls.penalty == 'elasticnet' or "L1+L2":
+                cls.model = ElasticNet(
+                    l1_ratio=cls.l1_ratio, max_iter=cls.max_iter, tol=cls.tol
+                    )
+        elif cls.scale == "binary":
+            if cls.model_name_long == "logistic regression":
+                #Defining logistic regression parameters
+                if cls.penalty == "L1" or "l1":
+                    cls.model = LogisticRegression(
+                        penalty='l1', solver='saga',
+                        max_iter=cls.max_iter, tol=cls.tol
+                        )        
+                elif cls.penalty == "L2" or "l2":
+                    cls.model = LogisticRegression(
+                        penalty='l2', solver='saga',
+                        max_iter=cls.max_iter, tol=cls.tol
+                        )
+                elif cls.penalty == "elasticnet" or "L1+L2":
+                    cls.model = SGDClassifier(
+                        penalty='elasticnet', l1_ratio=cls.l1_ratio,
+                        max_iter=cls.max_iter, tol=cls.tol, loss='log'
+                        )
+            elif cls.model_name_long == "support vector machine":
+                cls.model = SVC(kernel=cls.kernel, probability=True, max_iter=cls.max_iter, tol=cls.tol) 
+            elif cls.model_name_long == "random_forest":
+                cls.model = RandomForestClassifier(n_estimators=100)
+
+
+    def machine_learning_modelling(self):
+        if len(Input.phenotypes_to_analyse) > 1:
+            sys.stderr.write("\tof " 
+                +  self.name + " data...\n")
+        summary_file, coeff_file, model_file = self.get_outputfile_names()
+        summary_file = open(summary_file, "w")
+        coeff_file = open(coeff_file, "w")
+        model_file = open(model_file, "w")
+        if len(self.kmers_for_ML) == 0:
+            summary_file.write("No k-mers passed the step of k-mer filtering for " \
+                "machine learning modelling.\n")
+            return
+        self.get_dataframe_for_machine_learning()
+        summary_file.write("Dataset:\n%s\n\n" % self.skl_dataset)
+
+
+
 
     def get_dataframe_for_machine_learning(self):
         kmer_lists = ["K-mer_lists/" + sample + "_mapped.txt" for sample in Input.samples]
@@ -904,22 +972,6 @@ class phenotypes():
         self.X_test = self.ML_df_test.iloc[:,0:-2]
         self.y_test = self.ML_df_test.iloc[:,-2:-1]
         self.weights_test = self.ML_df_test.iloc[:,-1:]
-
-
-    def machine_learning_modelling(self):
-        if len(Input.phenotypes_to_analyse) > 1:
-            sys.stderr.write("\tof " 
-                +  self.name + " data...\n")
-        summary_file, coeff_file, model_file = self.get_outputfile_names()
-        summary_file = open(summary_file, "w")
-        coeff_file = open(coeff_file, "w")
-        model_file = open(model_file, "w")
-        if len(self.kmers_for_ML) == 0:
-            summary_file.write("No k-mers passed the step of k-mer filtering for " \
-                "machine learning modelling.\n")
-            return
-        self.get_dataframe_for_machine_learning()
-
 
 
     def get_outputfile_names(self):
@@ -2121,7 +2173,8 @@ def modeling(args):
         args.gammas, args.gamma_min, args.gamma_max, args.n_gammas,
         args.min, args.max, args.mpheno, args.length, args.cutoff,
         args.num_threads, args.pvalue, args.n_kmers, args.FDR, 
-        args.Bonferroni, args.binary_classifier
+        args.Bonferroni, args.binary_classifier, args.penalty,
+        args.max_iter, args.tol, args.l1_ratio
         )
     Input.get_multithreading_parameters()
 
@@ -2137,7 +2190,7 @@ def modeling(args):
     Input.pool.map(lambda x: x.map_samples(), Input.samples.values())
     if args.weights == "+":
         Samples.get_weights()
-
+    map(lambda x: print(x.name, x.weight), Input.samples.values())
     # Analyses of phenotypes
     phenotypes.preparations_for_kmer_testing()
     map(
