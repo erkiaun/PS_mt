@@ -12,7 +12,6 @@ from subprocess import call, Popen, PIPE, check_output
 import math
 import sys
 import warnings
-import time
 warnings.showwarning = lambda *args, **kwargs: None
 
 from Bio.Phylo.TreeConstruction import DistanceTreeConstructor, _DistanceMatrix
@@ -34,9 +33,9 @@ from sklearn.metrics import (
 from sklearn.model_selection import RandomizedSearchCV, GridSearchCV, train_test_split
 from functools import partial
 import Bio
-import sklearn.datasets
 import numpy as np
 import pandas as pd
+import sklearn.datasets
 
 
 class Input():
