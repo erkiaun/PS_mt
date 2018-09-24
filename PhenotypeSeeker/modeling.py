@@ -489,7 +489,7 @@ class phenotypes():
         counter = 0
 
         multithreading_code = split_of_kmer_lists[0][-5:]
-        open(self.test_result_output(
+        test_results_file = open(self.test_result_output(
             multithreading_code
             ), "w")
         text1_4_stderr = self.get_text1_4_stderr(phenotype)
@@ -557,7 +557,7 @@ class phenotypes():
 
     @classmethod
     def conduct_t_test(
-        self, kmer, kmer_presence_vector
+        self, kmer, kmer_presence_vector, test_results_file
         ):
         samples_w_kmer = []
         x = []
@@ -576,7 +576,7 @@ class phenotypes():
             x, y, x_weights, y_weights
             )
 
-        self.test_results_file.write(
+        test_results_file.write(
             kmer + "\t" + str(round(t_statistic, 2)) + "\t" + \
             "%.2E" % pvalue + "\t" + str(round(mean_x, 2)) + "\t" + \
             str(round(mean_y,2)) + "\t" + str(len(samples_w_kmer)) + "\t| " + \
@@ -625,7 +625,7 @@ class phenotypes():
         return t, pvalue, wtd_mean_x, wtd_mean_y
 
     def conduct_chi_squared_test(
-        self, kmer, kmer_presence
+        self, kmer, kmer_presence, test_results_file
         ):
         samples_w_kmer = []
         (
@@ -659,7 +659,7 @@ class phenotypes():
             ],
             1
             )
-        self.test_results_file.write(
+        test_results_file.write(
             kmer + "\t%.2f\t%.2E\t" % chisquare_results 
             + str(no_samples_w_kmer)  +"\t| " + " ".join(samples_w_kmer) + "\n"
             )
