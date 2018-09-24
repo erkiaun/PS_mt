@@ -877,12 +877,12 @@ class phenotypes():
         self.ML_df['phenotype'] = [
             sample.phenotypes[self.name] for sample in Input.samples.values()
             ]
-        print(shape(self.ML_df))
+        print(self.ML_df.shape)
         self.ML_df['weight'] = [
             sample.weight for sample in Input.samples.values()
             ]
         self.ML_df = self.ML_df.loc[self.ML_df.phenotype != 'NA']
-        print(shape(self.ML_df))
+        print(self.ML_df.shape)
 
     def machine_learning_modelling(self):
         if len(Input.phenotypes_to_analyse) > 1:
