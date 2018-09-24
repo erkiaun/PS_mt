@@ -440,7 +440,9 @@ class phenotypes():
         stderr_print.currentKmerNum.value = 0
         stderr_print.previousPercent.value = 0
         print(self.vectors_as_multiple_input)
-        pvalues_from_all_threads = Input.pool.map(self.get_kmers_tested, self.vectors_as_multiple_input)
+        pvalues_from_all_threads = Input.pool.map(
+            self.get_kmers_tested, self.vectors_as_multiple_input
+            )
         self.pvalues = \
             sorted(list(chain(*pvalues_from_all_threads)))
         sys.stderr.write("\n")
@@ -492,7 +494,7 @@ class phenotypes():
         test_results_file = open(self.test_result_output(
             multithreading_code
             ), "w")
-        text1_4_stderr = self.get_text1_4_stderr(phenotype)
+        text1_4_stderr = self.get_text1_4_stderr()
         text2_4_stderr = "tests conducted."
         for line in izip_longest(
                 *[open(item) for item in split_of_kmer_lists], fillvalue = ''
@@ -545,12 +547,11 @@ class phenotypes():
             outputfile = beginning_text + code + ".txt"
         return outputfile
 
-    @staticmethod
-    def get_text1_4_stderr(phenotype):
+    def get_text1_4_stderr(self.):
         if Samples.headerline:
-            text1_4_stderr = phenotype + ": "
+            text1_4_stderr = self.name + ": "
         elif len(Input.phenotypes_to_analyse) > 1:
-            text1_4_stderr = "phenotype " + phenotype + ": "
+            text1_4_stderr = "phenotype " + self.name + ": "
         else:
             text1_4_stderr = ""
         return text1_4_stderr
