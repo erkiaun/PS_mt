@@ -508,7 +508,7 @@ class phenotypes():
         
 
     def get_kmers_tested(self, split_of_kmer_lists):
-
+        map(lambda x: print(x.ML_df), Input.phenotypes_to_analyse.values())
         pvalue = None
         pvalues = []
         counter = 0
