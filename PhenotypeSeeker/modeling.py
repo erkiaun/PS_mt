@@ -189,11 +189,11 @@ class Samples():
     max_samples = None
     num_threads = None
 
-    def __init__(self, name, address, phenotypes):
+    def __init__(self, name, address, phenotypes, weight=1):
         self.name = name
         self.address = address
         self.phenotypes = phenotypes
-        self.weight = 6
+        self.weight = weight
     
 
         Samples.no_samples += 1
@@ -2199,10 +2199,8 @@ def modeling(args):
     sys.stderr.write("Mapping samples to the feature vector space:\n")
     stderr_print.currentSampleNum.value = 0
     Input.pool.map(lambda x: x.map_samples(), Input.samples.values())
-    map(lambda x: print(x.name, x.weight, id(x.weight)), Input.samples.values())
     if args.weights == "+":
         Samples.get_weights()
-    map(lambda x: print(x.name, x.weight, id(x.weight)), Input.samples.values())
     # Analyses of phenotypes
     phenotypes.preparations_for_kmer_testing()
     map(
