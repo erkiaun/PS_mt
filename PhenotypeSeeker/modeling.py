@@ -511,7 +511,7 @@ class phenotypes():
         
 
     def get_kmers_tested(self, samples, split_of_kmer_lists):
-        map(lambda x: print(x.name, x.weight, id(x.weight)), samples)
+        
         pvalue = None
         pvalues = []
         counter = 0
@@ -539,12 +539,12 @@ class phenotypes():
             if phenotypes.scale == "binary":
                 pvalue = self.conduct_chi_squared_test(
                     kmer, kmer_presence_vector,
-                    test_results_file
+                    test_results_file, samples
                     )
             elif phenotypes.scale == "continuous":
                 pvalue = self.conduct_t_test(
-                    kmer, kmer_presence,
-                    test_results_file
+                    kmer, kmer_presence_vector,
+                    test_results_file, samples
                     )
             if pvalue:
                 pvalues.append(pvalue)
@@ -584,7 +584,8 @@ class phenotypes():
 
     @classmethod
     def conduct_t_test(
-        self, kmer, kmer_presence_vector, test_results_file
+        self, kmer, kmer_presence_vector,
+        test_results_file, samples
         ):
         samples_w_kmer = []
         x = []
@@ -593,7 +594,8 @@ class phenotypes():
         y_weights = []
         
         self.get_samples_distribution_for_ttest(
-            x, y, x_weights, y_weights, kmer_presence_vector, samples_w_kmer
+            x, y, x_weights, y_weights,kmer_presence_vector,
+            samples_w_kmer, samples
             )
 
         if len(x) < Samples.min_samples or len(y) < 2 or len(x) > Samples.max_samples:
@@ -613,9 +615,10 @@ class phenotypes():
 
     def get_samples_distribution_for_ttest(
             self, x, y, x_weights, y_weights,
-            kmer_presence_vector, samples_w_kmer
+            kmer_presence_vector, samples_w_kmer,
+            samples
             ):
-        for index, sample in enumerate(Input.samples.values()):
+        for index, sample in enumerate(samples):
             sample_phenotype = sample.phenotypes[self.name]
             if sample_phenotype != "NA":
                 if kmer_presence_vector[index] == "0":
@@ -652,14 +655,15 @@ class phenotypes():
         return t, pvalue, wtd_mean_x, wtd_mean_y
 
     def conduct_chi_squared_test(
-        self, kmer, kmer_presence, test_results_file
+        self, kmer, kmer_presence, test_results_file,
+        samples
         ):
         samples_w_kmer = []
         (
         w_pheno_w_kmer, w_pheno_wo_kmer, wo_pheno_w_kmer, wo_pheno_wo_kmer,
         no_samples_wo_kmer
         ) = self.get_samples_distribution_for_chisquared(
-            kmer_presence, samples_w_kmer
+            kmer_presence, samples_w_kmer, samples
             )
         no_samples_w_kmer = len(samples_w_kmer)
         if no_samples_w_kmer < Samples.min_samples or no_samples_wo_kmer < 2 \
@@ -694,15 +698,16 @@ class phenotypes():
         return pvalue
 
     def get_samples_distribution_for_chisquared(
-            self, kmers_presence_vector, samples_w_kmer
+            self, kmers_presence_vector, samples_w_kmer,
+            samples
             ):
         no_samples_wo_kmer = 0
         with_pheno_with_kmer = 0
         with_pheno_without_kmer = 0
         without_pheno_with_kmer = 0
         without_pheno_without_kmer = 0
-        for index, sample in enumerate(Input.samples.values()):
-            # print(sample.name, sample.weight, id(sample.weight))
+        for index, sample in enumerate(samples):
+            print(sample.name, sample.weight, id(sample.weight))
             if sample.phenotypes[self.name] == "1":
                 if (kmers_presence_vector[index] != "0"):
                     with_pheno_with_kmer += sample.weight 
