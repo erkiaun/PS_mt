@@ -189,10 +189,11 @@ class Samples():
     max_samples = None
     num_threads = None
 
-    def __init__(self, name, address, phenotypes):
+    def __init__(self, name, address, phenotypes, weights=""):
         self.name = name
         self.address = address
         self.phenotypes = phenotypes
+        self.weights = weights
     
 
         Samples.no_samples += 1
@@ -698,6 +699,7 @@ class phenotypes():
         without_pheno_with_kmer = 0
         without_pheno_without_kmer = 0
         for index, sample in enumerate(Input.samples.values()):
+            print(sample.name)
             print(sample.weight)
             if sample.phenotypes[self.name] == "1":
                 if (kmers_presence_vector[index] != "0"):
