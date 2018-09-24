@@ -416,6 +416,7 @@ class phenotypes():
         self.pvalues = None
         self.kmers_for_ML = set()
         self.ML_df = pd.DataFrame()
+        self.test_results_file = ""
 
     # -------------------------------------------------------------------
     # Functions for calculating the association test results for kmers.
@@ -431,7 +432,7 @@ class phenotypes():
         stderr_print.currentKmerNum.value = 0
         stderr_print.previousPercent.value = 0
         pvalues_from_all_threads = Input.pool.map(partial(
-                self.get_kmers_tested, self.name
+                self.get_kmers_tested
                 ), 
             self.vectors_as_multiple_input
             )
@@ -477,18 +478,18 @@ class phenotypes():
                 )
         
 
-    def get_kmers_tested(self, phenotype, split_of_kmer_lists):
+    def get_kmers_tested(self, split_of_kmer_lists):
 
         names_of_samples = Input.samples.keys()
         phenotypes_of_samples = [
-            sample_data.phenotypes[phenotype] for sample_data in \
+            sample_data.phenotypes[self.name] for sample_data in \
             Input.samples.values()
             ]
         pvalues = []
         counter = 0
 
         multithreading_code = split_of_kmer_lists[0][-5:]
-        test_results_file = open(self.test_result_output(
+        open(self.test_result_output(
             multithreading_code
             ), "w")
         text1_4_stderr = self.get_text1_4_stderr(phenotype)
@@ -505,11 +506,11 @@ class phenotypes():
                     self.no_kmers_to_analyse.value, text2_4_stderr, text1_4_stderr
                 )
             kmer = line[0].split()[0]
-            kmer_presence = [j.split()[1].strip() for j in line]
+            kmer_presence_vector = [j.split()[1].strip() for j in line]
 
             if Samples.phenotype_scale == "binary":
                 pvalue = self.conduct_chi_squared_test(
-                    phenotypes_of_samples, names_of_samples, kmer, kmer_presence,
+                    kmer, kmer_presence_vector,
                     test_results_file
                     )
             elif Samples.phenotype_scale == "continuous":
@@ -542,7 +543,7 @@ class phenotypes():
                 self.name + "_" + code + ".txt"
         else:
             outputfile = beginning_text + code + ".txt"
-        return outputfile
+        self.test_results_file = outputfile
 
     @staticmethod
     def get_text1_4_stderr(phenotype):
@@ -556,8 +557,7 @@ class phenotypes():
 
     @classmethod
     def conduct_t_test(
-        cls, phenotypes_of_samples, names_of_samples, kmer, kmer_presence, 
-        test_results_file
+        self, kmer, kmer_presence_vector
         ):
         samples_w_kmer = []
         x = []
@@ -565,9 +565,8 @@ class phenotypes():
         x_weights = []
         y_weights = []
         
-        cls.get_samples_distribution_for_ttest(
-            x, y, x_weights, y_weights, kmer_presence,
-            samples_w_kmer, phenotypes_of_samples, names_of_samples
+        self.get_samples_distribution_for_ttest(
+            x, y, x_weights, y_weights, kmer_presence_vector, samples_w_kmer
             )
 
         if len(x) < Samples.min_samples or len(y) < 2 or len(x) > Samples.max_samples:
@@ -577,7 +576,7 @@ class phenotypes():
             x, y, x_weights, y_weights
             )
 
-        test_results_file.write(
+        self.test_results_file.write(
             kmer + "\t" + str(round(t_statistic, 2)) + "\t" + \
             "%.2E" % pvalue + "\t" + str(round(mean_x, 2)) + "\t" + \
             str(round(mean_y,2)) + "\t" + str(len(samples_w_kmer)) + "\t| " + \
@@ -585,15 +584,14 @@ class phenotypes():
             )
         return pvalue
 
-    @staticmethod
     def get_samples_distribution_for_ttest(
-            x, y, x_weights, y_weights, list1,
-            samples_w_kmer, phenotypes_of_samples, names_of_samples
+            self, x, y, x_weights, y_weights,
+            kmer_presence_vector, samples_w_kmer
             ):
-        for i, item in enumerate(phenotypes_of_samples):
-            sample_name = names_of_samples[i]
-            if item != "NA":
-                if list1[i] == "0":
+        for index, sample in enumerate(Input.samples.values()):
+            sample_phenotype = sample.phenotypes[self.name]
+            if sample_phenotype != "NA":
+                if kmer_presence_vector[index] == "0":
                     y.append(float(item))
                     y_weights.append(Input.samples[sample_name].weight)
                 else:
@@ -602,7 +600,7 @@ class phenotypes():
                     samples_w_kmer.append(sample_name)
 
     @staticmethod
-    def t_test(x, y, x_weights, y_weights):
+    def t_test(self, x, y, x_weights, y_weights):
         #Parametes for group containig the k-mer
         wtd_mean_y = np.average(y, weights=y_weights)
         sumofweightsy = sum(y_weights)
@@ -627,20 +625,21 @@ class phenotypes():
         return t, pvalue, wtd_mean_x, wtd_mean_y
 
     def conduct_chi_squared_test(
-        self, phenotypes_of_samples, names_of_samples, kmer, kmer_presence,
-        test_results_file
+        self, kmer, kmer_presence
         ):
         samples_w_kmer = []
         (
         w_pheno_w_kmer, w_pheno_wo_kmer, wo_pheno_w_kmer, wo_pheno_wo_kmer
         ) = self.get_samples_distribution_for_chisquared(
-            phenotypes_of_samples, names_of_samples, kmer_presence, samples_w_kmer
+            kmer_presence, samples_w_kmer
             )
         (w_pheno, wo_pheno, w_kmer, wo_kmer, total) = self.get_totals_in_classes(
             w_pheno_w_kmer, w_pheno_wo_kmer, wo_pheno_w_kmer, wo_pheno_wo_kmer
             )
         no_samples_w_kmer = len(samples_w_kmer)
-        if no_samples_w_kmer < Samples.min_samples or no_samples_w_kmer > Samples.max_samples:
+        no_samples_wo_kmer = Samples.no_samples-no_samples_w_kmer
+        if no_samples_w_kmer < Samples.min_samples or no_samples_wo_kmer < 2 \
+            or no_samples_w_kmer > Samples.max_samples:
             return
 
         (
@@ -660,7 +659,7 @@ class phenotypes():
             ],
             1
             )
-        test_results_file.write(
+        self.test_results_file.write(
             kmer + "\t%.2f\t%.2E\t" % chisquare_results 
             + str(no_samples_w_kmer)  +"\t| " + " ".join(samples_w_kmer) + "\n"
             )
@@ -668,28 +667,28 @@ class phenotypes():
         return pvalue
 
     @staticmethod
-    def get_samples_distribution_for_chisquared(
-            phenotypes_of_samples, names_of_samples, list1, samples_w_kmer
+    def get_samples_distribution_for_chisquared(self,
+            kmers_presence_vector, samples_w_kmer
             ):
         with_pheno_with_kmer = 0
         with_pheno_without_kmer = 0
         without_pheno_with_kmer = 0
         without_pheno_without_kmer = 0
-        for i, item in enumerate(phenotypes_of_samples):
-            sample_name = names_of_samples[i]
-            if item != "NA":
-                if item == "1":
-                    if (list1[i] != "0"):
-                        with_pheno_with_kmer += Input.samples[sample_name].weight 
+        for index, sample in enumerate(Input.samples.values()):
+            sample_phenotype = sample.phenotypes[self.name]
+            if sample_phenotype != "NA":
+                if sample_phenotype == "1":
+                    if (kmers_presence_vector[index] != "0"):
+                        with_pheno_with_kmer += sample.weight 
                         samples_w_kmer.append(sample_name)
                     else:
-                        with_pheno_without_kmer += Input.samples[sample_name].weight
+                        with_pheno_without_kmer += sample.weight
                 else:
-                    if (list1[i] != "0"):
-                        without_pheno_with_kmer += Input.samples[sample_name].weight
-                        samples_w_kmer.append(names_of_samples[i])
+                    if (kmers_presence_vector[index] != "0"):
+                        without_pheno_with_kmer += sample.weight
+                        samples_w_kmer.append(sample_name)
                     else:
-                        without_pheno_without_kmer += Input.samples[sample_name].weight
+                        without_pheno_without_kmer += sample.weight
         return(
             with_pheno_with_kmer, with_pheno_without_kmer,
             without_pheno_with_kmer, without_pheno_without_kmer
@@ -780,12 +779,10 @@ class phenotypes():
         # Filters the k-mers by their p-value achieved in statistical 
         # testing.
         pvalues = self.pvalues
-        print(pvalues)
         phenotype = self.name
         nr_of_kmers_tested = float(len(pvalues))
         self.get_pvalue_cutoff(pvalues, nr_of_kmers_tested)
         max_pvalue_by_limit = float('%.2E' % pvalues[self.kmer_limit-1])
-        print(max_pvalue_by_limit)
 
         stderr_print.currentKmerNum.value = 0
         stderr_print.previousPercent.value = 0
