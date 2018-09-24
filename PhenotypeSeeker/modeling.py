@@ -629,7 +629,7 @@ class phenotypes():
         ):
         samples_w_kmer = []
         (
-        w_pheno_w_kmer, w_pheno_wo_kmer, wo_pheno_w_kmer, wo_pheno_wo_kmer
+        w_pheno_w_kmer, w_pheno_wo_kmer, wo_pheno_w_kmer, wo_pheno_wo_kmer,
         no_samples_wo_kmer
         ) = self.get_samples_distribution_for_chisquared(
             kmer_presence, samples_w_kmer
