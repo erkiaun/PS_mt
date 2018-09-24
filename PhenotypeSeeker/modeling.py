@@ -193,7 +193,7 @@ class Samples():
         self.name = name
         self.address = address
         self.phenotypes = phenotypes
-        self.weight = 1
+    
 
         Samples.no_samples += 1
 
