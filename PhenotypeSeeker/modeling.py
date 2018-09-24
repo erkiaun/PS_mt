@@ -699,8 +699,7 @@ class phenotypes():
         without_pheno_with_kmer = 0
         without_pheno_without_kmer = 0
         for index, sample in enumerate(Input.samples.values()):
-            print(sample.name)
-            print(sample.weight)
+            print(sample.name, sample.weight, id(sample.weight))
             if sample.phenotypes[self.name] == "1":
                 if (kmers_presence_vector[index] != "0"):
                     with_pheno_with_kmer += sample.weight 
@@ -2192,9 +2191,10 @@ def modeling(args):
     sys.stderr.write("Mapping samples to the feature vector space:\n")
     stderr_print.currentSampleNum.value = 0
     Input.pool.map(lambda x: x.map_samples(), Input.samples.values())
+    map(lambda x: print(x.name, x.weight, id(x.weight)), Input.samples.values())
     if args.weights == "+":
         Samples.get_weights()
-    map(lambda x: print(x.name, x.weight), Input.samples.values())
+    map(lambda x: print(x.name, x.weight, id(x.weight)), Input.samples.values())
     # Analyses of phenotypes
     phenotypes.preparations_for_kmer_testing()
     map(
