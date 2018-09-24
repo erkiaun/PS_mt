@@ -543,7 +543,7 @@ class phenotypes():
                 self.name + "_" + code + ".txt"
         else:
             outputfile = beginning_text + code + ".txt"
-        self.test_results_file = outputfile
+        return outputfile
 
     @staticmethod
     def get_text1_4_stderr(phenotype):
