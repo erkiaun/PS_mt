@@ -189,11 +189,11 @@ class Samples():
     max_samples = None
     num_threads = None
 
-    def __init__(self, name, address, phenotypes, weight=""):
+    def __init__(self, name, address, phenotypes):
         self.name = name
         self.address = address
         self.phenotypes = phenotypes
-        self.weight = weight
+        self.weight = None
     
 
         Samples.no_samples += 1
