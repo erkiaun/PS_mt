@@ -423,8 +423,16 @@ class phenotypes():
         self.name = name
         self.pvalues = None
         self.kmers_for_ML = set()
-        self.ML_df = pd.DataFrame()
-        self.test_results_file = ""
+        self.ML_df = None
+        self.ML_df_train = None
+        self.ML_df_test = None
+        self.X_train = None
+        self.y_train = None
+        self.X_test = None
+        self.y_test = None
+        self.X_weights = None
+        self.y_weights = None
+
 
     # -------------------------------------------------------------------
     # Functions for calculating the association test results for kmers.
@@ -784,7 +792,6 @@ class phenotypes():
         nr_of_kmers_tested = float(len(pvalues))
         self.get_pvalue_cutoff(pvalues, nr_of_kmers_tested)
         max_pvalue_by_limit = float('%.2E' % pvalues[self.kmer_limit-1])
-        print(max_pvalue_by_limit)
 
         stderr_print.currentKmerNum.value = 0
         stderr_print.previousPercent.value = 0
@@ -801,7 +808,7 @@ class phenotypes():
             line_to_list = line.split()
             if float(line_to_list[2]) < self.pvalue_cutoff:
                 outputfile.write(line)
-                if float(line_to_list[2]) < max_pvalue_by_limit:
+                if float(line_to_list[2]) <= max_pvalue_by_limit:
                         self.kmers_for_ML.add(line_to_list[0])
             if counter%checkpoint == 0:
                 stderr_print.currentKmerNum.value += checkpoint
@@ -884,6 +891,7 @@ class phenotypes():
         print(self.ML_df.shape)
         self.ML_df = self.ML_df.loc[self.ML_df.phenotype != 'NA']
         print(self.ML_df.shape)
+        self.ML_df_train, self.ML_df_test = train_test_split(ML_df, test_size=0.25, random_state=0) 
 
 
     def machine_learning_modelling(self):
