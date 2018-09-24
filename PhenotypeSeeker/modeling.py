@@ -508,6 +508,7 @@ class phenotypes():
 
     def get_kmers_tested(self, split_of_kmer_lists):
 
+        pvalue = None
         pvalues = []
         counter = 0
 
@@ -699,6 +700,7 @@ class phenotypes():
         for index, sample in enumerate(Input.samples.values()):
             if sample.phenotypes[self.name] == "1":
                 if (kmers_presence_vector[index] != "0"):
+                    print(sample.weight)
                     with_pheno_with_kmer += sample.weight 
                     samples_w_kmer.append(sample.name)
                 else:
