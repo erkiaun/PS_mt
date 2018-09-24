@@ -667,7 +667,7 @@ class phenotypes():
         return pvalue
 
     def get_samples_distribution_for_chisquared(
-            self, kmers_presence_vector, samples_w_kmer, samples_wo_kmer
+            self, kmers_presence_vector, samples_w_kmer, no_samples_wo_kmer
             ):
         with_pheno_with_kmer = 0
         with_pheno_without_kmer = 0
