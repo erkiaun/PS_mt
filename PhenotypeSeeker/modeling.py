@@ -547,7 +547,7 @@ class phenotypes():
             outputfile = beginning_text + code + ".txt"
         return outputfile
 
-    def get_text1_4_stderr(self.):
+    def get_text1_4_stderr(self):
         if Samples.headerline:
             text1_4_stderr = self.name + ": "
         elif len(Input.phenotypes_to_analyse) > 1:
