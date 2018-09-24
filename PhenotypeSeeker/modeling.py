@@ -464,7 +464,9 @@ class phenotypes():
         stderr_print.previousPercent.value = 0
         map(lambda x: print(x.name, x.weight, id(x.weight)), Input.samples.values())
         pvalues_from_all_threads = Input.pool.map(
-            self.get_kmers_tested, self.vectors_as_multiple_input
+            partial(
+                self.get_kmers_tested, Input.samples.values()
+                ), self.vectors_as_multiple_input
             )
         self.pvalues = \
             sorted(list(chain(*pvalues_from_all_threads)))
@@ -508,8 +510,8 @@ class phenotypes():
                 )
         
 
-    def get_kmers_tested(self, split_of_kmer_lists):
-  
+    def get_kmers_tested(self, samples, split_of_kmer_lists):
+        map(lambda x: print(x.name, x.weight, id(x.weight)), samples)
         pvalue = None
         pvalues = []
         counter = 0
