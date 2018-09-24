@@ -628,16 +628,15 @@ class phenotypes():
         self, kmer, kmer_presence, test_results_file
         ):
         samples_w_kmer = []
-        no_samples_wo_kmer = 0
         (
         w_pheno_w_kmer, w_pheno_wo_kmer, wo_pheno_w_kmer, wo_pheno_wo_kmer
+        no_samples_wo_kmer
         ) = self.get_samples_distribution_for_chisquared(
-            kmer_presence, samples_w_kmer, no_samples_wo_kmer
+            kmer_presence, samples_w_kmer
             )
         no_samples_w_kmer = len(samples_w_kmer)
         if no_samples_w_kmer < Samples.min_samples or no_samples_wo_kmer < 2 \
             or no_samples_w_kmer > Samples.max_samples:
-            print(no_samples_w_kmer, no_samples_wo_kmer)
             return
         (w_pheno, wo_pheno, w_kmer, wo_kmer, total) = self.get_totals_in_classes(
             w_pheno_w_kmer, w_pheno_wo_kmer, wo_pheno_w_kmer, wo_pheno_wo_kmer
@@ -668,8 +667,9 @@ class phenotypes():
         return pvalue
 
     def get_samples_distribution_for_chisquared(
-            self, kmers_presence_vector, samples_w_kmer, no_samples_wo_kmer
+            self, kmers_presence_vector, samples_w_kmer
             ):
+        no_samples_wo_kmer = 0
         with_pheno_with_kmer = 0
         with_pheno_without_kmer = 0
         without_pheno_with_kmer = 0
@@ -692,6 +692,7 @@ class phenotypes():
         return(
             with_pheno_with_kmer, with_pheno_without_kmer,
             without_pheno_with_kmer, without_pheno_without_kmer
+            no_samples_wo_kmer
             )
 
     @staticmethod
