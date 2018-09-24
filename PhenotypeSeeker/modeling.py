@@ -411,7 +411,7 @@ class metrics():
 
 class phenotypes():
 
-    scale = None
+    scale = "binary"
 
     vectors_as_multiple_input = []
     progress_checkpoint = Value("i", 0)
