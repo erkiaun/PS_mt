@@ -483,7 +483,7 @@ class phenotypes():
                 )
         
 
-    def get_kmers_tested(self, name, split_of_kmer_lists):
+    def get_kmers_tested(self, split_of_kmer_lists):
 
         pvalues = []
         counter = 0
