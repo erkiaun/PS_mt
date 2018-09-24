@@ -462,7 +462,7 @@ class phenotypes():
     def test_kmers_association_with_phenotype(self):
         stderr_print.currentKmerNum.value = 0
         stderr_print.previousPercent.value = 0
-        map(lambda x: print(x.ML_df), Input.phenotypes_to_analyse.values())
+        map(lambda x: print(x.name, x.weight, id(x.weight)), Input.samples.values())
         pvalues_from_all_threads = Input.pool.map(
             self.get_kmers_tested, self.vectors_as_multiple_input
             )
