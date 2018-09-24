@@ -628,16 +628,16 @@ class phenotypes():
         self, kmer, kmer_presence, test_results_file
         ):
         samples_w_kmer = []
+        no_samples_wo_kmer = 0
         (
         w_pheno_w_kmer, w_pheno_wo_kmer, wo_pheno_w_kmer, wo_pheno_wo_kmer
         ) = self.get_samples_distribution_for_chisquared(
-            kmer_presence, samples_w_kmer
+            kmer_presence, samples_w_kmer, no_samples_wo_kmer
             )
         (w_pheno, wo_pheno, w_kmer, wo_kmer, total) = self.get_totals_in_classes(
             w_pheno_w_kmer, w_pheno_wo_kmer, wo_pheno_w_kmer, wo_pheno_wo_kmer
             )
         no_samples_w_kmer = len(samples_w_kmer)
-        no_samples_wo_kmer = Samples.no_samples-no_samples_w_kmer
         if no_samples_w_kmer < Samples.min_samples or no_samples_wo_kmer < 2 \
             or no_samples_w_kmer > Samples.max_samples:
             return
@@ -667,7 +667,7 @@ class phenotypes():
         return pvalue
 
     def get_samples_distribution_for_chisquared(
-            self, kmers_presence_vector, samples_w_kmer
+            self, kmers_presence_vector, samples_w_kmer, samples_wo_kmer
             ):
         with_pheno_with_kmer = 0
         with_pheno_without_kmer = 0
@@ -680,12 +680,14 @@ class phenotypes():
                     samples_w_kmer.append(sample.name)
                 else:
                     with_pheno_without_kmer += sample.weight
+                    no_samples_wo_kmer += 1
             elif sample.phenotypes[self.name] == "0":
                 if (kmers_presence_vector[index] != "0"):
                     without_pheno_with_kmer += sample.weight
                     samples_w_kmer.append(sample.name)
                 else:
                     without_pheno_without_kmer += sample.weight
+                    no_samples_wo_kmer += 1
         return(
             with_pheno_with_kmer, with_pheno_without_kmer,
             without_pheno_with_kmer, without_pheno_without_kmer
@@ -873,7 +875,12 @@ class phenotypes():
         self.ML_df['phenotype'] = [
             sample.phenotypes[self.name] for sample in Input.samples.values()
             ]
+        print(self.ML_df.shape())
+        self.ML_df['weight'] = [
+            sample.weight for sample in Input.samples.values()
+            ]
         self.ML_df = self.ML_df.loc[self.ML_df.phenotype != 'NA']
+        print(self.ML_df.shape())
 
     def machine_learning_modelling(self):
         if len(Input.phenotypes_to_analyse) > 1:
