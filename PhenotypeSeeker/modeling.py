@@ -463,6 +463,7 @@ class phenotypes():
         stderr_print.currentKmerNum.value = 0
         stderr_print.previousPercent.value = 0
         map(lambda x: print(x.ML_df), Input.phenotypes_to_analyse.values())
+        print()
         pvalues_from_all_threads = Input.pool.map(
             self.get_kmers_tested, self.vectors_as_multiple_input
             )
