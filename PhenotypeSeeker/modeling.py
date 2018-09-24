@@ -87,9 +87,15 @@ class Input():
             FDR, B, binary_classifier
             ):
         cls._get_phenotypes_to_analyse(mpheno)
-        Samples.alphas = cls._get_alphas(alphas, alpha_min, alpha_max, n_alphas)
-        Samples.gammas = cls._get_gammas(gammas, gamma_min, gamma_max, n_gammas)
-        Samples.min_samples, Samples.max_samples = cls._get_min_max(min_samples, max_samples)
+        Samples.alphas = cls._get_alphas(
+            alphas, alpha_min, alpha_max, n_alphas
+            )
+        Samples.gammas = cls._get_gammas(
+            gammas, gamma_min, gamma_max, n_gammas
+            )
+        Samples.min_samples, Samples.max_samples = cls._get_min_max(
+            min_samples, max_samples
+            )
         Samples.kmer_length = kmer_length
         Samples.cutoff = cutoff
         Samples.num_threads = num_threads
@@ -129,7 +135,8 @@ class Input():
 
     @staticmethod
     def _get_gammas(gammas, gamma_min, gamma_max, n_gammas):
-        # Generating the vector of alphas (hyperparameters in regression analysis)
+        # Generating the vector of gammas 
+        # (hyperparameters in SVM kernel analysis)
         # based on the given command line arguments.
         if gammas == None:
             gammas = np.logspace(
@@ -157,7 +164,8 @@ class Input():
         else: 
             phenotypes_to_analyze = map(lambda x: x-1, mpheno)
         for item in phenotypes_to_analyze:
-            cls.phenotypes_to_analyse[Samples.phenotypes[item]] = phenotypes(Samples.phenotypes[item])
+            cls.phenotypes_to_analyse[Samples.phenotypes[item]] = \
+                phenotypes(Samples.phenotypes[item])
 
 class Samples():
 
@@ -432,7 +440,8 @@ class phenotypes():
         stderr_print.currentKmerNum.value = 0
         stderr_print.previousPercent.value = 0
         pvalues_from_all_threads = Input.pool.map(
-                self.get_kmers_tested, self.vectors_as_multiple_input)
+                self.get_kmers_tested, self.vectors_as_multiple_input
+                )
         self.pvalues = \
             sorted(list(chain(*pvalues_from_all_threads)))
         sys.stderr.write("\n")
@@ -477,11 +486,6 @@ class phenotypes():
 
     def get_kmers_tested(self, split_of_kmer_lists):
 
-        names_of_samples = Input.samples.keys()
-        phenotypes_of_samples = [
-            sample_data.phenotypes[self.name] for sample_data in \
-            Input.samples.values()
-            ]
         pvalues = []
         counter = 0
 
@@ -512,7 +516,7 @@ class phenotypes():
                     )
             elif Samples.phenotype_scale == "continuous":
                 pvalue = self.conduct_t_test(
-                    phenotypes_of_samples, names_of_samples, kmer, kmer_presence,
+                    kmer, kmer_presence,
                     test_results_file
                     )
             if pvalue:
