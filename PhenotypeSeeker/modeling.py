@@ -423,6 +423,7 @@ class phenotypes():
         self.name = name
         self.pvalues = None
         self.kmers_for_ML = set()
+        self.skl_dataset = None
         self.ML_df = pd.DataFrame()
         self.ML_df_train = None
         self.ML_df_test = None
@@ -888,10 +889,15 @@ class phenotypes():
         self.ML_df['weight'] = [
             sample.weight for sample in Input.samples.values()
             ]
+        self.skl_dataset = sklearn.datasets.base.Bunch(
+            data=self.ML_df.iloc[:,0:-2], target=self.ML_df['phenotype'],
+            target_names=np.array(["resistant", "sensitive"]),
+            feature_names=self.ML_df.iloc[:,0:-2].columns.values
+            )
         print(self.ML_df.shape)
         self.ML_df = self.ML_df.loc[self.ML_df.phenotype != 'NA']
         print(self.ML_df.shape)
-        self.ML_df_train, self.ML_df_test = train_test_split(ML_df, test_size=0.25, random_state=0)
+        self.ML_df_train, self.ML_df_test = train_test_split(self.ML_df, test_size=0.25, random_state=0)
         self.X_train = self.ML_df_train.iloc[:,0:-2]
         self.y_train = self.ML_df_train.iloc[:,-2:-1]
         self.weights_train = self.ML_df_train.iloc[:,-1:]
@@ -913,6 +919,8 @@ class phenotypes():
                 "machine learning modelling.\n")
             return
         self.get_dataframe_for_machine_learning()
+
+
 
     def get_outputfile_names(self):
         if Samples.headerline:
