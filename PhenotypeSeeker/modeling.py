@@ -1063,16 +1063,11 @@ class phenotypes():
         self.ML_df['weight'] = [
             sample.weight for sample in Input.samples.values()
             ]
-        self.skl_dataset = sklearn.datasets.base.Bunch(
-            data=self.ML_df.iloc[:,0:-2], target=self.ML_df['phenotype'],
-            target_names=np.array(["resistant", "sensitive"]),
-            feature_names=self.ML_df.iloc[:,0:-2].columns.values
-            )
         self.ML_df = self.ML_df.loc[self.ML_df.phenotype != 'NA']
         if self.testset_size != 0.0:
             self.ML_df_train, self.ML_df_test = train_test_split(
                 self.ML_df, test_size=self.testset_size,
-                stratify=self.skl_dataset.target, random_state=0
+                stratify=self.ML_df['phenotype'], random_state=0
                 )
             self.X_train = self.ML_df_train.iloc[:,0:-2]
             self.y_train = self.ML_df_train.iloc[:,-2:-1]
@@ -1097,22 +1092,23 @@ class phenotypes():
             if self.penalty == "L1":
                 self.model = self.best_classifier.fit(self.X_train, self.y_train)
         else:
-            self.model = self.best_classifier.fit(self.X_train, self.y_train)
+            print(self.weights_train)
+            self.model = self.best_classifier.fit(self.X_train, self.y_train, sample_weight=weights_train)
 
     def cross_validation_results(self):
         if self.model_name_long != "random forest":
             self.summary_file.write('Parameters:\n%s\n\n' % self.model)
             self.summary_file.write("Grid scores (R2 score) on development set: \n")
-            means = clf.cv_results_['mean_test_score']
-            stds = clf.cv_results_['std_test_score']
+            means = self.classifier.cv_results_['mean_test_score']
+            stds = self.classifier.cv_results_['std_test_score']
             for mean, std, params in zip(
-                    means, stds, clf.cv_results_['params']
+                    means, stds, self.classifier.cv_results_['params']
                     ):
                 f1.write(
                     "%0.3f (+/-%0.03f) for %r \n" % (mean, std * 2, params)
                     )
             self.summary_file.write("\nBest parameters found on development set: \n")
-            for key, value in clf.best_params_.iteritems():
+            for key, value in self.classifier.best_params_.iteritems():
                 self.summary_file.write(key + " : " + str(value) + "\n")
 
     def predict(self, dataset, labels):
