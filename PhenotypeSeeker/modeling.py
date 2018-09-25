@@ -1009,7 +1009,6 @@ class phenotypes():
             sys.stderr.write("\tof " 
                 +  self.name + " data...\n")
         self.get_outputfile_names()
- 
         if len(self.kmers_for_ML) == 0:
             self.summary_file.write("No k-mers passed the step of k-mer filtering for " \
                 "machine learning modelling.\n")
@@ -1017,6 +1016,7 @@ class phenotypes():
         self.get_dataframe_for_machine_learning()
         self.fit_classifier()
         self.cross_validation_results()
+        self.predictions_on_test_set()
 
 
     def get_outputfile_names(self):
@@ -1040,7 +1040,7 @@ class phenotypes():
         
         self.summary_file = open(summary_file, "w")
         self.coeff_file = open(coeff_file, "w")
-        self.model_file = open(model_file, "w")  
+        self.model_file = open(model_file, "w")
 
 
     def get_dataframe_for_machine_learning(self):
