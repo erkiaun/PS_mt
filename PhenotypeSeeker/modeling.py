@@ -244,7 +244,8 @@ class Samples():
         if cls.take_logs:
             phenotype_list = map(lambda x: math.log(x, 2), phenotype_list)
         for i,j in zip(cls.phenotypes, phenotype_list):
-            sample_phenotypes[i] = j 
+            sample_phenotypes[i] = j
+        print(phenotypes.scale)
         return cls(name, address, phenotypes)
 
     @classmethod
