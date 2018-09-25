@@ -602,7 +602,6 @@ class phenotypes():
             text1_4_stderr = ""
         return text1_4_stderr
 
-    @classmethod
     def conduct_t_test(
         self, kmer, kmer_presence_vector,
         test_results_file, samples
