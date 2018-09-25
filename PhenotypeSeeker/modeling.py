@@ -1068,7 +1068,7 @@ class phenotypes():
         self.ML_df = self.ML_df.loc[self.ML_df.phenotype != 'NA']
         self.ML_df_train, self.ML_df_test = train_test_split(
             self.ML_df, test_size=self.testset_size,
-            stratify=skl_dataset.target, random_state=0
+            stratify=self.skl_dataset.target, random_state=0
             )
         self.X_train = self.ML_df_train.iloc[:,0:-2]
         self.y_train = self.ML_df_train.iloc[:,-2:-1]
