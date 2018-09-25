@@ -1017,6 +1017,12 @@ class phenotypes():
         self.fit_classifier()
         self.cross_validation_results()
 
+        self.summary_file.write('\nTraining set:\n')
+        self.predict(X_train, y_train)
+        if testset_size != 0:
+            self.summary_file.write('\nTraining set:\n')
+            self.predict(X_test, y_test)
+
 
     def get_outputfile_names(self):
         if Samples.headerline:
@@ -1080,12 +1086,12 @@ class phenotypes():
         else:
             print(self.X_train)
             print(self.weights_train)
-            # self.model = self.best_classifier.fit(self.X_train, self.y_train,
-            #     sample_weight=self.weights_train)
+            self.model = self.best_classifier.fit(self.X_train, self.y_train,
+                sample_weight=self.weights_train)
 
     def cross_validation_results(self):
         if self.model_name_long != "random forest":
-            self.summary_file.write('Parameters:\n%s\n\n' % model)
+            self.summary_file.write('Parameters:\n%s\n\n' % self.model)
             self.summary_file.write("Grid scores (R2 score) on development set: \n")
             means = clf.cv_results_['mean_test_score']
             stds = clf.cv_results_['std_test_score']
@@ -1101,29 +1107,31 @@ class phenotypes():
 
     def predict(self, dataset, labels):
             predictions = clf.predict(dataset)
-            f1.write('\nTraining set:\n')
-            self.summary_file.write("\nModel predictions on test set:\nSample_ID " \
+            self.summary_file.write("\nModel predictions on samples:\nSample_ID " \
                 "Acutal_phenotype Predicted_phenotype\n")
             for index, row in dataset.iterrows():
                 self.summary_file.write('%s %s %s\n' % (
                     index, labels.loc[index], self.best_classifier.predict(row)
                     ))
+            if self.scale == "continuous":
+                self.model_performance_regression(dataset, labels, predictions)
 
-            # f1.write('Mean squared error: %s\n' % \
-            #          mean_squared_error(y_train, train_y_prediction))
-            # f1.write("The coefficient of determination:"
-            #     + " %s\n" % clf.score(X_train, y_train))
-            # f1.write("The Spearman correlation coefficient and p-value:" \
-            #     " %s, %s \n" % stats.spearmanr(y_train, train_y_prediction))
-            # slope, intercept, r_value, pval_r, std_err = \
-            #     stats.linregress(y_train, train_y_prediction)
-            # f1.write("The Pearson correlation coefficient and p-value: " \
-            #         " %s, %s \n" % (r_value, pval_r))
-            # f1.write("The plus/minus 1 dilution factor accuracy (for MICs):" \
-            #     " %s \n\n" % metrics.within_1_tier_accuracy(
-            #         y_train, train_y_prediction
-            #         )
-            #     )
+    def model_performance_regression(self, dataset, labels, predictions):
+        self.summary_file.write('Mean squared error: %s\n' % \
+                 mean_squared_error(labels, predictions))
+        self.summary_file.write("The coefficient of determination:"
+            + " %s\n" % clf.score(dataset, labels))
+        self.summary_file.write("The Spearman correlation coefficient and p-value:" \
+            " %s, %s \n" % stats.spearmanr(labels, predictions))
+        slope, intercept, r_value, pval_r, std_err = \
+            stats.linregress(labels, predictions)
+        self.summary_file.write("The Pearson correlation coefficient and p-value: " \
+                " %s, %s \n" % (r_value, pval_r))
+        self.summary_file.write("The plus/minus 1 dilution factor accuracy (for MICs):" \
+            " %s \n\n" % metrics.within_1_tier_accuracy(
+                labels, predictions
+                )
+            )
 
 
 def linear_regression(
