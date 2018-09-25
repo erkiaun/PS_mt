@@ -1026,7 +1026,7 @@ class phenotypes():
             self.summary_file.write('\nTest set:\n')
             self.predict(self.X_test, self.y_test)
 
-        joblib.dump(self.model, self.model_filename)
+        joblib.dump(self.model, self.model_file)
         self.write_model_coefficients_to_file()
 
         self.summary_file.close()
@@ -1094,8 +1094,6 @@ class phenotypes():
             self.X_train = self.ML_df.iloc[:,0:-2]
             self.y_train = self.ML_df.iloc[:,-2:-1].astype(int)
             self.weights_train = self.ML_df.iloc[:,-1:]
-
-        print(self.X_train)
 
         self.summary_file.write("Dataset:\n%s\n\n" % self.skl_dataset)  
 
@@ -1196,10 +1194,14 @@ class phenotypes():
     def write_model_coefficients_to_file(self):
         self.coeff_file.write("K-mer\tcoef._in_" + self.model_name_short + \
             "_model\tNo._of_samples_with_k-mer\tSamples_with_k-mer\n")
-        self.ML_df = self.ML_df.loc['coefficient'] = self.classifier.best_estimator_.coef_[0]
+        if self.model_name_short != "RF":
+            self.ML_df = self.ML_df.loc['coefficient'] = \
+                self.classifier.best_estimator_.coef_[0]
+        else:
+            self.ML_df = self.ML_df.loc['coefficient'] = \
+                self.classifier.best_estimator_.feature_importances_[0]
         for kmer in self.ML_df:
             kmer_coef = self.ML_df[kmer].loc['coefficient']
-
             samples_with_kmer = self.ML_df.loc[self.ML_df[kmer] == 1].index.tolist()
             self.coeff_file.write("%s\t%s\t%s\t| %s\n" % (
                 kmer, coef,
