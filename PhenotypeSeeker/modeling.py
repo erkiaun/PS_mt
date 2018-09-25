@@ -1093,9 +1093,7 @@ class phenotypes():
             self.y_train = self.ML_df.iloc[:,-2:-1]
             self.weights_train = self.ML_df.iloc[:,-1:]
 
-        print(self.X_train.shape)
-        print(self.y_train.shape)
-        print(self.weights_train.shape)
+        print(self.X_train)
 
         self.summary_file.write("Dataset:\n%s\n\n" % self.skl_dataset)  
 
@@ -1132,7 +1130,7 @@ class phenotypes():
             "Acutal_phenotype Predicted_phenotype\n")
         for index, row in dataset.iterrows():
             self.summary_file.write('%s %s %s\n' % (
-                index, labels.loc[index], self.best_classifier.predict(row)
+                index, labels.loc[index], self.best_classifier.predict(row.reshape(1, -1))
                 ))
         if self.scale == "continuous":
             self.model_performance_regression(dataset, labels, predictions)
