@@ -2270,7 +2270,7 @@ def modeling(args):
     sys.stderr.write("Mapping samples to the feature vector space:\n")
     stderr_print.currentSampleNum.value = 0
     Input.pool.map(
-        lambda x: x.get_kmer_lists(), Input.samples.values()
+        lambda x: x.map_samples(), Input.samples.values()
         )
     if args.weights == "+":
         Samples.get_weights()
