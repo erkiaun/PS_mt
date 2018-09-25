@@ -1193,40 +1193,17 @@ class phenotypes():
             self.summary_file.write("1\t\t%s\t%s\n\n" % tuple(cm[1]))
 
 
-    # def coefficients_to_file(self):
-    #     self.coeff_file.write("K-mer\tcoef._in_lin_reg_model\tNo._of_samples_with_k-mer\
-    #             \tSamples_with_k-mer\n")
-    #     features = self.ML_df.columns.values
-    #     for index, coef in self.classifier.best_estimator_.coef_:
-    #         self.ML_df.columns.values[]
-            
-    #         # Take indexes of rows, 
-
-    #     # for x in range(len(self.classifier.best_estimator_.coef_)):
-    #     #     samples_with_kmer = 
-            
-    #     #     samples_with_kmer = [i for i,j in zip(
-    #     #         samples_in_analyze, kmers_presence_matrix[x]
-    #     #         ) if j != 0]
-    #         self.coeff_file.write("%s\t%s\t%s\t| %s\n" % (
-    #             features[index], coef,
-    #             len(samples_with_kmer), " ".join(samples_with_kmer)
-    #             ))  
-
-
-        kmers_presence_matrix = np.array(kmers_presence_matrix).transpose()
-        f2.write("K-mer\tcoef._in_lin_reg_model\tNo._of_samples_with_k-mer\
+    def coefficients_to_file(self):
+        self.coeff_file.write("K-mer\tcoef._in_lin_reg_model\tNo._of_samples_with_k-mer\
                 \tSamples_with_k-mer\n")
-        for x in range(len(clf.best_estimator_.coef_)):
-            samples_with_kmer = [i for i,j in zip(
-                samples_in_analyze, kmers_presence_matrix[x]
-                ) if j != 0]
-            f2.write("%s\t%s\t%s\t| %s\n" % (
-                features[x], clf.best_estimator_.coef_[x],
-                len(samples_with_kmer), " ".join(samples_with_kmer)
-                ))        
-        f1.close()
-        f2.close()
+        features = self.ML_df.columns.values
+        for index, coef in self.classifier.best_estimator_.coef_:
+            samples_with_kmer = \
+                self.ML_df.loc[self.ML_df[features[index]] == 1].index.tolist()
+        self.coeff_file.write("%s\t%s\t%s\t| %s\n" % (
+            features[index], coef,
+            len(samples_with_kmer), " ".join(samples_with_kmer)
+            ))  
 
 def linear_regression(
 	    kmer_lists_splitted,
