@@ -1067,7 +1067,8 @@ class phenotypes():
             )
         self.ML_df = self.ML_df.loc[self.ML_df.phenotype != 'NA']
         self.ML_df_train, self.ML_df_test = train_test_split(
-            self.ML_df, test_size=self.testset_size, random_state=0
+            self.ML_df, test_size=self.testset_size,
+            stratify=skl_dataset.target, random_state=0
             )
         self.X_train = self.ML_df_train.iloc[:,0:-2]
         self.y_train = self.ML_df_train.iloc[:,-2:-1]
@@ -1085,6 +1086,7 @@ class phenotypes():
                 self.model = self.best_classifier.fit(self.X_train, self.y_train)
         else:
             print(self.X_train)
+            print(self.y_train)
             print(self.weights_train)
             self.model = self.best_classifier.fit(self.X_train, self.y_train,
                 sample_weight=self.weights_train)
