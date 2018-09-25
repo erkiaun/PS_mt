@@ -1122,7 +1122,7 @@ class phenotypes():
             for mean, std, params in zip(
                     means, stds, self.best_classifier.cv_results_['params']
                     ):
-                self.summary_file(
+                self.summary_file.write(
                     "%0.3f (+/-%0.03f) for %r \n" % (mean, std * 2, params)
                     )
             self.summary_file.write("\nBest parameters found on development set: \n")
