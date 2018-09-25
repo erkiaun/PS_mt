@@ -1077,7 +1077,7 @@ class phenotypes():
             target_names=np.array(["resistant", "sensitive"]),
             feature_names=self.ML_df.iloc[:,0:-2].columns.values
             )
-        self.ML_df = self.ML_df.loc[self.ML_df.phenotype != 'NA']
+        self.ML_df = self.ML_df.loc[self.ML_df['phenotype'] != 'NA']
         if self.testset_size != 0.0:
             self.ML_df_train, self.ML_df_test = train_test_split(
                 self.ML_df, test_size=self.testset_size,
