@@ -1103,10 +1103,11 @@ class phenotypes():
             if self.penalty == "L1":
                 self.model = self.best_classifier.fit(self.X_train, self.y_train)
         else:
+            print(self.best_classifier)
             print(self.y_train.values)
-            print(self.weights_train.values)
+            print(self.weights_train.values.to_list)
             self.model = self.best_classifier.fit(
-                self.X_train, self.y_train, sample_weight=self.weights_train.values
+                self.X_train, self.y_train, sample_weight=self.weights_train.values.to_list
                 )
 
     def cross_validation_results(self):
