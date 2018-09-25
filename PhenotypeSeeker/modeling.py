@@ -1083,7 +1083,7 @@ class phenotypes():
                 sample_weight=self.weights_train)
 
     def cross_validation_results(self):
-        elif self.model_name_long != "random forest":
+        if self.model_name_long != "random forest":
             self.summary_file.write('Parameters:\n%s\n\n' % model)
             self.summary_file.write("Grid scores (R2 score) on development set: \n")
             means = clf.cv_results_['mean_test_score']
