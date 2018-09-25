@@ -1099,10 +1099,13 @@ class phenotypes():
                 self.summary_file.write(key + " : " + str(value) + "\n")
 
     def predictions_on_test_set(self):
-        for index, sample in range(len(samples_test)):
-            f1.write('%s %s %s\n' % (
-                samples_test[u], y_test[u], clf.predict(X_test)[u]
-                ))
+        self.summary_file.write("\nModel predictions on test set:\nSample_ID " \
+        "Acutal_phenotype Predicted_phenotype\n")
+        if self.testset_size != 0:
+            for index, row in X_test.iterrows():
+                self.summary_file.write('%s %s %s\n' % (
+                    index, y_test.loc[index], self.best_classifier.predict(row)
+                    ))
 
 
 def linear_regression(
