@@ -448,6 +448,10 @@ class phenotypes():
     n_iter = None
     n_splits = None
 
+    # outputfiles
+    summary_file = None
+    coeff_file = None
+    model_file = None
 
     def __init__(self, name):
         self.name = name
@@ -1009,7 +1013,7 @@ class phenotypes():
                 "machine learning modelling.\n")
             return
         self.get_dataframe_for_machine_learning()
-        summary_file.write("Dataset:\n%s\n\n" % self.skl_dataset)
+        self.summary_file.write("Dataset:\n%s\n\n" % self.skl_dataset)
         self.fit_classifier()
 
 
