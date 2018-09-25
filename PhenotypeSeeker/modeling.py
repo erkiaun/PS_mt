@@ -614,7 +614,7 @@ class phenotypes():
         y_weights = []
         
         self.get_samples_distribution_for_ttest(
-            x, y, x_weights, y_weights,kmer_presence_vector,
+            x, y, x_weights, y_weights, kmer_presence_vector,
             samples_w_kmer, samples
             )
 
