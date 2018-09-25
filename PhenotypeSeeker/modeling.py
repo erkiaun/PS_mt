@@ -1105,9 +1105,6 @@ class phenotypes():
             if self.penalty == "L1":
                 self.model = self.best_classifier.fit(self.X_train, self.y_train)
         else:
-            print(self.best_classifier)
-            print(self.y_train.values)
-            print(self.weights_train.values.flatten())
             self.model = self.best_classifier.fit(
                 self.X_train, self.y_train,
                 sample_weight=self.weights_train.values.flatten()
@@ -1130,7 +1127,7 @@ class phenotypes():
                 self.summary_file.write(key + " : " + str(value) + "\n")
 
     def predict(self, dataset, labels):
-        predictions = clf.predict(dataset)
+        predictions = self.best_classifier.predict(dataset)
         self.summary_file.write("\nModel predictions on samples:\nSample_ID " \
             "Acutal_phenotype Predicted_phenotype\n")
         for index, row in dataset.iterrows():
