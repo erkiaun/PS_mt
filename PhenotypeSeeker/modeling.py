@@ -1020,14 +1020,12 @@ class phenotypes():
         self.fit_classifier()
         self.cross_validation_results()
 
-        if testset_size != 0.0:
-            self.summary_file.write('\nTraining set:\n')
-            self.predict(X_train, y_train)
-            self.summary_file.write('\nTraining set:\n')
-            self.predict(X_test, y_test)
-        else:
-            self.summary_file.write('\nDataset:\n')
-            self.predict(X_train, y_train)
+        self.summary_file.write('\nTraining set:\n')
+        self.predict(self.X_train, self.y_train)
+        if self.testset_size != 0.0:
+            self.summary_file.write('\nTest set:\n')
+            self.predict(self.X_test, self.y_test)
+
 
     def get_outputfile_names(self):
         if Samples.headerline:
@@ -1071,7 +1069,7 @@ class phenotypes():
             feature_names=self.ML_df.iloc[:,0:-2].columns.values
             )
         self.ML_df = self.ML_df.loc[self.ML_df.phenotype != 'NA']
-        if testset_size != 0.0:
+        if self.testset_size != 0.0:
             self.ML_df_train, self.ML_df_test = train_test_split(
                 self.ML_df, test_size=self.testset_size,
                 stratify=self.skl_dataset.target, random_state=0
