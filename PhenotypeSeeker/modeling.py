@@ -616,7 +616,7 @@ class phenotypes():
             x, y, x_weights, y_weights, kmer_presence_vector,
             samples_w_kmer, samples
             )
-        print("Kohal!")
+
         if len(x) < Samples.min_samples or len(y) < 2 or len(x) > Samples.max_samples:
             return None
 
@@ -641,10 +641,10 @@ class phenotypes():
             sample_phenotype = sample.phenotypes[self.name]
             if sample_phenotype != "NA":
                 if kmer_presence_vector[index] == "0":
-                    y.append(float(sample))
+                    y.append(float(sample_phenotype))
                     y_weights.append(Input.samples[sample_name].weight)
                 else:
-                    x.append(float(sample))
+                    x.append(float(sample_phenotype))
                     x_weights.append(Input.samples[sample_name].weight)
                     samples_w_kmer.append(sample_name)
 
