@@ -1105,7 +1105,7 @@ class phenotypes():
         else:
             print(self.best_classifier)
             print(self.y_train.values)
-            print(self.weights_train.values.to_list)
+            print(self.weights_train.values.flatten())
             self.model = self.best_classifier.fit(
                 self.X_train, self.y_train, sample_weight=self.weights_train.values.flatten()
                 )
@@ -1193,25 +1193,25 @@ class phenotypes():
             self.summary_file.write("1\t\t%s\t%s\n\n" % tuple(cm[1]))
 
 
-    def coefficients_to_file(self):
-        self.kmers_presence_matrix = np.array(kmers_presence_matrix).transpose()
-        self.coeff_file.write("K-mer\tcoef._in_lin_reg_model\tNo._of_samples_with_k-mer\
-                \tSamples_with_k-mer\n")
-        for index, coef in self.classifier.best_estimator_.coef_:
-            print(index, coef, self.ML_df.iloc[index])
+    # def coefficients_to_file(self):
+    #     self.coeff_file.write("K-mer\tcoef._in_lin_reg_model\tNo._of_samples_with_k-mer\
+    #             \tSamples_with_k-mer\n")
+    #     features = self.ML_df.columns.values
+    #     for index, coef in self.classifier.best_estimator_.coef_:
+    #         self.ML_df.columns.values[]
             
-            # Take indexes of rows, 
+    #         # Take indexes of rows, 
 
-        # for x in range(len(self.classifier.best_estimator_.coef_)):
-        #     samples_with_kmer = 
+    #     # for x in range(len(self.classifier.best_estimator_.coef_)):
+    #     #     samples_with_kmer = 
             
-        #     samples_with_kmer = [i for i,j in zip(
-        #         samples_in_analyze, kmers_presence_matrix[x]
-        #         ) if j != 0]
-        #     self.coeff_file.write("%s\t%s\t%s\t| %s\n" % (
-        #         features[x], coef,
-        #         len(samples_with_kmer), " ".join(samples_with_kmer)
-        #         ))  
+    #     #     samples_with_kmer = [i for i,j in zip(
+    #     #         samples_in_analyze, kmers_presence_matrix[x]
+    #     #         ) if j != 0]
+    #         self.coeff_file.write("%s\t%s\t%s\t| %s\n" % (
+    #             features[index], coef,
+    #             len(samples_with_kmer), " ".join(samples_with_kmer)
+    #             ))  
 
 
         kmers_presence_matrix = np.array(kmers_presence_matrix).transpose()
