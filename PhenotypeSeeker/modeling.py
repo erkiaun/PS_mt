@@ -1066,11 +1066,12 @@ class phenotypes():
                 self.ML_df[line[0].split()[0]] = [int(j.split()[1].strip()) for j in line]
         self.ML_df = self.ML_df.astype(bool).astype(int)
         self.ML_df['phenotype'] = [
-            sample.phenotypes[self.name] for sample in Input.samples.values()
+            int(sample.phenotypes[self.name]) for sample in Input.samples.values()
             ]
         self.ML_df['weight'] = [
             sample.weight for sample in Input.samples.values()
             ]
+
         self.skl_dataset = sklearn.datasets.base.Bunch(
             data=self.ML_df.iloc[:,0:-2].values, target=self.ML_df['phenotype'].values,
             target_names=np.array(["resistant", "sensitive"]),
@@ -1194,7 +1195,9 @@ class phenotypes():
     def write_model_coefficients_to_file(self):
         self.coeff_file.write("K-mer\tcoef._in_" + self.model_name_short + \
             "_model\tNo._of_samples_with_k-mer\tSamples_with_k-mer\n")
-        features = self.ML_df.columns.values
+        self.ML_df = self.ML_df.loc['coefficients'] = self.classifier.best_estimator_.coef_[0]
+
+
         for index, coef in self.classifier.best_estimator_.coef_:
             samples_with_kmer = self.ML_df.loc[self.ML_df[features[index]] == 1].index.tolist()
             self.coeff_file.write("%s\t%s\t%s\t| %s\n" % (
