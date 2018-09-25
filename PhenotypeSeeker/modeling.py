@@ -239,7 +239,7 @@ class Samples():
         phenotypes = {}
         name, address, phenotype_list = \
             line.split()[0], line.split()[1], line.split()[2:]
-        if not all(x == "0" or x == "1" or x == "NA" for x in phenotypes):
+        if not all(x == "0" or x == "1" or x == "NA" for x in phenotype_list):
             phenotypes.scale = "continuous"
         if cls.take_logs:
             phenotype_list = map(lambda x: math.log(x, 2), phenotypes)
@@ -2427,7 +2427,6 @@ def modeling(args):
         lambda x: x.machine_learning_modelling(),
         Input.phenotypes_to_analyse.values()
         )
-    map(lambda x: print(x.ML_df), Input.phenotypes_to_analyse.values())
     '''
     if Samples.phenotype_scale == "continuous":
         linear_regression(
