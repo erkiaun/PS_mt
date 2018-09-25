@@ -448,7 +448,7 @@ class phenotypes():
     n_iter = None
     n_splits = None
 
-    # outputfiles
+    # ML output file holders
     summary_file = None
     coeff_file = None
     model_file = None
@@ -1001,6 +1001,8 @@ class phenotypes():
                         cls.best_clf, cls.hyper_parameters,
                         n_iter=cls.n_iter, cv=cls.n_splits
                         )
+            elif cls.model_name_long == "random forest":
+                cls.best_clf = cls.clf
 
     def machine_learning_modelling(self):
         if len(Input.phenotypes_to_analyse) > 1:
@@ -1013,8 +1015,8 @@ class phenotypes():
                 "machine learning modelling.\n")
             return
         self.get_dataframe_for_machine_learning()
-        self.summary_file.write("Dataset:\n%s\n\n" % self.skl_dataset)
         self.fit_classifier()
+        self.cross_validation_results()
 
 
     def get_outputfile_names(self):
@@ -1067,18 +1069,34 @@ class phenotypes():
         self.weights_train = self.ML_df_train.iloc[:,-1:]
         self.X_test = self.ML_df_test.iloc[:,0:-2]
         self.y_test = self.ML_df_test.iloc[:,-2:-1]
-        self.weights_test = self.ML_df_test.iloc[:,-1:]    
+        self.weights_test = self.ML_df_test.iloc[:,-1:]
+
+        self.summary_file.write("Dataset:\n%s\n\n" % self.skl_dataset)  
 
 
-    # def fit_classifier(self):
-    #     if self.scale == "continuous":
-    #         if self.penalty == "L1":
-    #             self.model = self.get_best_classifier.fit(self.X_train, self.y_train)
-    #     else:
-    #         self.model = self.get_best_classifier.fit(self.X_train, self.y_train,
-    #             sample_weight=self.weights_train)
-    #     self..write('Parameters:\n%s\n\n' % model)
-    #     f1.write("Grid scores (mean accuracy) on development set:\n")
+    def fit_classifier(self):
+        if self.scale == "continuous":
+            if self.penalty == "L1":
+                self.model = self.best_classifier.fit(self.X_train, self.y_train)
+        else:
+            self.model = self.best_classifier.fit(self.X_train, self.y_train,
+                sample_weight=self.weights_train)
+
+    def cross_validation_results(self):
+        elif self.model_name_long != "random forest":
+            self.summary_file.write('Parameters:\n%s\n\n' % model)
+            self.summary_file.write("Grid scores (R2 score) on development set: \n")
+            means = clf.cv_results_['mean_test_score']
+            stds = clf.cv_results_['std_test_score']
+            for mean, std, params in zip(
+                    means, stds, clf.cv_results_['params']
+                    ):
+                f1.write(
+                    "%0.3f (+/-%0.03f) for %r \n" % (mean, std * 2, params)
+                    )
+            self.summary_file.write("\nBest parameters found on development set: \n")
+            for key, value in clf.best_params_.iteritems():
+                self.summary_file.write(key + " : " + str(value) + "\n") 
 
 
 def linear_regression(
