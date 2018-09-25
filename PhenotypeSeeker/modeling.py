@@ -1020,15 +1020,14 @@ class phenotypes():
         self.fit_classifier()
         self.cross_validation_results()
 
-        if testset_size != 0:
+        if testset_size != 0.0:
             self.summary_file.write('\nTraining set:\n')
             self.predict(X_train, y_train)
             self.summary_file.write('\nTraining set:\n')
             self.predict(X_test, y_test)
         else:
             self.summary_file.write('\nDataset:\n')
-            self.predict(self.X_dataset, self.y_dataset, self.weights_dataset)
-
+            self.predict(X_train, y_train)
 
     def get_outputfile_names(self):
         if Samples.headerline:
@@ -1084,8 +1083,8 @@ class phenotypes():
             self.y_test = self.ML_df_test.iloc[:,-2:-1]
             self.weights_test = self.ML_df_test.iloc[:,-1:]
         else:
-            self.X_dataset = self.ML_df.iloc[:,0:-2]
-            self.y_dataset = self.ML_df.iloc[:,-2:-1]
+            self.X_train = self.ML_df.iloc[:,0:-2]
+            self.y_train = self.ML_df.iloc[:,-2:-1]
             self.weights_train = self.ML_df.iloc[:,-1:]
 
         self.summary_file.write("Dataset:\n%s\n\n" % self.skl_dataset)  
@@ -1096,9 +1095,6 @@ class phenotypes():
             if self.penalty == "L1":
                 self.model = self.best_classifier.fit(self.X_train, self.y_train)
         else:
-            print(self.X_train)
-            print(self.y_train)
-            print(self.weights_train)
             self.model = self.best_classifier.fit(self.X_train, self.y_train,
                 sample_weight=self.weights_train)
 
