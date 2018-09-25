@@ -616,7 +616,7 @@ class phenotypes():
             x, y, x_weights, y_weights, kmer_presence_vector,
             samples_w_kmer, samples
             )
-
+        print("Kohal!")
         if len(x) < Samples.min_samples or len(y) < 2 or len(x) > Samples.max_samples:
             return None
 
