@@ -1198,7 +1198,7 @@ class phenotypes():
         if self.model_name_short == "lin_reg":
             df_for_coeffs.loc['coefficient'] = \
                 self.best_classifier.best_estimator_.coef_
-        elif:
+        elif self.model_name_short == "RF":
             df_for_coeffs.loc['coefficient'] = \
                 self.best_classifier.best_estimator_.feature_importances_
         else:
