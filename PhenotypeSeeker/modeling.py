@@ -1132,7 +1132,8 @@ class phenotypes():
             "Acutal_phenotype Predicted_phenotype\n")
         for index, row in dataset.iterrows():
             self.summary_file.write('%s %s %s\n' % (
-                index, labels.loc[index].values[0], predictions[index]
+                index, labels.loc[index].values[0],
+                self.best_classifier.predict(row.reshape(1, -1))
                 ))
         if self.scale == "continuous":
             self.model_performance_regression(dataset, labels.values.flatten(), predictions)
@@ -1199,8 +1200,8 @@ class phenotypes():
         self.ML_df = self.ML_df.loc['coefficient'] = self.classifier.best_estimator_.coef_[0]
         for kmer in self.ML_df:
             kmer_coef = self.ML_df[kmer].loc['coefficient']
-            samples_with_kmer = self.ML_df.loc[self.ML_df[kmer] == 1].index.tolist()
 
+            samples_with_kmer = self.ML_df.loc[self.ML_df[kmer] == 1].index.tolist()
             self.coeff_file.write("%s\t%s\t%s\t| %s\n" % (
                 kmer, coef,
                 len(samples_with_kmer), " ".join(samples_with_kmer)
