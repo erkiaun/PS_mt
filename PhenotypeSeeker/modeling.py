@@ -239,15 +239,13 @@ class Samples():
         sample_phenotypes = {}
         name, address, phenotype_list = \
             line.split()[0], line.split()[1], line.split()[2:]
-        print(phenotype_list)
         if not all(x == "0" or x == "1" or x == "NA" for x in phenotype_list):
             phenotypes.scale = "continuous"
         if cls.take_logs:
             phenotype_list = map(lambda x: math.log(x, 2), phenotype_list)
         for i,j in zip(cls.phenotypes, phenotype_list):
             sample_phenotypes[i] = j
-        print(phenotypes.scale)
-        return cls(name, address, phenotypes)
+        return cls(name, address, sample_phenotypes)
 
     @classmethod
     def get_feature_vector(cls):
