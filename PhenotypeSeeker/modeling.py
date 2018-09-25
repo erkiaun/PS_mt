@@ -1027,6 +1027,7 @@ class phenotypes():
             self.predict(self.X_test, self.y_test)
 
         joblib.dump(self.model, self.model_filename)
+        self.write_model_coefficients_to_file()
 
         self.summary_file.close()
         self.coeff_file.close()
@@ -1055,6 +1056,7 @@ class phenotypes():
         self.summary_file = open(summary_file, "w")
         self.coeff_file = open(coeff_file, "w")
         self.model_file = open(model_file, "w")
+
 
 
     def get_dataframe_for_machine_learning(self):
@@ -1107,15 +1109,16 @@ class phenotypes():
             print(self.y_train.values)
             print(self.weights_train.values.flatten())
             self.model = self.best_classifier.fit(
-                self.X_train, self.y_train, sample_weight=self.weights_train.values.flatten()
+                self.X_train, self.y_train,
+                sample_weight=self.weights_train.values.flatten()
                 )
 
     def cross_validation_results(self):
         if self.model_name_long != "random forest":
             self.summary_file.write('Parameters:\n%s\n\n' % self.model)
             self.summary_file.write("Grid scores (R2 score) on development set: \n")
-            means = self.classifier.cv_results_['mean_test_score']
-            stds = self.classifier.cv_results_['std_test_score']
+            means = self.best_classifier.cv_results_['mean_test_score']
+            stds = self.best_classifier.cv_results_['std_test_score']
             for mean, std, params in zip(
                     means, stds, self.classifier.cv_results_['params']
                     ):
@@ -1123,7 +1126,7 @@ class phenotypes():
                     "%0.3f (+/-%0.03f) for %r \n" % (mean, std * 2, params)
                     )
             self.summary_file.write("\nBest parameters found on development set: \n")
-            for key, value in self.classifier.best_params_.iteritems():
+            for key, value in self.best_classifier.best_params_.iteritems():
                 self.summary_file.write(key + " : " + str(value) + "\n")
 
     def predict(self, dataset, labels):
@@ -1193,17 +1196,16 @@ class phenotypes():
             self.summary_file.write("1\t\t%s\t%s\n\n" % tuple(cm[1]))
 
 
-    def coefficients_to_file(self):
+    def write_model_coefficients_to_file(self):
         self.coeff_file.write("K-mer\tcoef._in_lin_reg_model\tNo._of_samples_with_k-mer\
                 \tSamples_with_k-mer\n")
         features = self.ML_df.columns.values
         for index, coef in self.classifier.best_estimator_.coef_:
-            samples_with_kmer = \
-                self.ML_df.loc[self.ML_df[features[index]] == 1].index.tolist()
-        self.coeff_file.write("%s\t%s\t%s\t| %s\n" % (
-            features[index], coef,
-            len(samples_with_kmer), " ".join(samples_with_kmer)
-            ))  
+            samples_with_kmer = self.ML_df.loc[self.ML_df[features[index]] == 1].index.tolist()
+            self.coeff_file.write("%s\t%s\t%s\t| %s\n" % (
+                features[index], coef,
+                len(samples_with_kmer), " ".join(samples_with_kmer)
+                ))  
 
 def linear_regression(
 	    kmer_lists_splitted,
