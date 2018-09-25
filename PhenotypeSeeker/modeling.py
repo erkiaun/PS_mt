@@ -84,13 +84,13 @@ class Input():
             min_samples, max_samples, mpheno, kmer_length,
             cutoff, num_threads, pvalue_cutoff, kmer_limit,
             FDR, B, binary_classifier, penalty, max_iter,
-            tol, l1_ratio
+            tol, l1_ratio, testset_size
             ):
         cls._get_phenotypes_to_analyse(mpheno)
-        Samples.alphas = cls._get_alphas(
+        phenotypes.alphas = cls._get_alphas(
             alphas, alpha_min, alpha_max, n_alphas
             )
-        Samples.gammas = cls._get_gammas(
+        phenotypes.gammas = cls._get_gammas(
             gammas, gamma_min, gamma_max, n_gammas
             )
         Samples.min_samples, Samples.max_samples = cls._get_min_max(
@@ -103,10 +103,11 @@ class Input():
         phenotypes.kmer_limit = kmer_limit
         phenotypes.FDR = FDR
         phenotypes.B = B
-        phenotypes.penalty = penalty
+        phenotypes.penalty = penalty.upper()
         phenotypes.max_iter = max_iter
         phenotypes.tol = tol
         phenotypes.l1_ratio = l1_ratio
+        phenotypes.test_size = testset_size
 
         cls.get_model_name(binary_classifier)
 
@@ -182,7 +183,6 @@ class Samples():
 
     kmer_length = None
     cutoff = None
-    alphas = None
     gammas = None
     min_samples = None
     max_samples = None
@@ -427,10 +427,16 @@ class phenotypes():
     model_name_short = None
 
     model = None
+    clf = None
     penalty = None
     max_iter = None
     tol = None
     l1_ratio = None
+    parameters = None
+    hyper_parameters = None
+    alphas = None
+    gammes = None
+    testset_size = 0.0
 
     def __init__(self, name):
         self.name = name
@@ -511,7 +517,6 @@ class phenotypes():
 
     def get_kmers_tested(self, samples, split_of_kmer_lists):
         
-        pvalue = None
         pvalues = []
         counter = 0
 
@@ -598,7 +603,7 @@ class phenotypes():
             )
 
         if len(x) < Samples.min_samples or len(y) < 2 or len(x) > Samples.max_samples:
-            return
+            return None
 
         t_statistic, pvalue, mean_x, mean_y = t_test(
             x, y, x_weights, y_weights
@@ -667,7 +672,7 @@ class phenotypes():
         no_samples_w_kmer = len(samples_w_kmer)
         if no_samples_w_kmer < Samples.min_samples or no_samples_wo_kmer < 2 \
             or no_samples_w_kmer > Samples.max_samples:
-            return
+            return None
         (w_pheno, wo_pheno, w_kmer, wo_kmer, total) = self.get_totals_in_classes(
             w_pheno_w_kmer, w_pheno_wo_kmer, wo_pheno_w_kmer, wo_pheno_wo_kmer
             )
@@ -898,43 +903,101 @@ class phenotypes():
                 +  Samples.phenotypes[0] + " data...\n")
         else:
             sys.stderr.write("Generating the " + cls.model_name_long + " model...\n")
-        cls.get_model()
+        cls.set_parameters()
+        cls.set_hyperparameters()
+        cls.get_classifier()
+        cls.fit_classifier()
 
     @classmethod
-    def get_model(cls):
+    def set_parameters(cls):
         if cls.scale == "continuous":
             # Defining linear regression parameters    
-            if cls.penalty == 'l1' or "L1":
-                cls.model = Lasso(max_iter=cls.max_iter, tol=cls.tol)        
-            if cls.penalty == 'l2' or "L2":
-                cls.model = Ridge(max_iter=cls.max_iter, tol=cls.tol)
+            if cls.penalty == 'l1':
+                cls.parameters = Lasso(max_iter=cls.max_iter, tol=cls.tol)        
+            if cls.penalty == 'l2':
+                cls.parameters = Ridge(max_iter=cls.max_iter, tol=cls.tol)
             if cls.penalty == 'elasticnet' or "L1+L2":
-                cls.model = ElasticNet(
+                cls.parameters = ElasticNet(
                     l1_ratio=cls.l1_ratio, max_iter=cls.max_iter, tol=cls.tol
                     )
         elif cls.scale == "binary":
             if cls.model_name_long == "logistic regression":
                 #Defining logistic regression parameters
-                if cls.penalty == "L1" or "l1":
-                    cls.model = LogisticRegression(
+                if cls.penalty == "L1":
+                    cls.parameters = LogisticRegression(
                         penalty='l1', solver='saga',
                         max_iter=cls.max_iter, tol=cls.tol
                         )        
-                elif cls.penalty == "L2" or "l2":
-                    cls.model = LogisticRegression(
+                elif cls.penalty == "L2":
+                    cls.parameters = LogisticRegression(
                         penalty='l2', solver='saga',
                         max_iter=cls.max_iter, tol=cls.tol
                         )
                 elif cls.penalty == "elasticnet" or "L1+L2":
-                    cls.model = SGDClassifier(
+                    cls.parameters = SGDClassifier(
                         penalty='elasticnet', l1_ratio=cls.l1_ratio,
                         max_iter=cls.max_iter, tol=cls.tol, loss='log'
                         )
             elif cls.model_name_long == "support vector machine":
-                cls.model = SVC(kernel=cls.kernel, probability=True, max_iter=cls.max_iter, tol=cls.tol) 
+                cls.parameters = SVC(
+                    kernel=cls.kernel, probability=True,
+                    max_iter=cls.max_iter, tol=cls.tol
+                    ) 
             elif cls.model_name_long == "random_forest":
-                cls.model = RandomForestClassifier(n_estimators=100)
+                cls.parameters = RandomForestClassifier(n_estimators=100)
 
+    @classmethod
+    def set_hyperparameters(cls):
+        if cls.scale == "continuous":
+            # Defining linear regression parameters    
+            cls.hyper_parameters = {'alpha': cls.alphas}
+        elif cls.scale == "binary":
+            if cls.model_name_long == "logistic regression":
+                #Defining logistic regression parameters
+                if penalty == "L1" or "L2":
+                    Cs = list(map(lambda x: 1/x, cls.alphas))
+                    cls.hyper_parameters = {'C':Cs}
+                elif penalty == "elasticnet":
+                    cls.hyper_parameters = {'alpha': cls.alphas}
+            elif cls.model_name_long == "support vector machine":
+                Cs = list(map(lambda x: 1/x, cls.alphas))
+                Gammas = list(map(lambda x: 1/x, cls.gammas))
+                if kernel == "linear":
+                    cls.hyper_parameters = {'C':Cs}
+                if kernel == "rbf":
+                    cls.hyper_parameters = {'C':Cs, 'gamma':Gammas}
+
+    @classmethod
+    def get_classifier(cls):
+        if cls.scale == "continuous":
+            cls.clf = GridSearchCV(lin_reg, parameters, cv=n_splits)
+        elif cls.scale == "binary":
+            if cls.model_name_long == "logistic regression":
+                cls.clf = GridSearchCV(log_reg, parameters, cv=n_splits)
+            elif cls.model_name_long == "support vector machine":
+                if kernel == "linear":
+                    cls.clf = GridSearchCV(svc, parameters, cv=n_splits)
+                if kernel == "rbf":
+                    cls.clf = RandomizedSearchCV(
+                        svc, parameters, n_iter=n_iter, cv=n_splits
+                        )
+    @classmethod
+    def fit_classifier(cls):
+        if cls.scale == "continuous":
+            if penalty == "L1":
+                clf.model = clf.fit(X_train, y_train)
+        elif cls.scale == "binary":
+            if cls.model_name_long == "logistic regression":
+                model = clf.fit(
+                    X_train, y_train, sample_weight=sample_weights_train
+                    )
+            elif cls.model_name_long == "support vector machine":
+                if kernel == "linear":
+                    cls.clf = GridSearchCV(svc, parameters, cv=n_splits)
+                if kernel == "rbf":
+                    cls.clf = RandomizedSearchCV(
+                        svc, parameters, n_iter=n_iter, cv=n_splits
+                        )
 
     def machine_learning_modelling(self):
         if len(Input.phenotypes_to_analyse) > 1:
@@ -974,7 +1037,9 @@ class phenotypes():
         print(self.ML_df.shape)
         self.ML_df = self.ML_df.loc[self.ML_df.phenotype != 'NA']
         print(self.ML_df.shape)
-        self.ML_df_train, self.ML_df_test = train_test_split(self.ML_df, test_size=0.25, random_state=0)
+        self.ML_df_train, self.ML_df_test = train_test_split(
+            self.ML_df, test_size=cls.testset_size, random_state=0
+            )
         self.X_train = self.ML_df_train.iloc[:,0:-2]
         self.y_train = self.ML_df_train.iloc[:,-2:-1]
         self.weights_train = self.ML_df_train.iloc[:,-1:]
@@ -985,22 +1050,22 @@ class phenotypes():
 
     def get_outputfile_names(self):
         if Samples.headerline:
-            summary_file = "summary_of_" + self.model_name_file + "_analysis" \
+            summary_file = "summary_of_" + self.model_name_short + "_analysis" \
                 + self.name + ".txt"
-            coeff_file = "k-mers_and_coefficients_in_" + self.model_name_file \
+            coeff_file = "k-mers_and_coefficients_in_" + self.model_name_short \
                 + "_model_" + self.name + ".txt"
-            model_file = self.model_name_file + "_model_" + self.name + ".pkl"
+            model_file = self.model_name_short + "_model_" + self.name + ".pkl"
         elif len(Input.phenotypes_to_analyse) > 1:
-            summary_file = "summary_of_" + self.model_name_file + "_analysis" \
+            summary_file = "summary_of_" + self.model_name_short + "_analysis" \
                 + self.name + ".txt"
-            coeff_file = "k-mers_and_coefficients_in_" + self.model_name_file \
+            coeff_file = "k-mers_and_coefficients_in_" + self.model_name_short \
                 + "_model_" + self.name + ".txt"
-            model_file = self.model_name_file +"_model_" + self.name + ".pkl"
+            model_file = self.model_name_short +"_model_" + self.name + ".pkl"
         else:
-            summary_file = "summary_of_" + self.model_name_file + "_analysis.txt"
-            coeff_file = "k-mers_and_coefficients_in_" + self.model_name_file \
+            summary_file = "summary_of_" + self.model_name_short + "_analysis.txt"
+            coeff_file = "k-mers_and_coefficients_in_" + self.model_name_short \
                 + "_model.txt"
-            model_file = self.model_name_file + "_model.txt"
+            model_file = self.model_name_short + "_model.txt"
         
         return summary_file, coeff_file, model_file       
 
@@ -1266,12 +1331,12 @@ def logistic_regression(
         f1.write("Dataset:\n%s\n\n" % dataset)
 
         #Defining logistic regression parameters
-        if penalty == "L1" or "l1":
+        if penalty == "L1":
             log_reg = LogisticRegression(
                 penalty='l1', solver='saga',
                 max_iter=max_iter, tol=tol
                 )        
-        elif penalty == "L2" or "l2":
+        elif penalty == "L2":
             log_reg = LogisticRegression(
                 penalty='l2', solver='saga',
                 max_iter=max_iter, tol=tol
@@ -2183,7 +2248,7 @@ def modeling(args):
         args.min, args.max, args.mpheno, args.length, args.cutoff,
         args.num_threads, args.pvalue, args.n_kmers, args.FDR, 
         args.Bonferroni, args.binary_classifier, args.penalty,
-        args.max_iter, args.tol, args.l1_ratio
+        args.max_iter, args.tol, args.l1_ratio, args.testset_size
         )
     Input.get_multithreading_parameters()
 
@@ -2196,7 +2261,6 @@ def modeling(args):
     Samples.get_feature_vector()
     sys.stderr.write("Mapping samples to the feature vector space:\n")
     stderr_print.currentSampleNum.value = 0
-    Input.pool.map(lambda x: x.map_samples(), Input.samples.values())
     if args.weights == "+":
         Samples.get_weights()
     # Analyses of phenotypes
