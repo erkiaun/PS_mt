@@ -1016,7 +1016,6 @@ class phenotypes():
         self.get_dataframe_for_machine_learning()
         self.fit_classifier()
         self.cross_validation_results()
-        self.predictions_on_test_set()
 
 
     def get_outputfile_names(self):
@@ -1079,8 +1078,10 @@ class phenotypes():
             if self.penalty == "L1":
                 self.model = self.best_classifier.fit(self.X_train, self.y_train)
         else:
-            self.model = self.best_classifier.fit(self.X_train, self.y_train,
-                sample_weight=self.weights_train)
+            print(self.X_train)
+            print(self.weights_train)
+            # self.model = self.best_classifier.fit(self.X_train, self.y_train,
+            #     sample_weight=self.weights_train)
 
     def cross_validation_results(self):
         if self.model_name_long != "random forest":
@@ -1098,14 +1099,31 @@ class phenotypes():
             for key, value in clf.best_params_.iteritems():
                 self.summary_file.write(key + " : " + str(value) + "\n")
 
-    def predictions_on_test_set(self):
-        self.summary_file.write("\nModel predictions on test set:\nSample_ID " \
-        "Acutal_phenotype Predicted_phenotype\n")
-        if self.testset_size != 0:
-            for index, row in X_test.iterrows():
+    def predict(self, dataset, labels):
+            predictions = clf.predict(dataset)
+            f1.write('\nTraining set:\n')
+            self.summary_file.write("\nModel predictions on test set:\nSample_ID " \
+                "Acutal_phenotype Predicted_phenotype\n")
+            for index, row in dataset.iterrows():
                 self.summary_file.write('%s %s %s\n' % (
-                    index, y_test.loc[index], self.best_classifier.predict(row)
+                    index, labels.loc[index], self.best_classifier.predict(row)
                     ))
+
+            # f1.write('Mean squared error: %s\n' % \
+            #          mean_squared_error(y_train, train_y_prediction))
+            # f1.write("The coefficient of determination:"
+            #     + " %s\n" % clf.score(X_train, y_train))
+            # f1.write("The Spearman correlation coefficient and p-value:" \
+            #     " %s, %s \n" % stats.spearmanr(y_train, train_y_prediction))
+            # slope, intercept, r_value, pval_r, std_err = \
+            #     stats.linregress(y_train, train_y_prediction)
+            # f1.write("The Pearson correlation coefficient and p-value: " \
+            #         " %s, %s \n" % (r_value, pval_r))
+            # f1.write("The plus/minus 1 dilution factor accuracy (for MICs):" \
+            #     " %s \n\n" % metrics.within_1_tier_accuracy(
+            #         y_train, train_y_prediction
+            #         )
+            #     )
 
 
 def linear_regression(
