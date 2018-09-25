@@ -1097,8 +1097,7 @@ class phenotypes():
             if self.penalty == "L1":
                 self.model = self.best_classifier.fit(self.X_train, self.y_train)
         else:
-            self.model = self.best_classifier.fit(self.X_train, self.y_train,
-                sample_weight=self.weights_train)
+            self.model = self.best_classifier.fit(self.X_train, self.y_train)
 
     def cross_validation_results(self):
         if self.model_name_long != "random forest":
