@@ -1156,7 +1156,7 @@ class phenotypes():
 
     def model_performance_classifier(self, dataset, labels, predictions):
             self.summary_file.write("\nTraining set: \n")
-            self.summary_file.write("Mean accuracy: %s\n" % clf.score(dataset, labels))
+            self.summary_file.write("Mean accuracy: %s\n" % self.best_classifier.score(dataset, labels))
             self.summary_file.write("Sensitivity: %s\n" % \
                     recall_score(labels, predictions))
             self.summary_file.write("Specificity: %s\n" % \
