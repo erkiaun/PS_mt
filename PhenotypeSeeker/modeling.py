@@ -983,26 +983,26 @@ class phenotypes():
     @classmethod
     def get_best_classifier(cls):
         if cls.scale == "continuous":
-            cls.best_clf = GridSearchCV(
+            cls.best_classifier = GridSearchCV(
                 cls.classifier, cls.hyper_parameters, cv=cls.n_splits
                 )
         elif cls.scale == "binary":
             if cls.model_name_long == "logistic regression":
-                cls.best_clf = GridSearchCV(
+                cls.best_classifier = GridSearchCV(
                     cls.classifier, cls.hyper_parameters, cv=cls.n_splits
                     )
             elif cls.model_name_long == "support vector machine":
                 if kernel == "linear":
-                    cls.best_clf = GridSearchCV(
+                    cls.best_classifier = GridSearchCV(
                         cls.classifier, cls.hyper_parameters, cv=cls.n_splits
                         )
                 if clf.kernel == "rbf":
                     cls.clf = RandomizedSearchCV(
-                        cls.best_clf, cls.hyper_parameters,
+                        cls.best_classifier, cls.hyper_parameters,
                         n_iter=cls.n_iter, cv=cls.n_splits
                         )
             elif cls.model_name_long == "random forest":
-                cls.best_clf = cls.clf
+                cls.best_classifier = cls.clf
 
     def machine_learning_modelling(self):
         if len(Input.phenotypes_to_analyse) > 1:
@@ -1096,7 +1096,13 @@ class phenotypes():
                     )
             self.summary_file.write("\nBest parameters found on development set: \n")
             for key, value in clf.best_params_.iteritems():
-                self.summary_file.write(key + " : " + str(value) + "\n") 
+                self.summary_file.write(key + " : " + str(value) + "\n")
+
+    def predictions_on_test_set(self):
+        for index, sample in range(len(samples_test)):
+            f1.write('%s %s %s\n' % (
+                samples_test[u], y_test[u], clf.predict(X_test)[u]
+                ))
 
 
 def linear_regression(
