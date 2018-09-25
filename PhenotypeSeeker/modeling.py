@@ -108,7 +108,7 @@ class Input():
         phenotypes.max_iter = max_iter
         phenotypes.tol = tol
         phenotypes.l1_ratio = l1_ratio
-        phenotypes.test_size = testset_size
+        phenotypes.testset_size = testset_size
         phenotypes.kernel = kernel
         phenotypes.n_iter = n_iter
         phenotypes.n_splits = n_splits
@@ -467,6 +467,9 @@ class phenotypes():
         self.y_test = None
         self.train_weights = None
         self.test_weights = None
+        self.X_dataset = None
+        self.y_dataset = None
+        self.weights_dataset = None
 
     # -------------------------------------------------------------------
     # Functions for calculating the association test results for kmers.
@@ -1017,11 +1020,14 @@ class phenotypes():
         self.fit_classifier()
         self.cross_validation_results()
 
-        self.summary_file.write('\nTraining set:\n')
-        self.predict(X_train, y_train)
         if testset_size != 0:
             self.summary_file.write('\nTraining set:\n')
+            self.predict(X_train, y_train)
+            self.summary_file.write('\nTraining set:\n')
             self.predict(X_test, y_test)
+        else:
+            self.summary_file.write('\nDataset:\n')
+            self.predict(self.X_dataset, self.y_dataset, self.weights_dataset)
 
 
     def get_outputfile_names(self):
@@ -1066,16 +1072,21 @@ class phenotypes():
             feature_names=self.ML_df.iloc[:,0:-2].columns.values
             )
         self.ML_df = self.ML_df.loc[self.ML_df.phenotype != 'NA']
-        self.ML_df_train, self.ML_df_test = train_test_split(
-            self.ML_df, test_size=self.testset_size,
-            stratify=self.skl_dataset.target, random_state=0
-            )
-        self.X_train = self.ML_df_train.iloc[:,0:-2]
-        self.y_train = self.ML_df_train.iloc[:,-2:-1]
-        self.weights_train = self.ML_df_train.iloc[:,-1:]
-        self.X_test = self.ML_df_test.iloc[:,0:-2]
-        self.y_test = self.ML_df_test.iloc[:,-2:-1]
-        self.weights_test = self.ML_df_test.iloc[:,-1:]
+        if testset_size != 0.0:
+            self.ML_df_train, self.ML_df_test = train_test_split(
+                self.ML_df, test_size=self.testset_size,
+                stratify=self.skl_dataset.target, random_state=0
+                )
+            self.X_train = self.ML_df_train.iloc[:,0:-2]
+            self.y_train = self.ML_df_train.iloc[:,-2:-1]
+            self.weights_train = self.ML_df_train.iloc[:,-1:]
+            self.X_test = self.ML_df_test.iloc[:,0:-2]
+            self.y_test = self.ML_df_test.iloc[:,-2:-1]
+            self.weights_test = self.ML_df_test.iloc[:,-1:]
+        else:
+            self.X_dataset = self.ML_df.iloc[:,0:-2]
+            self.y_dataset = self.ML_df.iloc[:,-2:-1]
+            self.weights_train = self.ML_df.iloc[:,-1:]
 
         self.summary_file.write("Dataset:\n%s\n\n" % self.skl_dataset)  
 
