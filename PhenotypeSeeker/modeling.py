@@ -1193,18 +1193,18 @@ class phenotypes():
             self.summary_file.write("1\t\t%s\t%s\n\n" % tuple(cm[1]))
 
 
-    def write_model_coefficients_to_file(self):
-        self.coeff_file.write("K-mer\tcoef._in_" + self.model_name_short + \
-            "_model\tNo._of_samples_with_k-mer\tSamples_with_k-mer\n")
-        self.ML_df = self.ML_df.loc['coefficients'] = self.classifier.best_estimator_.coef_[0]
-        for kmer in self.ML_df:
-            kmer_coef = 
+    # def write_model_coefficients_to_file(self):
+    #     self.coeff_file.write("K-mer\tcoef._in_" + self.model_name_short + \
+    #         "_model\tNo._of_samples_with_k-mer\tSamples_with_k-mer\n")
+    #     self.ML_df = self.ML_df.loc['coefficients'] = self.classifier.best_estimator_.coef_[0]
+    #     for kmer in self.ML_df:
+    #         kmer_coef = 
 
-            samples_with_kmer = self.ML_df.loc[self.ML_df[features[index]] == 1].index.tolist()
-            self.coeff_file.write("%s\t%s\t%s\t| %s\n" % (
-                kmer, coef,
-                len(samples_with_kmer), " ".join(samples_with_kmer)
-                ))  
+    #         samples_with_kmer = self.ML_df.loc[self.ML_df[features[index]] == 1].index.tolist()
+    #         self.coeff_file.write("%s\t%s\t%s\t| %s\n" % (
+    #             kmer, coef,
+    #             len(samples_with_kmer), " ".join(samples_with_kmer)
+    #             ))  
 
 def linear_regression(
 	    kmer_lists_splitted,
