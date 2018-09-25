@@ -1120,7 +1120,7 @@ class phenotypes():
             means = self.best_classifier.cv_results_['mean_test_score']
             stds = self.best_classifier.cv_results_['std_test_score']
             for mean, std, params in zip(
-                    means, stds, self.classifier.cv_results_['params']
+                    means, stds, self.best_classifier.cv_results_['params']
                     ):
                 f1.write(
                     "%0.3f (+/-%0.03f) for %r \n" % (mean, std * 2, params)
@@ -1197,8 +1197,8 @@ class phenotypes():
 
 
     def write_model_coefficients_to_file(self):
-        self.coeff_file.write("K-mer\tcoef._in_lin_reg_model\tNo._of_samples_with_k-mer\
-                \tSamples_with_k-mer\n")
+        self.coeff_file.write("K-mer\tcoef._in_" + self.model_name_short + \
+            "_model\tNo._of_samples_with_k-mer\tSamples_with_k-mer\n")
         features = self.ML_df.columns.values
         for index, coef in self.classifier.best_estimator_.coef_:
             samples_with_kmer = self.ML_df.loc[self.ML_df[features[index]] == 1].index.tolist()
