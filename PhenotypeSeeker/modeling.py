@@ -1209,7 +1209,7 @@ class phenotypes():
             samples_with_kmer = \
                 df_for_coeffs.loc[df_for_coeffs[kmer] == 1].index.tolist()
             self.coeff_file.write("%s\t%s\t%s\t| %s\n" % (
-                kmer, coef,
+                kmer, kmer_coef,
                 len(samples_with_kmer), " ".join(samples_with_kmer)
                 ))  
 
