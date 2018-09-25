@@ -1132,7 +1132,7 @@ class phenotypes():
             "Acutal_phenotype Predicted_phenotype\n")
         for index, row in dataset.iterrows():
             self.summary_file.write('%s %s %s\n' % (
-                index, labels.loc[index], self.best_classifier.predict(row.reshape(1, -1))
+                index, labels.values[index], predictions[index])
                 ))
         if self.scale == "continuous":
             self.model_performance_regression(dataset, labels.values.flatten(), predictions)
@@ -1171,7 +1171,7 @@ class phenotypes():
             self.summary_file.write("Average precision: %s\n" % \
                 average_precision_score(
                     labels, 
-                    clf.predict_proba(dataset)[:,1]
+                    self.best_classifier.predict_proba(dataset)[:,1]
                     )                        )
             self.summary_file.write("MCC: %s\n" % \
                 matthews_corrcoef(labels, predictions))
