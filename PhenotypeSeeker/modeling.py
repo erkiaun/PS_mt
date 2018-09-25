@@ -84,7 +84,8 @@ class Input():
             min_samples, max_samples, mpheno, kmer_length,
             cutoff, num_threads, pvalue_cutoff, kmer_limit,
             FDR, B, binary_classifier, penalty, max_iter,
-            tol, l1_ratio, testset_size, kernel
+            tol, l1_ratio, testset_size, kernel, n_iter,
+            n_splits
             ):
         cls._get_phenotypes_to_analyse(mpheno)
         phenotypes.alphas = cls._get_alphas(
@@ -109,6 +110,8 @@ class Input():
         phenotypes.l1_ratio = l1_ratio
         phenotypes.test_size = testset_size
         phenotypes.kernel = kernel
+        phenotypes.n_iter = n_iter
+        phenotypes.n_splits = n_splits
 
         cls.get_model_name(binary_classifier)
 
@@ -440,6 +443,8 @@ class phenotypes():
     gammes = None
     testset_size = 0.0
     kernel = None
+    n_iter = None
+    n_splits = None
 
 
     def __init__(self, name):
@@ -456,7 +461,6 @@ class phenotypes():
         self.y_test = None
         self.train_weights = None
         self.test_weights = None
-
 
     # -------------------------------------------------------------------
     # Functions for calculating the association test results for kmers.
@@ -910,7 +914,7 @@ class phenotypes():
         cls.set_classifier()
         cls.set_hyperparameters()
         cls.get_best_classifier()
-        cls.fit_classifier()
+
 
     @classmethod
     def set_classifier(cls):
@@ -974,34 +978,32 @@ class phenotypes():
     @classmethod
     def get_best_classifier(cls):
         if cls.scale == "continuous":
-            cls.best_clf = GridSearchCV(cls.classifier, cls.hyper_parameters, cv=n_splits)
+            cls.best_clf = GridSearchCV(
+                cls.classifier, cls.hyper_parameters, cv=cls.n_splits
+                )
         elif cls.scale == "binary":
             if cls.model_name_long == "logistic regression":
-                cls.best_clf = GridSearchCV(cls.classifier, cls.hyper_parameters, cv=n_splits)
-            elif cls.model_name_long == "support vector machine":
-                if kernel == "linear":
-                    cls.best_clf = GridSearchCV(cls.classifier, cls.hyper_parameters, cv=n_splits)
-                if clf.kernel == "rbf":
-                    cls.clf = RandomizedSearchCV(
-                        cls.best_clf, cls.hyper_parameters, n_iter=n_iter, cv=n_splits
-                        )
-    @classmethod
-    def fit_classifier(cls):
-        if cls.scale == "continuous":
-            if penalty == "L1":
-                clf.model = clf.fit(X_train, y_train)
-        elif cls.scale == "binary":
-            if cls.model_name_long == "logistic regression":
-                model = clf.fit(
-                    X_train, y_train, sample_weight=sample_weights_train
+                cls.best_clf = GridSearchCV(
+                    cls.classifier, cls.hyper_parameters, cv=cls.n_splits
                     )
             elif cls.model_name_long == "support vector machine":
                 if kernel == "linear":
-                    cls.clf = GridSearchCV(svc, parameters, cv=n_splits)
-                if kernel == "rbf":
-                    cls.clf = RandomizedSearchCV(
-                        svc, parameters, n_iter=n_iter, cv=n_splits
+                    cls.best_clf = GridSearchCV(
+                        cls.classifier, cls.hyper_parameters, cv=cls.n_splits
                         )
+                if clf.kernel == "rbf":
+                    cls.clf = RandomizedSearchCV(
+                        cls.best_clf, cls.hyper_parameters,
+                        n_iter=cls.n_iter, cv=cls.n_splits
+                        )
+
+    def fit_classifier(self):
+        if self.scale == "continuous":
+            if self.penalty == "L1":
+                self.model = self.get_best_classifier.fit(self.X_train, self.y_train)
+        else:
+            self.model = self.get_best_classifier.fit(self.X_train, self.y_train,
+                sample_weight=self.weights_train)
 
     def machine_learning_modelling(self):
         if len(Input.phenotypes_to_analyse) > 1:
@@ -1017,6 +1019,7 @@ class phenotypes():
             return
         self.get_dataframe_for_machine_learning()
         summary_file.write("Dataset:\n%s\n\n" % self.skl_dataset)
+        self.fit_classifier()
 
 
 
@@ -2253,7 +2256,7 @@ def modeling(args):
         args.num_threads, args.pvalue, args.n_kmers, args.FDR, 
         args.Bonferroni, args.binary_classifier, args.penalty,
         args.max_iter, args.tol, args.l1_ratio, args.testset_size,
-        args.kernel
+        args.kernel, args.n_iter, args.n_splits
         )
     Input.get_multithreading_parameters()
 
@@ -2268,6 +2271,7 @@ def modeling(args):
     stderr_print.currentSampleNum.value = 0
     if args.weights == "+":
         Samples.get_weights()
+
     # Analyses of phenotypes
     phenotypes.preparations_for_kmer_testing()
     map(
