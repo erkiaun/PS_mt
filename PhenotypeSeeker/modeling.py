@@ -1195,11 +1195,11 @@ class phenotypes():
         self.coeff_file.write("K-mer\tcoef._in_" + self.model_name_short + \
             "_model\tNo._of_samples_with_k-mer\tSamples_with_k-mer\n")
         if self.model_name_short != "RF":
-            self.ML_df.loc['coefficient'] = \
-                self.best_classifier.best_estimator_.coef_[0]
+            self.ML_df.iloc[:,0:-2].loc['coefficient'] = \
+                self.best_classifier.best_estimator_.coef_[0] 
         else:
             self.ML_df = self.ML_df.loc['coefficient'] = \
-                self.best_classifier.best_estimator_.feature_importances_[0]
+                self.classifier.best_estimator_.feature_importances_[0]
         for kmer in self.ML_df:
             kmer_coef = self.ML_df[kmer].loc['coefficient']
             samples_with_kmer = self.ML_df.loc[self.ML_df[kmer] == 1].index.tolist()
