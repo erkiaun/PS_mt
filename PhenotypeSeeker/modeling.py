@@ -187,7 +187,6 @@ class Samples():
 
     kmer_length = None
     cutoff = None
-    gammas = None
     min_samples = None
     max_samples = None
     num_threads = None
@@ -417,19 +416,22 @@ class phenotypes():
 
     scale = "binary"
 
+    model_name_long = None
+    model_name_short = None
+
+    # Multithreading parameters
     vectors_as_multiple_input = []
     progress_checkpoint = Value("i", 0)
     no_kmers_to_analyse = Value("i", 0)
     test_outputfiles = dict()
 
+    # Filtering parameters
     pvalue_cutoff = None
     kmer_limit = None
     FDR = None
     B = None
 
-    model_name_long = None
-    model_name_short = None
-
+    # Machine learning parameters
     model = None
     clf = None
     penalty = None
@@ -475,7 +477,6 @@ class phenotypes():
     def test_kmers_association_with_phenotype(self):
         stderr_print.currentKmerNum.value = 0
         stderr_print.previousPercent.value = 0
-        map(lambda x: print(x.name, x.weight, id(x.weight)), Input.samples.values())
         pvalues_from_all_threads = Input.pool.map(
             partial(
                 self.get_kmers_tested, Input.samples.values()
@@ -1053,11 +1054,9 @@ class phenotypes():
             target_names=np.array(["resistant", "sensitive"]),
             feature_names=self.ML_df.iloc[:,0:-2].columns.values
             )
-        print(self.ML_df.shape)
         self.ML_df = self.ML_df.loc[self.ML_df.phenotype != 'NA']
-        print(self.ML_df.shape)
         self.ML_df_train, self.ML_df_test = train_test_split(
-            self.ML_df, test_size=cls.testset_size, random_state=0
+            self.ML_df, test_size=self.testset_size, random_state=0
             )
         self.X_train = self.ML_df_train.iloc[:,0:-2]
         self.y_train = self.ML_df_train.iloc[:,-2:-1]
