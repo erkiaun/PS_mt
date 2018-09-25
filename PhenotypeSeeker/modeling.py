@@ -1066,7 +1066,7 @@ class phenotypes():
                 self.ML_df[line[0].split()[0]] = [int(j.split()[1].strip()) for j in line]
         self.ML_df = self.ML_df.astype(bool).astype(int)
         self.ML_df['phenotype'] = [
-            int(sample.phenotypes[self.name]) for sample in Input.samples.values()
+            sample.phenotypes[self.name] for sample in Input.samples.values()
             ]
         self.ML_df['weight'] = [
             sample.weight for sample in Input.samples.values()
