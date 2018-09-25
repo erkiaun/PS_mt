@@ -84,7 +84,7 @@ class Input():
             min_samples, max_samples, mpheno, kmer_length,
             cutoff, num_threads, pvalue_cutoff, kmer_limit,
             FDR, B, binary_classifier, penalty, max_iter,
-            tol, l1_ratio, testset_size
+            tol, l1_ratio, testset_size, kernel
             ):
         cls._get_phenotypes_to_analyse(mpheno)
         phenotypes.alphas = cls._get_alphas(
@@ -108,6 +108,7 @@ class Input():
         phenotypes.tol = tol
         phenotypes.l1_ratio = l1_ratio
         phenotypes.test_size = testset_size
+        phenotypes.kernel = kernel
 
         cls.get_model_name(binary_classifier)
 
@@ -432,11 +433,14 @@ class phenotypes():
     max_iter = None
     tol = None
     l1_ratio = None
-    parameters = None
+    classifier = None
+    best_classifier = None
     hyper_parameters = None
     alphas = None
     gammes = None
     testset_size = 0.0
+    kernel = None
+
 
     def __init__(self, name):
         self.name = name
@@ -903,48 +907,48 @@ class phenotypes():
                 +  Samples.phenotypes[0] + " data...\n")
         else:
             sys.stderr.write("Generating the " + cls.model_name_long + " model...\n")
-        cls.set_parameters()
+        cls.set_classifier()
         cls.set_hyperparameters()
-        cls.get_classifier()
+        cls.get_best_classifier()
         cls.fit_classifier()
 
     @classmethod
-    def set_parameters(cls):
+    def set_classifier(cls):
         if cls.scale == "continuous":
             # Defining linear regression parameters    
             if cls.penalty == 'l1':
-                cls.parameters = Lasso(max_iter=cls.max_iter, tol=cls.tol)        
+                cls.classifier = Lasso(max_iter=cls.max_iter, tol=cls.tol)        
             if cls.penalty == 'l2':
-                cls.parameters = Ridge(max_iter=cls.max_iter, tol=cls.tol)
+                cls.classifier = Ridge(max_iter=cls.max_iter, tol=cls.tol)
             if cls.penalty == 'elasticnet' or "L1+L2":
-                cls.parameters = ElasticNet(
+                cls.classifier = ElasticNet(
                     l1_ratio=cls.l1_ratio, max_iter=cls.max_iter, tol=cls.tol
                     )
         elif cls.scale == "binary":
             if cls.model_name_long == "logistic regression":
                 #Defining logistic regression parameters
                 if cls.penalty == "L1":
-                    cls.parameters = LogisticRegression(
+                    cls.classifier = LogisticRegression(
                         penalty='l1', solver='saga',
                         max_iter=cls.max_iter, tol=cls.tol
                         )        
                 elif cls.penalty == "L2":
-                    cls.parameters = LogisticRegression(
+                    cls.classifier = LogisticRegression(
                         penalty='l2', solver='saga',
                         max_iter=cls.max_iter, tol=cls.tol
                         )
                 elif cls.penalty == "elasticnet" or "L1+L2":
-                    cls.parameters = SGDClassifier(
+                    cls.classifier = SGDClassifier(
                         penalty='elasticnet', l1_ratio=cls.l1_ratio,
                         max_iter=cls.max_iter, tol=cls.tol, loss='log'
                         )
             elif cls.model_name_long == "support vector machine":
-                cls.parameters = SVC(
+                cls.classifier = SVC(
                     kernel=cls.kernel, probability=True,
                     max_iter=cls.max_iter, tol=cls.tol
                     ) 
             elif cls.model_name_long == "random_forest":
-                cls.parameters = RandomForestClassifier(n_estimators=100)
+                cls.classifier = RandomForestClassifier(n_estimators=100)
 
     @classmethod
     def set_hyperparameters(cls):
@@ -968,18 +972,18 @@ class phenotypes():
                     cls.hyper_parameters = {'C':Cs, 'gamma':Gammas}
 
     @classmethod
-    def get_classifier(cls):
+    def get_best_classifier(cls):
         if cls.scale == "continuous":
-            cls.clf = GridSearchCV(lin_reg, parameters, cv=n_splits)
+            cls.best_clf = GridSearchCV(cls.classifier, cls.hyper_parameters, cv=n_splits)
         elif cls.scale == "binary":
             if cls.model_name_long == "logistic regression":
-                cls.clf = GridSearchCV(log_reg, parameters, cv=n_splits)
+                cls.best_clf = GridSearchCV(cls.classifier, cls.hyper_parameters, cv=n_splits)
             elif cls.model_name_long == "support vector machine":
                 if kernel == "linear":
-                    cls.clf = GridSearchCV(svc, parameters, cv=n_splits)
-                if kernel == "rbf":
+                    cls.best_clf = GridSearchCV(cls.classifier, cls.hyper_parameters, cv=n_splits)
+                if clf.kernel == "rbf":
                     cls.clf = RandomizedSearchCV(
-                        svc, parameters, n_iter=n_iter, cv=n_splits
+                        cls.best_clf, cls.hyper_parameters, n_iter=n_iter, cv=n_splits
                         )
     @classmethod
     def fit_classifier(cls):
@@ -2248,7 +2252,8 @@ def modeling(args):
         args.min, args.max, args.mpheno, args.length, args.cutoff,
         args.num_threads, args.pvalue, args.n_kmers, args.FDR, 
         args.Bonferroni, args.binary_classifier, args.penalty,
-        args.max_iter, args.tol, args.l1_ratio, args.testset_size
+        args.max_iter, args.tol, args.l1_ratio, args.testset_size,
+        args.kernel
         )
     Input.get_multithreading_parameters()
 
