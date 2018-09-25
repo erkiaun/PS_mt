@@ -1132,7 +1132,7 @@ class phenotypes():
             "Acutal_phenotype Predicted_phenotype\n")
         for index, row in dataset.iterrows():
             self.summary_file.write('%s %s %s\n' % (
-                index, labels.values[index], predictions[index])
+                index, labels.values[index], predictions[index]
                 ))
         if self.scale == "continuous":
             self.model_performance_regression(dataset, labels.values.flatten(), predictions)
