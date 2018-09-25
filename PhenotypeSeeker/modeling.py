@@ -236,15 +236,15 @@ class Samples():
 
     @classmethod
     def from_inputfile(cls, line):
-        phenotypes = {}
+        sample_phenotypes = {}
         name, address, phenotype_list = \
             line.split()[0], line.split()[1], line.split()[2:]
         if not all(x == "0" or x == "1" or x == "NA" for x in phenotype_list):
             phenotypes.scale = "continuous"
         if cls.take_logs:
-            phenotype_list = map(lambda x: math.log(x, 2), phenotypes)
+            phenotype_list = map(lambda x: math.log(x, 2), phenotype_list)
         for i,j in zip(cls.phenotypes, phenotype_list):
-            phenotypes[i] = j 
+            sample_phenotypes[i] = j 
         return cls(name, address, phenotypes)
 
     @classmethod
