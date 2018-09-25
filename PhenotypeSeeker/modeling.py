@@ -1133,7 +1133,7 @@ class phenotypes():
         for index, row in dataset.iterrows():
             self.summary_file.write('%s %s %s\n' % (
                 index, labels.loc[index].values[0],
-                self.best_classifier.predict(row.reshape(1, -1))
+                self.best_classifier.predict(row.reshape(1, -1))[0]
                 ))
         if self.scale == "continuous":
             self.model_performance_regression(dataset, labels.values.flatten(), predictions)
@@ -1158,7 +1158,6 @@ class phenotypes():
             )
 
     def model_performance_classifier(self, dataset, labels, predictions):
-            self.summary_file.write("\nTraining set: \n")
             self.summary_file.write("Mean accuracy: %s\n" % self.best_classifier.score(dataset, labels))
             self.summary_file.write("Sensitivity: %s\n" % \
                     recall_score(labels, predictions))
@@ -1182,7 +1181,7 @@ class phenotypes():
                 metrics.VME(labels, predictions))
             self.summary_file.write("Major error rate: %s\n" %\
                 metrics.ME(labels, predictions))
-            self.summary_file.write('Classification report:\n %s\n' % classification_report(
+            self.summary_file.write('Classification report:\n\n %s\n' % classification_report(
                 labels, predictions, 
                 target_names=["sensitive", "resistant"]
                 ))
