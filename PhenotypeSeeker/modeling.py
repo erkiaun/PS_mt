@@ -1085,6 +1085,10 @@ class phenotypes():
             self.y_train = self.ML_df.iloc[:,-2:-1]
             self.weights_train = self.ML_df.iloc[:,-1:]
 
+        print(self.X_train.shape)
+        print(self.y_train.shape)
+        print(self.weights_train.shape)
+
         self.summary_file.write("Dataset:\n%s\n\n" % self.skl_dataset)  
 
 
@@ -1113,15 +1117,17 @@ class phenotypes():
                 self.summary_file.write(key + " : " + str(value) + "\n")
 
     def predict(self, dataset, labels):
-            predictions = clf.predict(dataset)
-            self.summary_file.write("\nModel predictions on samples:\nSample_ID " \
-                "Acutal_phenotype Predicted_phenotype\n")
-            for index, row in dataset.iterrows():
-                self.summary_file.write('%s %s %s\n' % (
-                    index, labels.loc[index], self.best_classifier.predict(row)
-                    ))
-            if self.scale == "continuous":
-                self.model_performance_regression(dataset, labels, predictions)
+        predictions = clf.predict(dataset)
+        self.summary_file.write("\nModel predictions on samples:\nSample_ID " \
+            "Acutal_phenotype Predicted_phenotype\n")
+        for index, row in dataset.iterrows():
+            self.summary_file.write('%s %s %s\n' % (
+                index, labels.loc[index], self.best_classifier.predict(row)
+                ))
+        if self.scale == "continuous":
+            self.model_performance_regression(dataset, labels, predictions)
+        elif self.scale == "binary":
+            self.model_performance_classifier(dataset, labels, predictions)
 
     def model_performance_regression(self, dataset, labels, predictions):
         self.summary_file.write('Mean squared error: %s\n' % \
@@ -1139,6 +1145,42 @@ class phenotypes():
                 labels, predictions
                 )
             )
+
+    def model_performance_classifier(self, dataset, labels, predictions):
+            self.summary_file.write("\nTraining set: \n")
+            self.summary_file.write("Mean accuracy: %s\n" % clf.score(dataset, labels))
+            self.summary_file.write("Sensitivity: %s\n" % \
+                    recall_score(labels, predictions))
+            self.summary_file.write("Specificity: %s\n" % \
+                    recall_score(
+                        list(map(lambda x: 1 if x == 0 else 0, labels)), 
+                        list(map(lambda x: 1 if x == 0 else 0, predictions
+                        ))))
+            self.summary_file.write("AUC-ROC: %s\n" % \
+                roc_auc_score(labels, predictions, average="micro"))
+            self.summary_file.write("Average precision: %s\n" % \
+                average_precision_score(
+                    labels, 
+                    clf.predict_proba(dataset)[:,1]
+                    )                        )
+            self.summary_file.write("MCC: %s\n" % \
+                matthews_corrcoef(labels, predictions))
+            self.summary_file.write("Cohen kappa: %s\n" %\
+                cohen_kappa_score(labels, predictions))
+            self.summary_file.write("Very major error rate: %s\n" %\
+                metrics.VME(labels, predictions))
+            self.summary_file.write("Major error rate: %s\n" %\
+                metrics.ME(labels, predictions))
+            self.summary_file.write('Classification report:\n %s\n' % classification_report(
+                labels, predictions, 
+                target_names=["sensitive", "resistant"]
+                ))
+            cm = confusion_matrix(labels, predictions)
+            self.summary_file.write("Confusion matrix:\n")
+            self.summary_file.write("Predicted\t0\t1:\n")
+            self.summary_file.write("Actual\n")
+            self.summary_file.write("0\t\t%s\t%s\n" % tuple(cm[0]))
+            self.summary_file.write("1\t\t%s\t%s\n\n" % tuple(cm[1]))
 
 
 def linear_regression(
