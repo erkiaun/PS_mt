@@ -1078,6 +1078,7 @@ class phenotypes():
             feature_names=self.ML_df.iloc[:,0:-2].columns.values
             )
         self.ML_df = self.ML_df.loc[self.ML_df.phenotype != 'NA']
+        self.ML_df.index = Input.samples.keys()
         if self.testset_size != 0.0:
             self.ML_df_train, self.ML_df_test = train_test_split(
                 self.ML_df, test_size=self.testset_size,
@@ -1134,9 +1135,9 @@ class phenotypes():
                 index, labels.loc[index], self.best_classifier.predict(row.reshape(1, -1))
                 ))
         if self.scale == "continuous":
-            self.model_performance_regression(dataset, labels, predictions)
+            self.model_performance_regression(dataset, labels.flatten(), predictions)
         elif self.scale == "binary":
-            self.model_performance_classifier(dataset, labels, predictions)
+            self.model_performance_classifier(dataset, labels.flatten(), predictions)
 
     def model_performance_regression(self, dataset, labels, predictions):
         self.summary_file.write('Mean squared error: %s\n' % \
@@ -1196,12 +1197,12 @@ class phenotypes():
         self.coeff_file.write("K-mer\tcoef._in_" + self.model_name_short + \
             "_model\tNo._of_samples_with_k-mer\tSamples_with_k-mer\n")
         self.ML_df = self.ML_df.loc['coefficients'] = self.classifier.best_estimator_.coef_[0]
+        for kmer in self.ML_df:
+            kmer_coef = 
 
-
-        for index, coef in self.classifier.best_estimator_.coef_:
             samples_with_kmer = self.ML_df.loc[self.ML_df[features[index]] == 1].index.tolist()
             self.coeff_file.write("%s\t%s\t%s\t| %s\n" % (
-                features[index], coef,
+                kmer, coef,
                 len(samples_with_kmer), " ".join(samples_with_kmer)
                 ))  
 
