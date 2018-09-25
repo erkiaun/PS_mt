@@ -962,7 +962,7 @@ class phenotypes():
         elif cls.scale == "binary":
             if cls.model_name_long == "logistic regression":
                 #Defining logistic regression parameters
-                if penalty == "L1" or "L2":
+                if cls.penalty == "L1" or "L2":
                     Cs = list(map(lambda x: 1/x, cls.alphas))
                     cls.hyper_parameters = {'C':Cs}
                 elif penalty == "elasticnet":
@@ -997,24 +997,14 @@ class phenotypes():
                         n_iter=cls.n_iter, cv=cls.n_splits
                         )
 
-    def fit_classifier(self):
-        if self.scale == "continuous":
-            if self.penalty == "L1":
-                self.model = self.get_best_classifier.fit(self.X_train, self.y_train)
-        else:
-            self.model = self.get_best_classifier.fit(self.X_train, self.y_train,
-                sample_weight=self.weights_train)
-
     def machine_learning_modelling(self):
         if len(Input.phenotypes_to_analyse) > 1:
             sys.stderr.write("\tof " 
                 +  self.name + " data...\n")
-        summary_file, coeff_file, model_file = self.get_outputfile_names()
-        summary_file = open(summary_file, "w")
-        coeff_file = open(coeff_file, "w")
-        model_file = open(model_file, "w")
+        self.get_outputfile_names()
+ 
         if len(self.kmers_for_ML) == 0:
-            summary_file.write("No k-mers passed the step of k-mer filtering for " \
+            self.summary_file.write("No k-mers passed the step of k-mer filtering for " \
                 "machine learning modelling.\n")
             return
         self.get_dataframe_for_machine_learning()
@@ -1022,6 +1012,28 @@ class phenotypes():
         self.fit_classifier()
 
 
+    def get_outputfile_names(self):
+        if Samples.headerline:
+            summary_file = "summary_of_" + self.model_name_short + "_analysis" \
+                + self.name + ".txt"
+            coeff_file = "k-mers_and_coefficients_in_" + self.model_name_short \
+                + "_model_" + self.name + ".txt"
+            model_file = self.model_name_short + "_model_" + self.name + ".pkl"
+        elif len(Input.phenotypes_to_analyse) > 1:
+            summary_file = "summary_of_" + self.model_name_short + "_analysis" \
+                + self.name + ".txt"
+            coeff_file = "k-mers_and_coefficients_in_" + self.model_name_short \
+                + "_model_" + self.name + ".txt"
+            model_file = self.model_name_short +"_model_" + self.name + ".pkl"
+        else:
+            summary_file = "summary_of_" + self.model_name_short + "_analysis.txt"
+            coeff_file = "k-mers_and_coefficients_in_" + self.model_name_short \
+                + "_model.txt"
+            model_file = self.model_name_short + "_model.txt"
+        
+        self.summary_file = open(summary_file, "w")
+        self.coeff_file = open(coeff_file, "w")
+        self.model_file = open(model_file, "w")  
 
 
     def get_dataframe_for_machine_learning(self):
@@ -1052,29 +1064,18 @@ class phenotypes():
         self.weights_train = self.ML_df_train.iloc[:,-1:]
         self.X_test = self.ML_df_test.iloc[:,0:-2]
         self.y_test = self.ML_df_test.iloc[:,-2:-1]
-        self.weights_test = self.ML_df_test.iloc[:,-1:]
+        self.weights_test = self.ML_df_test.iloc[:,-1:]    
 
 
-    def get_outputfile_names(self):
-        if Samples.headerline:
-            summary_file = "summary_of_" + self.model_name_short + "_analysis" \
-                + self.name + ".txt"
-            coeff_file = "k-mers_and_coefficients_in_" + self.model_name_short \
-                + "_model_" + self.name + ".txt"
-            model_file = self.model_name_short + "_model_" + self.name + ".pkl"
-        elif len(Input.phenotypes_to_analyse) > 1:
-            summary_file = "summary_of_" + self.model_name_short + "_analysis" \
-                + self.name + ".txt"
-            coeff_file = "k-mers_and_coefficients_in_" + self.model_name_short \
-                + "_model_" + self.name + ".txt"
-            model_file = self.model_name_short +"_model_" + self.name + ".pkl"
-        else:
-            summary_file = "summary_of_" + self.model_name_short + "_analysis.txt"
-            coeff_file = "k-mers_and_coefficients_in_" + self.model_name_short \
-                + "_model.txt"
-            model_file = self.model_name_short + "_model.txt"
-        
-        return summary_file, coeff_file, model_file       
+    # def fit_classifier(self):
+    #     if self.scale == "continuous":
+    #         if self.penalty == "L1":
+    #             self.model = self.get_best_classifier.fit(self.X_train, self.y_train)
+    #     else:
+    #         self.model = self.get_best_classifier.fit(self.X_train, self.y_train,
+    #             sample_weight=self.weights_train)
+    #     self..write('Parameters:\n%s\n\n' % model)
+    #     f1.write("Grid scores (mean accuracy) on development set:\n")
 
 
 def linear_regression(
