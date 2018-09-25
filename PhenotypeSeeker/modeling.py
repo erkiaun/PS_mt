@@ -1204,9 +1204,9 @@ class phenotypes():
         else:
             df_for_coeffs.loc['coefficient'] = \
                 self.best_classifier.best_estimator_.coef_[0]
-        for kmer in self.ML_df:
-            kmer_coef = self.ML_df[kmer].loc['coefficient']
-            samples_with_kmer = self.ML_df.loc[self.ML_df[kmer] == 1].index.tolist()
+        for kmer in df_for_coeffs
+            kmer_coef = df_for_coeffs[kmer].loc['coefficient']
+            samples_with_kmer = df_for_coeffs.loc[self.ML_df[kmer] == 1].index.tolist()
             self.coeff_file.write("%s\t%s\t%s\t| %s\n" % (
                 kmer, coef,
                 len(samples_with_kmer), " ".join(samples_with_kmer)
