@@ -170,7 +170,7 @@ class Input():
     @classmethod
     def _get_phenotypes_to_analyse(cls, mpheno):
         if not mpheno:
-            phenotypes_to_analyze = range(Samples.no_phenotypes)
+            phenotypes_to_analyze = xrange(Samples.no_phenotypes)
         else: 
             phenotypes_to_analyze = map(lambda x: x-1, mpheno)
         for item in phenotypes_to_analyze:
@@ -243,7 +243,7 @@ class Samples():
             phenotypes.scale = "continuous"
         if cls.take_logs:
             phenotype_list = map(lambda x: math.log(x, 2), phenotype_list)
-        for i,j in zip(cls.phenotypes, phenotype_list):
+        for i,j in izip(cls.phenotypes, phenotype_list):
             sample_phenotypes[i] = j
         return cls(name, address, sample_phenotypes)
 
@@ -315,8 +315,8 @@ class Samples():
                 line = line.strip().split()
                 distancematrix.append(line[1:counter])
                 counter += 1
-        for i in range(len(distancematrix)):
-            for j in range(len(distancematrix[i])):
+        for i in xrange(len(distancematrix)):
+            for j in xrange(len(distancematrix[i])):
                 distancematrix[i][j] = float(distancematrix[i][j])
         return(distancematrix)
 
@@ -384,7 +384,7 @@ class metrics():
     def VME(targets, predictions):
         # Function to calculate the very major error (VME) rate
         VMEs = 0
-        for item in zip(targets, predictions):
+        for item in izip(targets, predictions):
             if item[0] == 1 and item[1] == 0:
                 VMEs += 1
         VME = str(float(VMEs)/len(targets)*100)+"%"
@@ -394,7 +394,7 @@ class metrics():
     def ME(targets, predictions):
         # Function to calculate the major error (ME) rate
         MEs = 0
-        for item in zip(targets, predictions):
+        for item in izip(targets, predictions):
             if item[0] == 0 and item[1] == 1:
                  MEs += 1
         ME = str(float(MEs)/len(targets)*100)+"%"
@@ -405,7 +405,7 @@ class metrics():
         # Calculate the plus/minus one dilution factor accuracy
         # for predicted antibiotic resistance values.
         within_1_tier = 0
-        for item in zip(targets, predictions):
+        for item in izip(targets, predictions):
             if abs(item[0]-item[1]) <= 1:
                 within_1_tier +=1
         accuracy = float(within_1_tier)/len(targets)
@@ -522,7 +522,7 @@ class phenotypes():
     @classmethod
     def _splitted_vectors_to_multiple_input(cls):
         vectors_as_multiple_input = []
-        for i in range(Samples.num_threads):
+        for i in xrange(Samples.num_threads):
             cls.vectors_as_multiple_input.append(
                 [
                 "K-mer_lists/" + sample + "_mapped_%05d" %i \
@@ -653,14 +653,14 @@ class phenotypes():
         #Parametes for group containig the k-mer
         wtd_mean_y = np.average(y, weights=y_weights)
         sumofweightsy = sum(y_weights)
-        ybar = np.float64(sum([i*j for i,j in zip(y, y_weights)])/sumofweightsy)
-        vary = sum([i*j for i,j in zip(y_weights, (y - ybar)**2)])/(sumofweightsy-1)
+        ybar = np.float64(sum([i*j for i,j in izip(y, y_weights)])/sumofweightsy)
+        vary = sum([i*j for i,j in izip(y_weights, (y - ybar)**2)])/(sumofweightsy-1)
         
         #Parameters for group not containig the k-mer
         wtd_mean_x = np.average(x, weights=x_weights)
         sumofweightsx = sum(x_weights)
-        xbar = np.float64(sum([i*j for i,j in zip(x, x_weights)])/sumofweightsx)
-        varx = sum([i*j for i,j in zip(x_weights, (x - xbar)**2)])/(sumofweightsx-1)
+        xbar = np.float64(sum([i*j for i,j in izip(x, x_weights)])/sumofweightsx)
+        varx = sum([i*j for i,j in izip(x_weights, (x - xbar)**2)])/(sumofweightsx-1)
 
         #Calculating the weighted Welch's t-test results
         dif = wtd_mean_x-wtd_mean_y
@@ -794,7 +794,7 @@ class phenotypes():
                 ],
                 shell=True
                 )
-            for l in range(Samples.num_threads):
+            for l in xrange(Samples.num_threads):
                 call(
                     [
                     "rm " + beginning_text + phenotype +
@@ -810,7 +810,7 @@ class phenotypes():
                 ],
                 shell=True
                 )
-            for l in range(Samples.num_threads):
+            for l in xrange(Samples.num_threads):
                 call(
                     ["rm " + beginning_text + phenotype + "_%05d.txt" %l],
                     shell=True
@@ -1088,16 +1088,24 @@ class phenotypes():
                 stratify=stratify, random_state=0
                 )
             self.X_train = self.ML_df_train.iloc[:,0:-2]
-            self.y_train = self.ML_df_train.iloc[:,-2:-1].astype(int)
+            self.y_train = self.ML_df_train.iloc[:,-2:-1]
             self.weights_train = self.ML_df_train.iloc[:,-1:]
             self.X_test = self.ML_df_test.iloc[:,0:-2]
-            self.y_test = self.ML_df_test.iloc[:,-2:-1].astype(int)
+            self.y_test = self.ML_df_test.iloc[:,-2:-1]
             self.weights_test = self.ML_df_test.iloc[:,-1:]
         else:
             self.X_train = self.ML_df.iloc[:,0:-2]
             self.y_train = self.ML_df.iloc[:,-2:-1].astype(int)
             self.weights_train = self.ML_df.iloc[:,-1:]
 
+        if phenotypes.scale == "continuous":
+            self.y_train = self.y_train.astype(float)
+            if self.testset_size != 0.0:
+                self.y_test = self.y_test.astype(float)    
+        elif phenotypes.scale == "binary":
+            self.y_train = self.y_train.astype(int)
+            if self.testset_size != 0.0:
+                self.y_test = self.y_test.astype(int) 
         self.summary_file.write("Dataset:\n%s\n\n" % self.skl_dataset)  
 
 
@@ -1117,7 +1125,7 @@ class phenotypes():
             self.summary_file.write("Grid scores (R2 score) on development set: \n")
             means = self.best_classifier.cv_results_['mean_test_score']
             stds = self.best_classifier.cv_results_['std_test_score']
-            for mean, std, params in zip(
+            for mean, std, params in izip(
                     means, stds, self.best_classifier.cv_results_['params']
                     ):
                 self.summary_file.write(
