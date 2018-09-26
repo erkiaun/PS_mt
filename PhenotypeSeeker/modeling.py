@@ -639,13 +639,13 @@ class phenotypes():
             ):
         for index, sample in enumerate(samples):
             sample_phenotype = sample.phenotypes[self.name]
-            if sample_phenotype != "NA":
+            if sample.phenotypes[self.name] != "NA":
                 if kmer_presence_vector[index] == "0":
-                    y.append(float(sample_phenotype))
-                    y_weights.append(Input.samples[sample_name].weight)
+                    y.append(float(sample.phenotypes[self.name]))
+                    y_weights.append(sample.weight)
                 else:
-                    x.append(float(sample_phenotype))
-                    x_weights.append(Input.samples[sample_name].weight)
+                    x.append(float(sample.phenotypes[self.name]))
+                    x_weights.append(sample.weight)
                     samples_w_kmer.append(sample_name)
 
     @staticmethod
