@@ -619,14 +619,17 @@ class phenotypes():
 
         if len(x) < Samples.min_samples or len(y) < 2 or len(x) > Samples.max_samples:
             return None
+
+        t_statistic, pvalue, mean_x, mean_y = self.t_test(
+            x, y, x_weights, y_weights
+            )
+
         if kmer == "AAAAAAAAAAAGA":
             print(x)
             print(y)
             print(x_weights)
             print(y_weights)
-        t_statistic, pvalue, mean_x, mean_y = self.t_test(
-            x, y, x_weights, y_weights
-            )
+            print(t_statistic, pvalue, mean_x, mean_y)
 
         test_results_file.write(
             kmer + "\t" + str(round(t_statistic, 2)) + "\t" + \
