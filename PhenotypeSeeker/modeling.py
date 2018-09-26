@@ -648,7 +648,8 @@ class phenotypes():
                     x_weights.append(sample.weight)
                     samples_w_kmer.append(sample.name)
 
-    def t_test(self, x, y, x_weights, y_weights):
+    @staticmethod
+    def t_test(x, y, x_weights, y_weights):
         #Parametes for group containig the k-mer
         wtd_mean_y = np.average(y, weights=y_weights)
         sumofweightsy = sum(y_weights)
@@ -1078,9 +1079,13 @@ class phenotypes():
         self.ML_df = self.ML_df.loc[self.ML_df.phenotype != 'NA']
         self.ML_df.index = Input.samples.keys()
         if self.testset_size != 0.0:
+            if phenotype.scale == "continuous":
+                stratify = None
+            elif phenotype.scale == "binary":
+                stratify = self.skl_dataset.target
             self.ML_df_train, self.ML_df_test = train_test_split(
                 self.ML_df, test_size=self.testset_size,
-                stratify=self.skl_dataset.target, random_state=0
+                stratify=statify, random_state=0
                 )
             self.X_train = self.ML_df_train.iloc[:,0:-2]
             self.y_train = self.ML_df_train.iloc[:,-2:-1].astype(int)
