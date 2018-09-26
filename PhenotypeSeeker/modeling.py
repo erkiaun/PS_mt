@@ -648,7 +648,6 @@ class phenotypes():
                     x_weights.append(sample.weight)
                     samples_w_kmer.append(sample.name)
 
-    @staticmethod
     def t_test(self, x, y, x_weights, y_weights):
         #Parametes for group containig the k-mer
         wtd_mean_y = np.average(y, weights=y_weights)
