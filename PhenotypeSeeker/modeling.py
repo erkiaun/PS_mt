@@ -1004,7 +1004,7 @@ class phenotypes():
                         n_iter=cls.n_iter, cv=cls.n_splits
                         )
             elif cls.model_name_long == "random forest":
-                cls.best_classifier = cls.clf
+                cls.best_classifier = cls.classifier
 
     def machine_learning_modelling(self):
         if len(Input.phenotypes_to_analyse) > 1:
@@ -1016,7 +1016,7 @@ class phenotypes():
                 "machine learning modelling.\n")
             return
         self.get_dataframe_for_machine_learning()
-        self.fit_classifier()
+        self.fit_model()
         self.cross_validation_results()
 
         self.summary_file.write('\nTraining set:\n')
@@ -1109,7 +1109,7 @@ class phenotypes():
         self.summary_file.write("Dataset:\n%s\n\n" % self.skl_dataset)  
 
 
-    def fit_classifier(self):
+    def fit_model(self):
         if self.scale == "continuous":
             if self.penalty == "L1":
                 self.model = self.best_classifier.fit(self.X_train, self.y_train)
@@ -1153,7 +1153,7 @@ class phenotypes():
         self.summary_file.write('Mean squared error: %s\n' % \
                  mean_squared_error(labels, predictions))
         self.summary_file.write("The coefficient of determination:"
-            + " %s\n" % clf.score(dataset, labels))
+            + " %s\n" % self.best_classifier.score(dataset, labels))
         self.summary_file.write("The Spearman correlation coefficient and p-value:" \
             " %s, %s \n" % stats.spearmanr(labels, predictions))
         slope, intercept, r_value, pval_r, std_err = \
