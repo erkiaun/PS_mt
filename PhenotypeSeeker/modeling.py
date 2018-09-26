@@ -1079,9 +1079,9 @@ class phenotypes():
         self.ML_df = self.ML_df.loc[self.ML_df.phenotype != 'NA']
         self.ML_df.index = Input.samples.keys()
         if self.testset_size != 0.0:
-            if phenotype.scale == "continuous":
+            if phenotypes.scale == "continuous":
                 stratify = None
-            elif phenotype.scale == "binary":
+            elif phenotypes.scale == "binary":
                 stratify = self.skl_dataset.target
             self.ML_df_train, self.ML_df_test = train_test_split(
                 self.ML_df, test_size=self.testset_size,
