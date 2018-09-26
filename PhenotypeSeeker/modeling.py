@@ -619,7 +619,7 @@ class phenotypes():
 
         if len(x) < Samples.min_samples or len(y) < 2 or len(x) > Samples.max_samples:
             return None
-        if kmer = "AAAAAAAAAAAGA":
+        if kmer == "AAAAAAAAAAAGA":
             print(x)
             print(y)
             print(x_weights)
