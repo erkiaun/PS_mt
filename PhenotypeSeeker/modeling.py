@@ -620,7 +620,7 @@ class phenotypes():
         if len(x) < Samples.min_samples or len(y) < 2 or len(x) > Samples.max_samples:
             return None
 
-        t_statistic, pvalue, mean_x, mean_y = t_test(
+        t_statistic, pvalue, mean_x, mean_y = self.t_test(
             x, y, x_weights, y_weights
             )
 
