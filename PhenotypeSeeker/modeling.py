@@ -639,14 +639,14 @@ class phenotypes():
             ):
         for index, sample in enumerate(samples):
             sample_phenotype = sample.phenotypes[self.name]
-            if sample.phenotypes[self.name] != "NA":
+            if sample_phenotype != "NA":
                 if kmer_presence_vector[index] == "0":
-                    y.append(float(sample.phenotypes[self.name]))
+                    y.append(float(sample_phenotype))
                     y_weights.append(sample.weight)
                 else:
-                    x.append(float(sample.phenotypes[self.name]))
+                    x.append(float(sample_phenotype))
                     x_weights.append(sample.weight)
-                    samples_w_kmer.append(sample_name)
+                    samples_w_kmer.append(sample.name)
 
     @staticmethod
     def t_test(self, x, y, x_weights, y_weights):
