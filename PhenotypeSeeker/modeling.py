@@ -619,7 +619,11 @@ class phenotypes():
 
         if len(x) < Samples.min_samples or len(y) < 2 or len(x) > Samples.max_samples:
             return None
-
+        if kmer = "AAAAAAAAAAAGA":
+            print(x)
+            print(y)
+            print(x_weights)
+            print(y_weights)
         t_statistic, pvalue, mean_x, mean_y = self.t_test(
             x, y, x_weights, y_weights
             )
@@ -1150,7 +1154,7 @@ class phenotypes():
             self.model_performance_classifier(dataset, labels.values.flatten(), predictions)
 
     def model_performance_regression(self, dataset, labels, predictions):
-        self.summary_file.write('Mean squared error: %s\n' % \
+        self.summary_file.write('\nMean squared error: %s\n' % \
                  mean_squared_error(labels, predictions))
         self.summary_file.write("The coefficient of determination:"
             + " %s\n" % self.best_classifier.score(dataset, labels))
