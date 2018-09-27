@@ -984,9 +984,9 @@ class phenotypes():
             elif cls.model_name_long == "support vector machine":
                 Cs = list(map(lambda x: 1/x, cls.alphas))
                 Gammas = list(map(lambda x: 1/x, cls.gammas))
-                if kernel == "linear":
+                if cls.kernel == "linear":
                     cls.hyper_parameters = {'C':Cs}
-                if kernel == "rbf":
+                if clf.kernel == "rbf":
                     cls.hyper_parameters = {'C':Cs, 'gamma':Gammas}
 
     @classmethod
@@ -1001,7 +1001,7 @@ class phenotypes():
                     cls.classifier, cls.hyper_parameters, cv=cls.n_splits
                     )
             elif cls.model_name_long == "support vector machine":
-                if kernel == "linear":
+                if clf.kernel == "linear":
                     cls.best_classifier = GridSearchCV(
                         cls.classifier, cls.hyper_parameters, cv=cls.n_splits
                         )
