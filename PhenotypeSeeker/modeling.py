@@ -1006,8 +1006,8 @@ class phenotypes():
                         cls.classifier, cls.hyper_parameters, cv=cls.n_splits
                         )
                 if cls.kernel == "rbf":
-                    cls.clf = RandomizedSearchCV(
-                        cls.best_classifier, cls.hyper_parameters,
+                    cls.best_classifier = RandomizedSearchCV(
+                        cls.classifier, cls.hyper_parameters,
                         n_iter=cls.n_iter, cv=cls.n_splits
                         )
             elif cls.model_name_long == "random forest":
