@@ -1218,7 +1218,7 @@ class phenotypes():
                 self.best_classifier.best_estimator_.coef_
         elif self.model_name_short == "RF":
             df_for_coeffs.loc['coefficient'] = \
-                self.best_classifier.best_estimator_.feature_importances_
+                self.best_classifier.feature_importances_
         else:
             df_for_coeffs.loc['coefficient'] = \
                 self.best_classifier.best_estimator_.coef_[0]
