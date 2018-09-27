@@ -1001,11 +1001,11 @@ class phenotypes():
                     cls.classifier, cls.hyper_parameters, cv=cls.n_splits
                     )
             elif cls.model_name_long == "support vector machine":
-                if clf.kernel == "linear":
+                if cls.kernel == "linear":
                     cls.best_classifier = GridSearchCV(
                         cls.classifier, cls.hyper_parameters, cv=cls.n_splits
                         )
-                if clf.kernel == "rbf":
+                if cls.kernel == "rbf":
                     cls.clf = RandomizedSearchCV(
                         cls.best_classifier, cls.hyper_parameters,
                         n_iter=cls.n_iter, cv=cls.n_splits
