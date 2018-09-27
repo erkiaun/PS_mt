@@ -986,7 +986,7 @@ class phenotypes():
                 Gammas = list(map(lambda x: 1/x, cls.gammas))
                 if cls.kernel == "linear":
                     cls.hyper_parameters = {'C':Cs}
-                if clf.kernel == "rbf":
+                if cls.kernel == "rbf":
                     cls.hyper_parameters = {'C':Cs, 'gamma':Gammas}
 
     @classmethod
