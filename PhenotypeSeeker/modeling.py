@@ -965,7 +965,7 @@ class phenotypes():
                     kernel=cls.kernel, probability=True,
                     max_iter=cls.max_iter, tol=cls.tol
                     ) 
-            elif cls.model_name_long == "random_forest":
+            elif cls.model_name_long == "random forest":
                 cls.classifier = RandomForestClassifier(n_estimators=100)
 
     @classmethod
