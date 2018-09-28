@@ -1218,8 +1218,8 @@ class phenotypes():
         elif self.model_name_short == "RF":
             df_for_coeffs.loc['coefficient'] = \
                 self.best_classifier.feature_importances_
-        elif self.model_name_short == "SVM":
-            if self.kernel == "linear":
+        elif self.model_name_short in ("SVM", "log_reg"):
+            if self.kernel != "rbf":
                 df_for_coeffs.loc['coefficient'] = \
                     self.best_classifier.best_estimator_.coef_[0]
         for kmer in df_for_coeffs:
