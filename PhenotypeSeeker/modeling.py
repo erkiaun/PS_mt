@@ -1126,7 +1126,7 @@ class phenotypes():
                 )
 
     def cross_validation_results(self):
-        if self.model_name_long != "random forest":
+        if self.model_name_long not in ("random forest", "Naive Bayes"):
             self.summary_file.write('Parameters:\n%s\n\n' % self.model)
             self.summary_file.write("Grid scores (R2 score) on development set: \n")
             means = self.best_classifier.cv_results_['mean_test_score']
@@ -1223,7 +1223,7 @@ class phenotypes():
                 df_for_coeffs.loc['coefficient'] = \
                     self.best_classifier.best_estimator_.coef_[0]
         for kmer in df_for_coeffs:
-            if self.kernel == "rbf":
+            if self.kernel == "rbf" or self.model_name_short == "NB":
                 kmer_coef = "NA"
             else:
                 kmer_coef = df_for_coeffs[kmer].loc['coefficient']
