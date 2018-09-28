@@ -597,7 +597,7 @@ class phenotypes():
         if Samples.headerline:
             text1_4_stderr = self.name + ": "
         elif len(Input.phenotypes_to_analyse) > 1:
-            text1_4_stderr = "phenotype " + self.name + ": "
+            text1_4_stderr = self.name + ": "
         else:
             text1_4_stderr = ""
         return text1_4_stderr
@@ -623,13 +623,6 @@ class phenotypes():
         t_statistic, pvalue, mean_x, mean_y = self.t_test(
             x, y, x_weights, y_weights
             )
-
-        if kmer == "AAAAAAAAAAAGA":
-            print(x)
-            print(y)
-            print(x_weights)
-            print(y_weights)
-            print(t_statistic, pvalue, mean_x, mean_y)
 
         test_results_file.write(
             kmer + "\t" + str(round(t_statistic, 2)) + "\t" + \
@@ -1219,17 +1212,22 @@ class phenotypes():
         elif self.model_name_short == "RF":
             df_for_coeffs.loc['coefficient'] = \
                 self.best_classifier.feature_importances_
-        else:
-            df_for_coeffs.loc['coefficient'] = \
-                self.best_classifier.best_estimator_.coef_[0]
+        elif self.model_name_short == "SVM":
+            if self.kernel == "linear":
+                df_for_coeffs.loc['coefficient'] = \
+                    self.best_classifier.best_estimator_.coef_[0]
         for kmer in df_for_coeffs:
-            kmer_coef = df_for_coeffs[kmer].loc['coefficient']
+            if self.kernel == "rbf":
+                kmer_coef = "NA"
+            else:
+                kmer_coef = df_for_coeffs[kmer].loc['coefficient']
             samples_with_kmer = \
                 df_for_coeffs.loc[df_for_coeffs[kmer] == 1].index.tolist()
             self.coeff_file.write("%s\t%s\t%s\t| %s\n" % (
                 kmer, kmer_coef,
                 len(samples_with_kmer), " ".join(samples_with_kmer)
-                ))  
+                ))
+
 
 def linear_regression(
 	    kmer_lists_splitted,
