@@ -1091,7 +1091,7 @@ class phenotypes():
                 stratify = self.skl_dataset.target
             self.ML_df_train, self.ML_df_test = train_test_split(
                 self.ML_df, test_size=self.testset_size,
-                stratify=stratify, random_state=0
+                stratify=stratify, random_state=55
                 )
             self.X_train = self.ML_df_train.iloc[:,0:-2]
             self.y_train = self.ML_df_train.iloc[:,-2:-1]
