@@ -24,7 +24,7 @@ from sklearn.externals import joblib
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import (Lasso, LogisticRegression, Ridge, ElasticNet,
     SGDClassifier)
-from sklearn.naive_bayes import GaussianNB
+from sklearn.naive_bayes import BernoulliNB, GaussianNB
 from sklearn.svm import SVC
 from sklearn.metrics import (
     classification_report, r2_score, mean_squared_error, recall_score,
@@ -965,7 +965,7 @@ class phenotypes():
             elif cls.model_name_long == "random forest":
                 cls.classifier = RandomForestClassifier(n_estimators=100)
             elif cls.model_name_long == "Naive Bayes":
-                cls.classifier = GaussianNB(n_estimators=100)
+                cls.classifier = BernoulliNB()
 
     @classmethod
     def set_hyperparameters(cls):
@@ -1009,7 +1009,7 @@ class phenotypes():
                         cls.classifier, cls.hyper_parameters,
                         n_iter=cls.n_iter, cv=cls.n_splits
                         )
-            elif cls.model_name_long == "random forest":
+            elif cls.model_name_long in ("random forest", "Naive Bayes"):
                 cls.best_classifier = cls.classifier
 
     def machine_learning_modelling(self):
@@ -1078,6 +1078,7 @@ class phenotypes():
             ]
         self.ML_df.index = Input.samples.keys()
         self.ML_df = self.ML_df.loc[self.ML_df.phenotype != 'NA']
+        self.ML_df = self.ML_df.T.drop_duplicates().T
         self.skl_dataset = sklearn.datasets.base.Bunch(
             data=self.ML_df.iloc[:,0:-2].values, target=self.ML_df['phenotype'].values,
             target_names=np.array(["resistant", "sensitive"]),
