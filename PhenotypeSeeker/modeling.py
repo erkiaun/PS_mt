@@ -702,7 +702,7 @@ class phenotypes():
         wo_pheno_w_kmer_expected, wo_pheno_wo_kmer_expected
         ) = self.get_expected_distribution(
             w_pheno, wo_pheno, w_kmer, wo_kmer, total)
-        if kmer = "CCTCGGGTAGATC":
+        if kmer == "CCTCGGGTAGATC":
             print(w_pheno_w_kmer, w_pheno_wo_kmer, wo_pheno_w_kmer, wo_pheno_wo_kmer)
             print(w_pheno_w_kmer_expected, w_pheno_wo_kmer_expected,
                 wo_pheno_w_kmer_expected, wo_pheno_wo_kmer_expected)
@@ -1391,7 +1391,7 @@ def modeling(args):
     if args.weights == "+":
         Samples.get_weights()
     map(
-        lambda x: x.weight, Input.samples.values()
+        lambda x: print(x.weight), Input.samples.values()
         )
 
     # Analyses of phenotypes
