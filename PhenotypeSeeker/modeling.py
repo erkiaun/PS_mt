@@ -217,7 +217,7 @@ class Samples():
         Input.lock.acquire()
         stderr_print.currentSampleNum.value += 1
         Input.lock.release()
-        stderr_print.print_progress()
+        stderr_print.print_progress("lists generated.")
 
     def map_samples(self):
         # Takes k-mers, which passed frequency filtering as 
@@ -236,7 +236,7 @@ class Samples():
         Input.lock.acquire()
         stderr_print.currentSampleNum.value += 1
         Input.lock.release()
-        stderr_print.print_progress()
+        stderr_print.print_progress("samples mapped.")
 
     @classmethod
     def from_inputfile(cls, line):
@@ -374,9 +374,10 @@ class stderr_print():
             cls(output)
 
     @classmethod
-    def print_progress(cls):
-        output = "\t%d of %d lists generated." % (
-            cls.currentSampleNum.value, Samples.no_samples
+    def print_progress(cls, txt):
+        output = "\t%d of %d %s" % (
+            cls.currentSampleNum.value, Samples.no_samples,
+            txt
             )
         cls(output)
 
