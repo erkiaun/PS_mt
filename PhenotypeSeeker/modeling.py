@@ -1391,7 +1391,7 @@ def modeling(args):
     if args.weights == "+":
         Samples.get_weights()
     map(
-        lambda x: print(x.weight), Input.samples.values()
+        lambda x: print(x.name, x.weight), Input.samples.values()
         )
 
     # Analyses of phenotypes
