@@ -702,10 +702,7 @@ class phenotypes():
         wo_pheno_w_kmer_expected, wo_pheno_wo_kmer_expected
         ) = self.get_expected_distribution(
             w_pheno, wo_pheno, w_kmer, wo_kmer, total)
-        if kmer == "CCTCGGGTAGATC":
-            print(w_pheno_w_kmer, w_pheno_wo_kmer, wo_pheno_w_kmer, wo_pheno_wo_kmer)
-            print(w_pheno_w_kmer_expected, w_pheno_wo_kmer_expected,
-                wo_pheno_w_kmer_expected, wo_pheno_wo_kmer_expected)
+
         chisquare_results = stats.chisquare(
             [
             w_pheno_w_kmer, w_pheno_wo_kmer,
@@ -1045,13 +1042,13 @@ class phenotypes():
 
     def get_outputfile_names(self):
         if Samples.headerline:
-            summary_file = "summary_of_" + self.model_name_short + "_analysis" \
+            summary_file = "summary_of_" + self.model_name_short + "_analysis_" \
                 + self.name + ".txt"
             coeff_file = "k-mers_and_coefficients_in_" + self.model_name_short \
                 + "_model_" + self.name + ".txt"
             model_file = self.model_name_short + "_model_" + self.name + ".pkl"
         elif len(Input.phenotypes_to_analyse) > 1:
-            summary_file = "summary_of_" + self.model_name_short + "_analysis" \
+            summary_file = "summary_of_" + self.model_name_short + "_analysis_" \
                 + self.name + ".txt"
             coeff_file = "k-mers_and_coefficients_in_" + self.model_name_short \
                 + "_model_" + self.name + ".txt"
@@ -1390,9 +1387,6 @@ def modeling(args):
         )
     if args.weights == "+":
         Samples.get_weights()
-    map(
-        lambda x: print(x.name, x.weight), Input.samples.values()
-        )
 
     # Analyses of phenotypes
     phenotypes.preparations_for_kmer_testing()
