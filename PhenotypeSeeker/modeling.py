@@ -1163,8 +1163,8 @@ class phenotypes():
             + " %s\n" % self.best_classifier.score(dataset, labels))
         self.summary_file.write("The Spearman correlation coefficient and p-value:" \
             " %s, %s \n" % stats.spearmanr(labels, predictions))
-        slope, intercept, r_value, pval_r, std_err = \
-            stats.linregress(labels, predictions)
+        r_value, pval_r = \
+            stats.pearsonr(labels, predictions)
         self.summary_file.write("The Pearson correlation coefficient and p-value: " \
                 " %s, %s \n" % (r_value, pval_r))
         self.summary_file.write("The plus/minus 1 dilution factor accuracy (for MICs):" \
