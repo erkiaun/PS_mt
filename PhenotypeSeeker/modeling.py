@@ -1117,9 +1117,8 @@ class phenotypes():
 
 
     def fit_model(self):
-        if self.scale == "continuous":
-            if self.penalty == "L1":
-                self.model = self.best_classifier.fit(self.X_train, self.y_train)
+        if self.scale == "continuous" and self.penalty in ("L1", "elasticnet"):
+            self.model = self.best_classifier.fit(self.X_train, self.y_train)
         else:
             self.model = self.best_classifier.fit(
                 self.X_train, self.y_train,
