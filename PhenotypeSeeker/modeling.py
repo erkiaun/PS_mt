@@ -1041,10 +1041,10 @@ class phenotypes():
         #     self.predict(self.X_test, self.y_test)
 
         self.summary_file.write('\nTraining set:\n')
-        self.predict(self.X_train.values, self.y_train)
+        self.predict(self.X_train, self.y_train)
         if self.testset_size != 0.0:
             self.summary_file.write('\nTest set:\n')
-            self.predict(self.X_test.values, self.y_test)
+            self.predict(self.X_test, self.y_test)
 
 
         joblib.dump(self.model, self.model_file)
@@ -1169,7 +1169,7 @@ class phenotypes():
                 self.summary_file.write(key + " : " + str(value) + "\n")
 
     def predict(self, dataset, labels):
-        predictions = self.best_classifier.predict(dataset)
+        predictions = self.best_classifier.predict(dataset.values)
         self.summary_file.write("\nModel predictions on samples:\nSample_ID " \
             "Acutal_phenotype Predicted_phenotype\n")
         for index, row in dataset.iterrows():
@@ -1180,7 +1180,7 @@ class phenotypes():
         if self.scale == "continuous":
             self.model_performance_regression(dataset, labels.values.flatten(), predictions)
         elif self.scale == "binary":
-            self.model_performance_classifier(dataset, labels.values.flatten(), predictions)
+            self.model_performance_classifier(dataset.values, labels.values.flatten(), predictions)
 
     def model_performance_regression(self, dataset, labels, predictions):
         self.summary_file.write('\nMean squared error: %s\n' % \
