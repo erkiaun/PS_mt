@@ -1145,7 +1145,7 @@ class phenotypes():
             # self.best_classifier = xgb.train(xgb_param, dtrain, num_round, evallist)
             # self.best_classifier.dump_model('dump.raw.txt', 'featmap.txt')
             self.best_classifier = xgb.XGBClassifier(n_estimators=100, max_depth=8, learning_rate=0.1, subsample=0.5)
-            self.best_classifier.fit(self.X_train, self.y_train) 
+            self.best_classifier.fit(dtrain) 
         else:
             self.model = self.best_classifier.fit(
                 self.X_train, self.y_train,
