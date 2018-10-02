@@ -177,8 +177,14 @@ def Main():
         '-bc', '--binary_classifier', metavar='', type=str, default='log',
         help='The binary classifier to be used. Possible variants are \
         "log" (logistic regression; default), "SVM" (support vector \
-        machine), "RF" (random forest), "NB" (naive bayes) and XGB \
-        (extreme gradient boost)'
+        machine), "RF" (random forest), "NB" (naive bayes) and XGBC \
+        (extreme gradient boost classifier)'
+        )
+    regression_models.add_argument(
+        '-reg', '--regressor', metavar='', type=str, default='lin',
+        help='The regressor to be used. Possible variants are \
+        "lin" (linear regression; default), and XGBR (extreme gradient boost \
+        regressor)'
         )
     regression_models.add_argument(
         '--kernel', metavar='', type=str, default='linear',
