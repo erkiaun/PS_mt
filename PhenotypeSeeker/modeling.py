@@ -988,7 +988,7 @@ class phenotypes():
     @classmethod
     def set_hyperparameters(cls):
         if cls.scale == "continuous":
-            if cls.model_name_short == "lin_reg"
+            if cls.model_name_short == "lin_reg":
                 # Defining linear regression parameters    
                 cls.hyper_parameters = {'alpha': cls.alphas}
             if cls.model_name_short == "XGBR":
