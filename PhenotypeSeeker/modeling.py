@@ -593,7 +593,7 @@ class phenotypes():
         if Samples.headerline:
             outputfile = beginning_text + \
                 self.name + "_" + code + ".txt"
-        elif len(Input.phenotypes_to_analyse) > 1:
+        elif Samples.no_phenoypes > 1:
             outputfile = beginning_text + \
                 self.name + "_" + code + ".txt"
         else:
