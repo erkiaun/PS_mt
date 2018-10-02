@@ -19,7 +19,7 @@ from collections import Counter, OrderedDict
 from multiprocess import Manager, Pool, Value
 from scipy import stats
 from sklearn.externals import joblib
-from sklearn.ensemble import RandomForestClassifier, XGBoost
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import (Lasso, LogisticRegression, Ridge, ElasticNet,
     SGDClassifier)
 from sklearn.naive_bayes import BernoulliNB, GaussianNB
