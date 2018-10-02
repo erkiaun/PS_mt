@@ -115,7 +115,7 @@ class Input():
         phenotypes.n_iter = n_iter
         phenotypes.n_splits = n_splits
 
-        cls.get_model_name(binary_classifier)
+        cls.get_model_name(regressor, binary_classifier)
 
     @staticmethod
     def get_model_name(regressor, binary_classifier):
