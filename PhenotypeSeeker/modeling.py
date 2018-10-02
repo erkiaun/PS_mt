@@ -1054,7 +1054,7 @@ class phenotypes():
         self.cross_validation_results()
 
         self.summary_file.write('\nTraining set:\n')
-        self.predict(self.X_train.values, self.y_train.values
+        self.predict(self.X_train.values, self.y_train.values)
         if self.testset_size != 0.0:
             self.summary_file.write('\nTest set:\n')
             self.predict(self.X_test.values, self.y_test.values
