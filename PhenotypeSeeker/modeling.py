@@ -1054,10 +1054,10 @@ class phenotypes():
         self.cross_validation_results()
 
         self.summary_file.write('\nTraining set:\n')
-        self.predict(self.X_train, self.y_train)
+        self.predict(self.X_train.values(), self.y_train.values())
         if self.testset_size != 0.0:
             self.summary_file.write('\nTest set:\n')
-            self.predict(self.X_test, self.y_test)
+            self.predict(self.X_test.values(), self.y_test.values())
 
         joblib.dump(self.model, self.model_file)
         self.write_model_coefficients_to_file()
@@ -1183,7 +1183,7 @@ class phenotypes():
 
     def predict(self, dataset, labels):
         if self.scale == "continuous":
-            predictions = self.best_regressor.predict(dataset)
+            predictions = self.best_regres.predict(dataset)
         elif self.scale == "binary":
             predictions = self.best_classifier.predict(dataset)
         self.summary_file.write("\nModel predictions on samples:\nSample_ID " \
