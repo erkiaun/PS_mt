@@ -1150,13 +1150,13 @@ class phenotypes():
 
     def fit_model(self):
         if self.scale == "continuous":
-            if self.regressor == "lin_reg":
+            if self.model_name_short == "lin_reg":
                 # if self.penalty in ("L1", "elasticnet"):
                 self.model = self.best_regressor.fit(self.X_train, self.y_train)
-            elif self.regressor == "XGBR":
+            elif self.model_name_short == "XGBR":
                 self.model = self.best_regressor.fit(self.X_train, self.y_train)
         elif self.scale == "binary":
-            if self.classifier == "XGBC":
+            if self.model_name_short == "XGBC":
                 self.model = self.best_classifier.fit(self.X_train, self.y_train)
             else:
                 self.model = self.best_classifier.fit(
