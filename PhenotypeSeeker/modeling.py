@@ -932,9 +932,9 @@ class phenotypes():
     def set_classifier(cls):
         if cls.scale == "continuous":
             # Defining linear regression parameters    
-            if cls.penalty == 'l1':
+            if cls.penalty == 'L1':
                 cls.classifier = Lasso(max_iter=cls.max_iter, tol=cls.tol)        
-            if cls.penalty == 'l2':
+            if cls.penalty == 'L2':
                 cls.classifier = Ridge(max_iter=cls.max_iter, tol=cls.tol)
             if cls.penalty == 'elasticnet' or "L1+L2":
                 cls.classifier = ElasticNet(
