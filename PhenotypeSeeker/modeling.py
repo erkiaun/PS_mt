@@ -1,7 +1,5 @@
 #!/usr/bin/python2.7
 
-from __future__ import print_function
-
 __author__ = "Erki Aun"
 __version__ = "0.3.0"
 __maintainer__ = "Erki Aun"
@@ -33,6 +31,7 @@ from sklearn.metrics import (
     )
 from sklearn.model_selection import RandomizedSearchCV, GridSearchCV, train_test_split
 from functools import partial
+from xgboost import XGBClassifier
 import Bio
 import numpy as np
 import pandas as pd
@@ -134,6 +133,9 @@ class Input():
             elif binary_classifier == "NB":
                 phenotypes.model_name_long = "Naive Bayes"
                 phenotypes.model_name_short = "NB"
+            elif binary_classifier == "XGB":
+                phenotypes.model_name_long = "Extreme Gradient Boost"
+                phenotypes.model_name_short = "XGB"
         
     @staticmethod
     def _get_alphas(alphas, alpha_min, alpha_max, n_alphas):       
@@ -965,6 +967,8 @@ class phenotypes():
                     ) 
             elif cls.model_name_long == "random forest":
                 cls.classifier = RandomForestClassifier(n_estimators=100)
+            elif cls.model_name_long == "Extreme Gradient Boost":
+                cls.classifier = XGBClassifier()
             elif cls.model_name_long == "Naive Bayes":
                 cls.classifier = BernoulliNB()
 
@@ -1010,7 +1014,8 @@ class phenotypes():
                         cls.classifier, cls.hyper_parameters,
                         n_iter=cls.n_iter, cv=cls.n_splits
                         )
-            elif cls.model_name_long in ("random forest", "Naive Bayes"):
+            elif cls.model_name_long in ("random forest", "Naive Bayes",
+                    "Extreme Gradient Boost"):
                 cls.best_classifier = cls.classifier
 
     def machine_learning_modelling(self):
@@ -1119,6 +1124,8 @@ class phenotypes():
     def fit_model(self):
         if self.scale == "continuous" and self.penalty in ("L1", "elasticnet"):
             self.model = self.best_classifier.fit(self.X_train, self.y_train)
+        if self.model_name_short == "XGB":
+            self.model = self.best_classifier.fit(self.X_train, self.y_train)
         else:
             self.model = self.best_classifier.fit(
                 self.X_train, self.y_train,
@@ -1126,7 +1133,7 @@ class phenotypes():
                 )
 
     def cross_validation_results(self):
-        if self.model_name_long not in ("random forest", "Naive Bayes"):
+        if self.model_name_long not in ("random forest", "Naive Bayes", "Extreme Gradient Boost"):
             self.summary_file.write('Parameters:\n%s\n\n' % self.model)
             self.summary_file.write("Grid scores (R2 score) on development set: \n")
             means = self.best_classifier.cv_results_['mean_test_score']
@@ -1215,7 +1222,7 @@ class phenotypes():
         if self.model_name_short == "lin_reg":
             df_for_coeffs.loc['coefficient'] = \
                 self.best_classifier.best_estimator_.coef_
-        elif self.model_name_short == "RF":
+        elif self.model_name_short in ("RF", "XGB"):
             df_for_coeffs.loc['coefficient'] = \
                 self.best_classifier.feature_importances_
         elif self.model_name_short in ("SVM", "log_reg"):
