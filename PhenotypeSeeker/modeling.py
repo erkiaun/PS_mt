@@ -1141,7 +1141,7 @@ class phenotypes():
             if self.testset_size != 0.0:
                 self.y_test = self.y_test.astype(int)
 
-        if self.binary_classifier == "XGBC" or self.regressor == "XGBR":
+        if self.classifier == "XGBC" or self.regressor == "XGBR":
             self.xgb_train = xgb.DMatix(self.X_train.values, self.y_train, weight=self.weights_train.values.flatten())
             if self.testset_size != 0.0:
                 self.xgb_test = xgb.DMatix(self.X_test.values, self.y_test.values, weight=self.weights_test.values.flatten())
