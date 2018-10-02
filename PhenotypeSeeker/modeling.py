@@ -1189,10 +1189,16 @@ class phenotypes():
         self.summary_file.write("\nModel predictions on samples:\nSample_ID " \
             "Acutal_phenotype Predicted_phenotype\n")
         for index, row in dataset.iterrows():
-            self.summary_file.write('%s %s %s\n' % (
-                index, labels.loc[index].values[0],
-                self.best_classifier.predict(row.reshape(1, -1))[0]
-                ))
+            if self.scale == "continuous":
+                self.summary_file.write('%s %s %s\n' % (
+                    index, labels.loc[index].values[0],
+                    self.best_regressor.predict(row.reshape(1, -1))[0]
+                    ))
+            elif self.scale == "binary":
+                self.summary_file.write('%s %s %s\n' % (
+                    index, labels.loc[index].values[0],
+                    self.best_classifier.predict(row.reshape(1, -1))[0]
+                    ))
         if self.scale == "continuous":
             self.model_performance_regression(dataset, labels.values.flatten(), predictions)
         elif self.scale == "binary":
