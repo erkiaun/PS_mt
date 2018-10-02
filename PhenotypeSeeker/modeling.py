@@ -1057,7 +1057,7 @@ class phenotypes():
         self.predict(self.X_train.values, self.y_train.values)
         if self.testset_size != 0.0:
             self.summary_file.write('\nTest set:\n')
-            self.predict(self.X_test.values, self.y_test.values
+            self.predict(self.X_test.values, self.y_test.values)
 
         joblib.dump(self.model, self.model_file)
         self.write_model_coefficients_to_file()
