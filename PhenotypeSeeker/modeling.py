@@ -1208,7 +1208,7 @@ class phenotypes():
         self.summary_file.write('\nMean squared error: %s\n' % \
                  mean_squared_error(labels, predictions))
         self.summary_file.write("The coefficient of determination:"
-            + " %s\n" % self.best_regressor.score(dataset, labels))
+            + " %s\n" % self.best_regressor.score(dataset.values, labels))
         self.summary_file.write("The Spearman correlation coefficient and p-value:" \
             " %s, %s \n" % stats.spearmanr(labels, predictions))
         r_value, pval_r = \
