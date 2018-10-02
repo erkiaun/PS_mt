@@ -1154,10 +1154,10 @@ class phenotypes():
                 # if self.penalty in ("L1", "elasticnet"):
                 self.model = self.best_regressor.fit(self.X_train, self.y_train)
             elif self.model_name_short == "XGBR":
-                self.model = self.best_regressor.fit(self.X_train, self.y_train)
+                self.model = self.best_regressor.fit(self.X_train.values, self.y_train.values)
         elif self.scale == "binary":
             if self.model_name_short == "XGBC":
-                self.model = self.best_classifier.fit(self.X_train, self.y_train)
+                self.model = self.best_classifier.fit(self.X_train.values, self.y_train.values)
             else:
                 self.model = self.best_classifier.fit(
                     self.X_train, self.y_train,
