@@ -554,7 +554,7 @@ class phenotypes():
             ):
             counter += 1
             if counter == 100000: #############################################################################################
-                return
+                break
             if counter%self.progress_checkpoint.value == 0:
                 Input.lock.acquire()
                 stderr_print.currentKmerNum.value += self.progress_checkpoint.value
