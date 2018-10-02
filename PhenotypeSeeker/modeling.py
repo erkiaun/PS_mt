@@ -19,7 +19,7 @@ from collections import Counter, OrderedDict
 from multiprocess import Manager, Pool, Value
 from scipy import stats
 from sklearn.externals import joblib
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.linear_model import (Lasso, LogisticRegression, Ridge, ElasticNet,
     SGDClassifier)
 from sklearn.naive_bayes import BernoulliNB, GaussianNB
@@ -31,7 +31,7 @@ from sklearn.metrics import (
     )
 from sklearn.model_selection import RandomizedSearchCV, GridSearchCV, train_test_split
 from functools import partial
-from xgboost import XGBClassifier
+#from xgboost import XGBClassifier
 import Bio
 import numpy as np
 import pandas as pd
@@ -553,6 +553,8 @@ class phenotypes():
                 *[open(item) for item in split_of_kmer_lists], fillvalue = ''
             ):
             counter += 1
+            if counter == 100000: #############################################################################################
+                return
             if counter%self.progress_checkpoint.value == 0:
                 Input.lock.acquire()
                 stderr_print.currentKmerNum.value += self.progress_checkpoint.value
@@ -968,7 +970,7 @@ class phenotypes():
             elif cls.model_name_long == "random forest":
                 cls.classifier = RandomForestClassifier(n_estimators=100)
             elif cls.model_name_long == "Extreme Gradient Boost":
-                cls.classifier = XGBClassifier()
+                cls.classifier = GradientBoostingClassifier()
             elif cls.model_name_long == "Naive Bayes":
                 cls.classifier = BernoulliNB()
 
