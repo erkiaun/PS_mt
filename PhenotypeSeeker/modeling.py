@@ -1183,7 +1183,7 @@ class phenotypes():
 
     def predict(self, dataset, labels):
         if self.scale == "continuous":
-            predictions = self.best_regressort.predict(dataset)
+            predictions = self.best_regressor.predict(dataset)
         elif self.scale == "binary":
             predictions = self.best_classifier.predict(dataset)
         self.summary_file.write("\nModel predictions on samples:\nSample_ID " \
