@@ -1128,8 +1128,8 @@ class phenotypes():
         if self.scale == "continuous" and self.penalty in ("L1", "elasticnet"):
             self.model = self.best_classifier.fit(self.X_train, self.y_train)
         if self.model_name_short == "XGB":
-            dtrain = xgb.DMatrix(self.X_train.values(), label=self.y_train.values(), weight=self.weights_train)
-            dtest = xgb.DMatrix(self.X_test.values(), label=self.y_test.values(), weight=self.weights_ttest)
+            dtrain = xgb.DMatrix(self.X_train.values, label=self.y_train.values, weight=self.weights_train)
+            dtest = xgb.DMatrix(self.X_test.values, label=self.y_test.values, weight=self.weights_ttest)
             xgb_param = {'max_depth': 2, 'eta': 1, 'silent': 1, 'objective': 'binary:logistic'}
             xgb_param['nthread'] = Input.num_threads
             xgb_param['eval_metric'] = 'auc'
