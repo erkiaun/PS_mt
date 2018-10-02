@@ -1264,9 +1264,12 @@ class phenotypes():
         if self.model_name_short == "lin_reg":
             df_for_coeffs.loc['coefficient'] = \
                 self.best_classifier.best_estimator_.coef_
-        elif self.model_name_short in ("RF", "XGBR", "XGBC"):
+        elif self.model_name_short in ("RF"):
             df_for_coeffs.loc['coefficient'] = \
                 self.best_classifier.feature_importances_
+        elif self.model_name_short in ("XGBR", "XGBC"):
+            df_for_coeffs.loc['coefficient'] = \
+                self.best_regressor.feature_importances_
         elif self.model_name_short in ("SVM", "log_reg"):
             if self.kernel != "rbf":
                 df_for_coeffs.loc['coefficient'] = \
