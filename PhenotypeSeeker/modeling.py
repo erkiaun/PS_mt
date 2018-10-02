@@ -19,7 +19,7 @@ from collections import Counter, OrderedDict
 from multiprocess import Manager, Pool, Value
 from scipy import stats
 from sklearn.externals import joblib
-from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+from sklearn.ensemble import RandomForestClassifier, XGBoost
 from sklearn.linear_model import (Lasso, LogisticRegression, Ridge, ElasticNet,
     SGDClassifier)
 from sklearn.naive_bayes import BernoulliNB, GaussianNB
@@ -454,6 +454,7 @@ class phenotypes():
     kernel = None
     n_iter = None
     n_splits = None
+    xgb_param = None
 
     # ML output file holders
     summary_file = None
@@ -1125,7 +1126,14 @@ class phenotypes():
         if self.scale == "continuous" and self.penalty in ("L1", "elasticnet"):
             self.model = self.best_classifier.fit(self.X_train, self.y_train)
         if self.model_name_short == "XGB":
-            self.model = self.best_classifier.fit(self.X_train, self.y_train)
+            dtrain = xgb.DMatrix(self.X_train, label=self.y_train, weight=self.weights_train)
+            dtest = xgb.DMatrix(self.X_test, label=self.y_test, weight=self.weights_ttest)
+            xgb_param = {'max_depth': 2, 'eta': 1, 'silent': 1, 'objective': 'binary:logistic'}
+            xgb_param['nthread'] = Input.num_threads
+            xgb_param['eval_metric'] = 'auc'
+            evallist = [(dtest, 'eval'), (dtrain, 'train')]
+            self.best_classifier = xgb.train(self.xgb_param, dtrain, early_stopping_rounds=10, evallist)
+            self.best_classifier.dump_model('dump.raw.txt', 'featmap.txt')
         else:
             self.model = self.best_classifier.fit(
                 self.X_train, self.y_train,
@@ -1222,10 +1230,10 @@ class phenotypes():
         if self.model_name_short == "lin_reg":
             df_for_coeffs.loc['coefficient'] = \
                 self.best_classifier.best_estimator_.coef_
-        elif self.model_name_short in ("RF", "XGB"):
+        elif self.model_name_short == "RF":
             df_for_coeffs.loc['coefficient'] = \
                 self.best_classifier.feature_importances_
-        elif self.model_name_short in ("SVM", "log_reg"):
+        elif self.model_name_short in ("SVM", "log_reg", "XGB"):
             if self.kernel != "rbf":
                 df_for_coeffs.loc['coefficient'] = \
                     self.best_classifier.best_estimator_.coef_[0]
