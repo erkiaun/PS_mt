@@ -1037,7 +1037,7 @@ class phenotypes():
                         cls.classifier, cls.hyper_parameters,
                         n_iter=cls.n_iter, cv=cls.n_splits
                         )
-            elif cls.model_name_short in ("RF", "NB", "XGBC", "XGBR"):
+            elif cls.model_name_short in ("RF", "NB", "XGBC"):
                 cls.best_classifier = cls.classifier
 
     def machine_learning_modelling(self):
@@ -1154,11 +1154,10 @@ class phenotypes():
                 # if self.penalty in ("L1", "elasticnet"):
                 self.model = self.best_regressor.fit(self.X_train, self.y_train)
             elif self.regressor == "XGBR":
-                num_round = 10
-                self.model = xgb.train(param, self.xgb_train, num_round, evallist)
+                self.model = self.best_regressor.fit(self.X_train, self.y_train)
         elif self.scale == "binary":
             if self.classifier == "XGBC":
-                self.model = xgb.train(param, self.xgb_train, num_round, evallist)
+                self.model = self.best_classifier.fit(self.X_train, self.y_train)
             else:
                 self.model = self.best_classifier.fit(
                     self.X_train, self.y_train,
@@ -1183,7 +1182,10 @@ class phenotypes():
                 self.summary_file.write(key + " : " + str(value) + "\n")
 
     def predict(self, dataset, labels):
-        predictions = self.best_classifier.predict(dataset)
+        if self.scale == "continuous":
+            predictions = self.best_regressor.predict(dataset)
+        elif self.scale == "binary":
+            predictions = self.best_classifier.predict(dataset)
         self.summary_file.write("\nModel predictions on samples:\nSample_ID " \
             "Acutal_phenotype Predicted_phenotype\n")
         for index, row in dataset.iterrows():
