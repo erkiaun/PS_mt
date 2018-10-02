@@ -1134,7 +1134,7 @@ class phenotypes():
             xgb_param['nthread'] = Input.num_threads
             xgb_param['eval_metric'] = 'auc'
             evallist = [(dtest, 'eval'), (dtrain, 'train')]
-            self.best_classifier = xgb.train(self.xgb_param, dtrain, early_stopping_rounds=10, evallist)
+            self.best_classifier = xgb.train(xgb_param, dtrain, early_stopping_rounds=10, evallist)
             self.best_classifier.dump_model('dump.raw.txt', 'featmap.txt')
         else:
             self.model = self.best_classifier.fit(
