@@ -970,8 +970,8 @@ class phenotypes():
                     ) 
             elif cls.model_name_long == "random forest":
                 cls.classifier = RandomForestClassifier(n_estimators=100)
-            elif cls.model_name_long == "Extreme Gradient Boost":
-                cls.classifier = GradientBoostingClassifier()
+            # elif cls.model_name_long == "Extreme Gradient Boost":
+            #     cls.classifier = GradientBoostingClassifier()
             elif cls.model_name_long == "Naive Bayes":
                 cls.classifier = BernoulliNB()
 
