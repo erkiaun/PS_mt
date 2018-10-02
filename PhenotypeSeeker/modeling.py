@@ -1144,7 +1144,7 @@ class phenotypes():
             # num_round = 10
             # self.best_classifier = xgb.train(xgb_param, dtrain, num_round, evallist)
             # self.best_classifier.dump_model('dump.raw.txt', 'featmap.txt')
-            self.best_classifier = xgb.XGBClassifier(n_estimators=100, max_depth=8, learning_rate=0.1, subsample=0.5)
+            self.best_classifier = xgb.XGBClassifier()
             self.best_classifier.fit(self.X_train.values, self.y_train) 
         else:
             self.model = self.best_classifier.fit(
@@ -1245,12 +1245,12 @@ class phenotypes():
         elif self.model_name_short == "RF":
             df_for_coeffs.loc['coefficient'] = \
                 self.best_classifier.feature_importances_
-        elif self.model_name_short in ("SVM", "log_reg", "XGB"):
+        elif self.model_name_short in ("SVM", "log_reg"):
             if self.kernel != "rbf":
                 df_for_coeffs.loc['coefficient'] = \
                     self.best_classifier.best_estimator_.coef_[0]
         for kmer in df_for_coeffs:
-            if self.kernel == "rbf" or self.model_name_short == "NB":
+            if self.kernel == "rbf" or self.model_name_short in ("NB", "XGB"):
                 kmer_coef = "NA"
             else:
                 kmer_coef = df_for_coeffs[kmer].loc['coefficient']
