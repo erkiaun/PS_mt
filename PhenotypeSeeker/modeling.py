@@ -985,7 +985,7 @@ class phenotypes():
             elif cls.model_name_long == "Naive Bayes":
                 cls.classifier = BernoulliNB()
             elif cls.model_name_short == "XGBC":
-                cls.classifier = XGBClassifier()
+                cls.classifier = xgb.XGBClassifier()
 
     @classmethod
     def set_hyperparameters(cls):
@@ -1054,10 +1054,10 @@ class phenotypes():
         self.cross_validation_results()
 
         self.summary_file.write('\nTraining set:\n')
-        self.predict(self.X_train.values(), self.y_train.values())
+        self.predict(self.X_train.values, self.y_train.values
         if self.testset_size != 0.0:
             self.summary_file.write('\nTest set:\n')
-            self.predict(self.X_test.values(), self.y_test.values())
+            self.predict(self.X_test.values, self.y_test.values
 
         joblib.dump(self.model, self.model_file)
         self.write_model_coefficients_to_file()
