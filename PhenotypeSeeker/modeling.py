@@ -31,7 +31,7 @@ from sklearn.metrics import (
     )
 from sklearn.model_selection import RandomizedSearchCV, GridSearchCV, train_test_split
 from functools import partial
-#from xgboost import XGBClassifier
+import xgboost as xgb
 import Bio
 import numpy as np
 import pandas as pd
