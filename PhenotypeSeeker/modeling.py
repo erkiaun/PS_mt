@@ -992,7 +992,16 @@ class phenotypes():
                 # Defining linear regression parameters    
                 cls.hyper_parameters = {'alpha': cls.alphas}
             if cls.model_name_short == "XGBR":
-                pass
+                params = {  
+                        "n_estimators": st.randint(3, 40),
+                        "max_depth": st.randint(3, 40),
+                        "learning_rate": st.uniform(0.05, 0.4),
+                        "colsample_bytree": one_to_left,
+                        "subsample": one_to_left,
+                        "gamma": st.uniform(0, 10),
+                        'reg_alpha': from_zero_positive,
+                        "min_child_weight": from_zero_positive,
+                    }
         elif cls.scale == "binary":
             if cls.model_name_long == "logistic regression":
                 #Defining logistic regression parameters
@@ -1117,7 +1126,7 @@ class phenotypes():
                 stratify = self.skl_dataset.target
             self.ML_df_train, self.ML_df_test = train_test_split(
                 self.ML_df, test_size=self.testset_size,
-                stratify=stratify, random_state=0
+                stratify=stratify, random_state=55
                 )
             self.X_train = self.ML_df_train.iloc[:,0:-2]
             self.y_train = self.ML_df_train.iloc[:,-2:-1]
@@ -1138,6 +1147,14 @@ class phenotypes():
             self.y_train = self.y_train.astype(int)
             if self.testset_size != 0.0:
                 self.y_test = self.y_test.astype(int)
+
+        self.X_train.to_csv()
+        self.y_train.to_csv()
+        self.weights_train.to_csv()
+        self.X_test.to_csv()
+        self.y_test.to_csv()
+        self.weights_test.to_csv()
+
 
         if self.classifier == "XGBC" or self.regressor == "XGBR":
             self.xgb_train = xgb.DMatix(self.X_train.values, self.y_train, weight=self.weights_train.values.flatten())
