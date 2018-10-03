@@ -563,6 +563,8 @@ class phenotypes():
                 *[open(item) for item in split_of_kmer_lists], fillvalue = ''
             ):
             counter += 1
+            if counter == 10000:
+                break
             if counter%self.progress_checkpoint.value == 0:
                 Input.lock.acquire()
                 stderr_print.currentKmerNum.value += self.progress_checkpoint.value
