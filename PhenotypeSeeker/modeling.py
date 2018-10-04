@@ -1148,9 +1148,11 @@ class phenotypes():
             if self.testset_size != 0.0:
                 self.y_test = self.y_test.astype(int)
 
+        self.ML_df.to_csv('data.csv')
         self.X_train.to_csv('X_train.csv')
         self.y_train.to_csv('y_train.csv')
         self.weights_train.to_csv('weights_train.csv')
+
         self.X_test.to_csv('X_test.csv')
         self.y_test.to_csv('y_test.csv')
         self.weights_test.to_csv('weights_test.csv')
