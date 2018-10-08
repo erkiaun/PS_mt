@@ -1029,6 +1029,7 @@ class phenotypes():
                 cls.best_regressor = GridSearchCV(
                     cls.classifier, cls.hyper_parameters, cv=cls.n_splits
                     )
+                print(cls.best_regressor) ########################################################
             elif cls.model_name_short == "XGBR":
                 cls.best_regressor = cls.regressor
         elif cls.scale == "binary":
