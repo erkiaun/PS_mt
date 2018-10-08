@@ -274,7 +274,7 @@ class Samples():
     # input samples.
     
     def get_mash_sketches(self):
-    	mash_args = "cat " + self.address + "| mash sketch - -o K-mer_lists/" + self.name
+    	mash_args = "cat " + self.address + "| mash sketch - -o " + self.name
     	process = Popen(mash_args, shell=True, stderr=PIPE)
 
     @classmethod
@@ -292,9 +292,9 @@ class Samples():
 
     @staticmethod
     def get_mash_distances():
-        call("ls K-mer_lists/*.msh", shell=True)
-        call("ls K-mer_lists/*.txt", shell=True)
-        call("mash paste reference.msh K-mer_lists/*.msh", shell=True)
+        # call("ls K-mer_lists/*.msh", shell=True)
+        # call("ls K-mer_lists/*.txt", shell=True)
+        call("mash paste reference.msh *.msh", shell=True)
         with open("mash_distances.mat", "w+") as f1:
             call(["mash", "dist", "reference.msh", "reference.msh"], stdout=f1)
 
