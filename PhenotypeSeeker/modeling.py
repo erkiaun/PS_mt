@@ -951,7 +951,6 @@ class phenotypes():
                     cls.regressor = Lasso(max_iter=cls.max_iter, tol=cls.tol)        
                 if cls.penalty == 'L2':
                     cls.regressor = Ridge(max_iter=cls.max_iter, tol=cls.tol)
-                    print(cls.regressor)#############################################
                 if cls.penalty == 'elasticnet' or "L1+L2":
                     cls.regressor = ElasticNet(
                         l1_ratio=cls.l1_ratio, max_iter=cls.max_iter, tol=cls.tol
@@ -1028,7 +1027,7 @@ class phenotypes():
         if cls.scale == "continuous":
             if cls.model_name_short == "lin_reg":
                 cls.best_regressor = GridSearchCV(
-                    cls.classifier, cls.hyper_parameters, cv=cls.n_splits
+                    cls.regressor, cls.hyper_parameters, cv=cls.n_splits
                     )
             elif cls.model_name_short == "XGBR":
                 cls.best_regressor = cls.regressor
@@ -1171,8 +1170,13 @@ class phenotypes():
     def fit_model(self):
         if self.scale == "continuous":
             if self.model_name_short == "lin_reg":
-                # if self.penalty in ("L1", "elasticnet"):
-                self.model = self.best_regressor.fit(self.X_train, self.y_train)
+                if self.penalty in ("L1", "elasticnet"):
+                    self.model = self.best_regressor.fit(self.X_train, self.y_train)
+                elif self.penalty == L2:
+                    self.model = self.best_classifier.fit(
+                        self.X_train, self.y_train,
+                        sample_weight=self.weights_train.values.flatten()
+                        )
             elif self.model_name_short == "XGBR":
                 self.model = self.best_regressor.fit(self.X_train.values, self.y_train.values)
         elif self.scale == "binary":
