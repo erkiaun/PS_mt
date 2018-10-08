@@ -39,7 +39,6 @@ import numpy as np
 import pandas as pd
 import sklearn.datasets
 
-
 import time
 
 class Input():
@@ -296,13 +295,8 @@ class Samples():
 
     @classmethod
     def get_mash_distances(cls):
-        call("ls K-mer_lists", shell=True)
-        mash_args = ["mash", "paste", "reference.msh"]
-        for sample in Input.samples.values():
-            mash_args.append("K-mer_lists/" + sample.name + ".msh")
-        print(mash_args)
-        call(mash_args)
-        # process = Popen(mash_args, shell=True, stderr=PIPE)
+        mash_args = "mash paste reference.msh K-mer_lists/*.msh"
+        process = Popen(mash_args, shell=True, stderr=PIPE)
         with open("mash_distances.mat", "w+") as f1:
             call(["mash", "dist", "reference.msh", "reference.msh"], stdout=f1)
 
@@ -1446,7 +1440,7 @@ def modeling(args):
     	Input.pool.map(
 	        lambda x: x.get_mash_sketches(), Input.samples.values()
 	        )
-        time.sleep(5)
+        time.sleep(4)
         Samples.get_weights()
 
     # Analyses of phenotypes
