@@ -294,7 +294,7 @@ class Samples():
 
     @classmethod
     def get_mash_distances(cls):
-        mash_args = "mash paste reference.msh K-mer_lists/*.msh"
+        mash_args = ["mash paste reference.msh K-mer_lists/*.msh"]
         call(mash_args, shell=True)
         # process = Popen(mash_args, shell=True, stderr=PIPE)
         with open("mash_distances.mat", "w+") as f1:
