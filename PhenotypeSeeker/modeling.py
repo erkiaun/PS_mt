@@ -1192,9 +1192,13 @@ class phenotypes():
     def cross_validation_results(self):
         if self.model_name_short not in ("RF", "NB", "XGBC", "XGBR"):
             self.summary_file.write('Parameters:\n%s\n\n' % self.model)
-            self.summary_file.write("Grid scores (R2 score) on development set: \n")
-            means = self.best_classifier.cv_results_['mean_test_score']
-            stds = self.best_classifier.cv_results_['std_test_score']
+            self.summary_file.write("Grid scores (R2 score) on development set: \n")s
+            if self.scale == "continuous":
+                means = self.best_regressor.cv_results_['mean_test_score']
+                stds = self.best_regressor.cv_results_['std_test_score']
+            elif self.scale == "binary":
+                means = self.best_classifier.cv_results_['mean_test_score']
+                stds = self.best_classifier.cv_results_['std_test_score']
             for mean, std, params in izip(
                     means, stds, self.best_classifier.cv_results_['params']
                     ):
