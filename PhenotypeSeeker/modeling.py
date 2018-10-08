@@ -274,7 +274,7 @@ class Samples():
     # input samples.
     
     def get_mash_sketches(self):
-    	call(["cat", self.address, "|", "mash", "sketch", "-", "-o", "K-mer_lists/" + self.name])
+    	call(["cat " + self.address + "| mash sketch - -o K-mer_lists/" + self.name], shell=True)
 
     @classmethod
     def get_weights(cls):
