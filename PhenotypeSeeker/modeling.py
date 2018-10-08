@@ -3,7 +3,7 @@
 from __future__ import print_function
 
 __author__ = "Erki Aun"
-__version__ = "0.3.0"
+__version__ = "0.3.1"
 __maintainer__ = "Erki Aun"
 __email__ = "erki.aun@ut.ee"
 
@@ -273,9 +273,12 @@ class Samples():
     # Functions for calculating the mash distances and GSC weights for
     # input samples.
     
+    def get_mash_sketches(self):
+    	call(["cat", self.address, "|", "mash", "sketch", "-", "-o", "K-mer_lists/" + self.name])
+
     @classmethod
     def get_weights(cls):
-        cls._mash_caller()
+        cls.get_mash_distances()
         cls._mash_output_to_distance_matrix(Input.samples.keys(), "mash_distances.mat")
         dist_mat = cls._distance_matrix_modifier("distances.mat")
         cls._distance_matrix_to_phyloxml(Input.samples.keys(), dist_mat)   
@@ -285,20 +288,26 @@ class Samples():
         weights = cls._newick_to_GSC_weights("tree_newick.txt")
         for key, value in weights.iteritems():
             Input.samples[key].weight = value
-    
-    @classmethod
-    def _mash_caller(cls):
-        #Estimating phylogenetic distances between samples using mash
-        sys.stderr.write("\nEstimating the Mash distances between samples...\n")
-        mash_args = ["mash", "sketch", "-o", "reference", "-m", cls.cutoff]
-        for sample_data in Input.samples.values():
-            mash_args.append(sample_data.address)
-        process = Popen(mash_args, stderr=PIPE)
-        for line in iter(process.stderr.readline, ''):
-            stderr_print(line.strip())
-        stderr_print("")
+
+    @staticmethod
+    def get_mash_distances():
+    	call(["mash", "paste", "reference.msh", "K-mer_lists/*.msh"])
         with open("mash_distances.mat", "w+") as f1:
             call(["mash", "dist", "reference.msh", "reference.msh"], stdout=f1)
+
+    # @classmethod
+    # def _mash_caller(cls):
+    #     #Estimating phylogenetic distances between samples using mash
+    #     sys.stderr.write("\nEstimating the Mash distances between samples...\n")
+    #     mash_args = ["mash", "sketch", "-o", "reference", "-m", cls.cutoff]
+    #     for sample_data in Input.samples.values():
+    #         mash_args.append(sample_data.address)
+    #     process = Popen(mash_args, stderr=PIPE)
+    #     for line in iter(process.stderr.readline, ''):
+    #         stderr_print(line.strip())
+    #     stderr_print("")
+    #     with open("mash_distances.mat", "w+") as f1:
+    #         call(["mash", "dist", "reference.msh", "reference.msh"], stdout=f1)
 
     @classmethod
     def _mash_output_to_distance_matrix(cls, names_of_samples, mash_distances):
@@ -561,8 +570,6 @@ class phenotypes():
                 *[open(item) for item in split_of_kmer_lists], fillvalue = ''
             ):
             counter += 1
-            if counter == 25000:
-                break
             if counter%self.progress_checkpoint.value == 0:
                 Input.lock.acquire()
                 stderr_print.currentKmerNum.value += self.progress_checkpoint.value
@@ -991,17 +998,6 @@ class phenotypes():
             if cls.model_name_short == "lin_reg":
                 # Defining linear regression parameters    
                 cls.hyper_parameters = {'alpha': cls.alphas}
-            if cls.model_name_short == "XGBR":
-                cls.hyper_parameters = {  
-                        "n_estimators": st.randint(3, 40),
-                        "max_depth": st.randint(3, 40),
-                        "learning_rate": st.uniform(0.05, 0.4),
-                        "colsample_bytree": one_to_left,
-                        "subsample": one_to_left,
-                        "gamma": st.uniform(0, 10),
-                        'reg_alpha': from_zero_positive,
-                        "min_child_weight": from_zero_positive,
-                    }
         elif cls.scale == "binary":
             if cls.model_name_long == "logistic regression":
                 #Defining logistic regression parameters
@@ -1017,8 +1013,6 @@ class phenotypes():
                     cls.hyper_parameters = {'C':Cs}
                 if cls.kernel == "rbf":
                     cls.hyper_parameters = {'C':Cs, 'gamma':Gammas}
-            if cls.model_name_short == "XGBC":
-                pass
 
     @classmethod
     def get_best_model(cls):
@@ -1136,7 +1130,7 @@ class phenotypes():
             self.weights_test = self.ML_df_test.iloc[:,-1:]
         else:
             self.X_train = self.ML_df.iloc[:,0:-2]
-            self.y_train = self.ML_df.iloc[:,-2:-1].astype(int)
+            self.y_train = self.ML_df.iloc[:,-2:-1]
             self.weights_train = self.ML_df.iloc[:,-1:]
 
         if phenotypes.scale == "continuous":
@@ -1149,13 +1143,6 @@ class phenotypes():
                 self.y_test = self.y_test.astype(int)
 
         self.ML_df.to_csv('data.csv')
-        self.X_train.to_csv('X_train.csv')
-        self.y_train.to_csv('y_train.csv')
-        self.weights_train.to_csv('weights_train.csv')
-
-        self.X_test.to_csv('X_test.csv')
-        self.y_test.to_csv('y_test.csv')
-        self.weights_test.to_csv('weights_test.csv')
 
         self.summary_file.write("Dataset:\n%s\n\n" % self.skl_dataset)  
 
@@ -1445,6 +1432,9 @@ def modeling(args):
         lambda x: x.map_samples(), Input.samples.values()
         )
     if args.weights == "+":
+    	Input.pool.map(
+	        lambda x: x.get_mash_sketches(), Input.samples.values()
+	        )
         Samples.get_weights()
 
     # Analyses of phenotypes
