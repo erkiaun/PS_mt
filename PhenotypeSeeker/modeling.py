@@ -951,6 +951,7 @@ class phenotypes():
                     cls.regressor = Lasso(max_iter=cls.max_iter, tol=cls.tol)        
                 if cls.penalty == 'L2':
                     cls.regressor = Ridge(max_iter=cls.max_iter, tol=cls.tol)
+                    print(cls.regressor)#############################################
                 if cls.penalty == 'elasticnet' or "L1+L2":
                     cls.regressor = ElasticNet(
                         l1_ratio=cls.l1_ratio, max_iter=cls.max_iter, tol=cls.tol
@@ -1029,7 +1030,6 @@ class phenotypes():
                 cls.best_regressor = GridSearchCV(
                     cls.classifier, cls.hyper_parameters, cv=cls.n_splits
                     )
-                print(cls.best_regressor) ########################################################
             elif cls.model_name_short == "XGBR":
                 cls.best_regressor = cls.regressor
         elif cls.scale == "binary":
