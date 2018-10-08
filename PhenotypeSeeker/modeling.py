@@ -278,7 +278,7 @@ class Samples():
     	mash_args = "cat " + self.address + "| mash sketch - -o K-mer_lists/" + self.name
     	process = Popen(mash_args, shell=True, stdout=PIPE, stderr=PIPE)
         out, err = process.communicate()
-        Input.lock.aquire()
+        Input.lock.acquire()
         stderr_print(err.strip())
         Input.lock.release()
 
