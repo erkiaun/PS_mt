@@ -294,7 +294,7 @@ class Samples():
             Input.samples[key].weight = value
 
     @classmethod
-    def get_mash_distances():
+    def get_mash_distances(cls):
         cls.mash_distances_args = ["mash", "paste", "reference.msh"] + cls.mash_distances_args
         process = Popen(cls.mash_distances_args, stderr=PIPE)
         with open("mash_distances.mat", "w+") as f1:
