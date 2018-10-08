@@ -276,7 +276,7 @@ class Samples():
     def get_mash_sketches(self):
     	mash_args = "cat " + self.address + "| mash sketch - -o K-mer_lists/" + self.name
     	process = Popen(mash_args, shell=True, stderr=PIPE)
-        call(["ls K-mer_lists/*.msh"], shell=True)
+        call("ls K-mer_lists/*.msh", shell=True)
 
     @classmethod
     def get_weights(cls):
