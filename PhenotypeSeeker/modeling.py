@@ -276,7 +276,7 @@ class Samples():
     
     def get_mash_sketches(self):
     	mash_args = "cat " + self.address + "| mash sketch - -o K-mer_lists/" + self.name
-    	process = Popen(mash_args, shell=True, stderr=PIPE)
+    	process = Popen(mash_args, shell=True, stdout=PIPE, stderr=PIPE)
         out, err = process.communicate()
         stderr_print(err.strip())
 
