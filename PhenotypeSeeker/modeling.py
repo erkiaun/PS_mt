@@ -289,7 +289,7 @@ class Samples():
         dist_mat = cls._distance_matrix_modifier("distances.mat")
         cls._distance_matrix_to_phyloxml(Input.samples.keys(), dist_mat)   
         cls._phyloxml_to_newick("tree_xml.txt")
-        sys.stderr.write("Calculating the Gerstein Sonnhammer Coathia " \
+        stderr_print("Calculating the Gerstein Sonnhammer Coathia " \
             "weights from mash distance matrix...")
         weights = cls._newick_to_GSC_weights("tree_newick.txt")
         for key, value in weights.iteritems():
@@ -303,7 +303,7 @@ class Samples():
             stderr_print(line.strip())
         with open("mash_distances.mat", "w+") as f1:
             call(["mash", "dist", "reference.msh", "reference.msh"], stdout=f1)
-        stderr_print("")
+
 
     # @classmethod
     # def _mash_caller(cls):
@@ -1442,6 +1442,7 @@ def modeling(args):
         lambda x: x.map_samples(), Input.samples.values()
         )
     if args.weights == "+":
+        sys.stderr.write("\nEstimating the Mash distances between samples...\n")
     	Input.pool.map(
 	        lambda x: x.get_mash_sketches(), Input.samples.values()
 	        )
