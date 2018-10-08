@@ -278,7 +278,7 @@ class Samples():
     	mash_args = "cat " + self.address + "| mash sketch - -o K-mer_lists/" + self.name
     	process = Popen(mash_args, shell=True, stderr=PIPE)
         out, err = process.communicate()
-        stderr_print(err.strip())
+        stderr_print(err)
 
     @classmethod
     def get_weights(cls):
@@ -298,7 +298,7 @@ class Samples():
         mash_args = "mash paste reference.msh K-mer_lists/*.msh"
         process = Popen(mash_args, shell=True, stdout=PIPE, stderr=PIPE)
         out, err = process.communicate()
-        stderr_print(err.strip())
+        stderr_print(err)
         with open("mash_distances.mat", "w+") as f1:
             call(["mash", "dist", "reference.msh", "reference.msh"], stdout=f1)
 
