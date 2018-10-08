@@ -293,7 +293,7 @@ class Samples():
 
     @staticmethod
     def get_mash_distances():
-        call(["mash paste reference.msh K-mer_lists/*.msh"], shell=True)
+        call("mash paste reference.msh K-mer_lists/*.msh", shell=True)
         with open("mash_distances.mat", "w+") as f1:
             call(["mash", "dist", "reference.msh", "reference.msh"], stdout=f1)
 
