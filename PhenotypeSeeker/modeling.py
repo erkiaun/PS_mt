@@ -297,6 +297,7 @@ class Samples():
         mash_args = ["mash", "paste", "reference.msh"]
         for sample in Input.samples.values():
             mash_args.append("K-mer_lists/" + sample.name + ".msh")
+        print(mash_args)
         call(mash_args)
         # process = Popen(mash_args, shell=True, stderr=PIPE)
         with open("mash_distances.mat", "w+") as f1:
