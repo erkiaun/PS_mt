@@ -1444,7 +1444,7 @@ def modeling(args):
     	Input.pool.map(
 	        lambda x: x.get_mash_sketches(), Input.samples.values()
 	        )
-        Input.pool.close()
+        Input.pool.join()
         Samples.get_weights()
 
     # Analyses of phenotypes
