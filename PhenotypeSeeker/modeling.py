@@ -203,6 +203,8 @@ class Samples():
     max_samples = None
     num_threads = None
 
+    mash_distances_args = []
+
     def __init__(self, name, address, phenotypes, weight=1):
         self.name = name
         self.address = address
@@ -274,8 +276,9 @@ class Samples():
     # input samples.
     
     def get_mash_sketches(self):
-    	mash_args = "cat " + self.address + "| mash sketch - -o " + self.name
-    	process = Popen(mash_args, shell=True, stderr=PIPE)
+    	mash_sketch_args = "cat " + self.address + "| mash sketch - -o K-mer_lists/" + self.name
+        mash_distances_args.append("K-mer_lists/" + sample.name + ".msh")
+    	process = Popen(mash_sketch_args, shell=True, stderr=PIPE)
 
     @classmethod
     def get_weights(cls):
@@ -290,11 +293,10 @@ class Samples():
         for key, value in weights.iteritems():
             Input.samples[key].weight = value
 
-    @staticmethod
+    @classmethod
     def get_mash_distances():
-        # call("ls K-mer_lists/*.msh", shell=True)
-        # call("ls K-mer_lists/*.txt", shell=True)
-        call("mash paste reference.msh *.msh", shell=True)
+        cls.mash_distances_args = ["mash", "paste", "reference.msh"] + cls.mash_distances_args
+        process = Popen(cls.mash_distances_args, stderr=PIPE)
         with open("mash_distances.mat", "w+") as f1:
             call(["mash", "dist", "reference.msh", "reference.msh"], stdout=f1)
 
