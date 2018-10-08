@@ -294,6 +294,7 @@ class Samples():
 
     @classmethod
     def get_mash_distances(cls):
+        call("ls K-mer_lists", shell=True)
         mash_args = ["mash", "paste", "reference.msh"]
         for sample in Input.samples.values():
             mash_args.append("K-mer_lists/" + sample.name + ".msh")
