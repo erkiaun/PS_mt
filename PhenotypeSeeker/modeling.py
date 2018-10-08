@@ -277,7 +277,7 @@ class Samples():
     
     def get_mash_sketches(self):
     	mash_sketch_args = "cat " + self.address + "| mash sketch - -o K-mer_lists/" + self.name
-        self.mash_distances_args.append("K-mer_lists/" + self.name + ".msh")
+        Samples.mash_distances_args.append("K-mer_lists/" + self.name + ".msh")
     	process = Popen(mash_sketch_args, shell=True, stderr=PIPE)
 
     @classmethod
