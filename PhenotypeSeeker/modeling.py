@@ -1199,7 +1199,7 @@ class phenotypes():
                 self.summary_file.write(key + " : " + str(value) + "\n")
 
     def predict(self, dataset, labels):
-            predictions = self.best_model.predict(dataset.values)
+        predictions = self.best_model.predict(dataset.values)
         self.summary_file.write("\nModel predictions on samples:\nSample_ID " \
             "Acutal_phenotype Predicted_phenotype\n")
         for index, row in dataset.iterrows():
