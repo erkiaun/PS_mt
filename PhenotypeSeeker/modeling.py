@@ -39,8 +39,6 @@ import numpy as np
 import pandas as pd
 import sklearn.datasets
 
-import time
-
 class Input():
 
     samples = OrderedDict()
@@ -1446,7 +1444,6 @@ def modeling(args):
     	Input.pool.map(
 	        lambda x: x.get_mash_sketches(), Input.samples.values()
 	        )
-        # time.sleep(1)
         Samples.get_weights()
 
     # Analyses of phenotypes
