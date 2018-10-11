@@ -302,21 +302,6 @@ class Samples():
         with open("mash_distances.mat", "w+") as f1:
             call(["mash", "dist", "reference.msh", "reference.msh"], stdout=f1)
 
-
-    # @classmethod
-    # def _mash_caller(cls):
-    #     #Estimating phylogenetic distances between samples using mash
-    #     sys.stderr.write("\nEstimating the Mash distances between samples...\n")
-    #     mash_args = ["mash", "sketch", "-o", "reference", "-m", cls.cutoff]
-    #     for sample_data in Input.samples.values():
-    #         mash_args.append(sample_data.address)
-    #     process = Popen(mash_args, stderr=PIPE)
-    #     for line in iter(process.stderr.readline, ''):
-    #         stderr_print(line.strip())
-    #     stderr_print("")
-    #     with open("mash_distances.mat", "w+") as f1:
-    #         call(["mash", "dist", "reference.msh", "reference.msh"], stdout=f1)
-
     @classmethod
     def _mash_output_to_distance_matrix(cls, names_of_samples, mash_distances):
         with open(mash_distances) as f1:
@@ -374,7 +359,6 @@ class Samples():
             weights[item] = 1 - weights[item]
         return(weights)
 
-
 class stderr_print():
     # --------------------------------------------------------
     # Functions and variables necessarry to show the progress 
@@ -405,42 +389,6 @@ class stderr_print():
             txt
             )
         cls(output)
-
-class metrics():
-    # ---------------------------------------------------------
-    # Self-implemented performance measure functions
-
-    @staticmethod
-    def VME(targets, predictions):
-        # Function to calculate the very major error (VME) rate
-        VMEs = 0
-        for item in izip(targets, predictions):
-            if item[0] == 1 and item[1] == 0:
-                VMEs += 1
-        VME = str(float(VMEs)/len(targets)*100)+"%"
-        return VME
-
-    @staticmethod
-    def ME(targets, predictions):
-        # Function to calculate the major error (ME) rate
-        MEs = 0
-        for item in izip(targets, predictions):
-            if item[0] == 0 and item[1] == 1:
-                 MEs += 1
-        ME = str(float(MEs)/len(targets)*100)+"%"
-        return ME
-
-    @staticmethod
-    def within_1_tier_accuracy(targets, predictions):
-        # Calculate the plus/minus one dilution factor accuracy
-        # for predicted antibiotic resistance values.
-        within_1_tier = 0
-        for item in izip(targets, predictions):
-            if abs(item[0]-item[1]) <= 1:
-                within_1_tier +=1
-        accuracy = float(within_1_tier)/len(targets)
-        return accuracy
-
 
 class phenotypes():
 
@@ -975,7 +923,7 @@ class phenotypes():
                 #Defining logistic regression parameters
                 if cls.penalty == "L1":
                     cls.model = LogisticRegression(
-                        penalty='l1', solver='saga',
+                        penalty='l1', solver='liblinear',
                         max_iter=cls.max_iter, tol=cls.tol
                         )        
                 elif cls.penalty == "L2":
@@ -1150,8 +1098,6 @@ class phenotypes():
             if self.testset_size != 0.0:
                 self.y_test = self.y_test.astype(int)
 
-        self.ML_df.to_csv('data.csv')
-
         self.summary_file.write("Dataset:\n%s\n\n" % self.skl_dataset)  
 
 
@@ -1180,11 +1126,15 @@ class phenotypes():
     def cross_validation_results(self):
         if self.model_name_short not in ("RF", "NB", "XGBC", "XGBR"):
             self.summary_file.write('Parameters:\n%s\n\n' % self.model)
-            self.summary_file.write("Grid scores (R2 score) on development set: \n")
+            if phenotype == "continuous":
+                self.summary_file.write("Grid scores (R2 score) on development set: \n")
+            elif phenotype == "binary":
+                self.summary_file.write("Grid scores (mean accuracy) on development set: \n")
             means = self.best_model.cv_results_['mean_test_score']
             stds = self.best_model.cv_results_['std_test_score']
-            for mean, std, params in izip(
-                    means, stds, self.best_model.cv_results_['params']
+            params = self.best_model.cv_results_['params']
+            for mean, std, param in izip(
+                    means, stds, params
                     ):
                 self.summary_file.write(
                     "%0.3f (+/-%0.03f) for %r \n" % (mean, std * 2, params)
@@ -1219,7 +1169,7 @@ class phenotypes():
         self.summary_file.write("The Pearson correlation coefficient and p-value: " \
                 " %s, %s \n" % (r_value, pval_r))
         self.summary_file.write("The plus/minus 1 dilution factor accuracy (for MICs):" \
-            " %s \n\n" % metrics.within_1_tier_accuracy(
+            " %s \n\n" % self.within_1_tier_accuracy(
                 labels, predictions
                 )
             )
@@ -1245,9 +1195,9 @@ class phenotypes():
             self.summary_file.write("Cohen kappa: %s\n" %\
                 cohen_kappa_score(labels, predictions))
             self.summary_file.write("Very major error rate: %s\n" %\
-                metrics.VME(labels, predictions))
+                self.VME(labels, predictions))
             self.summary_file.write("Major error rate: %s\n" %\
-                metrics.ME(labels, predictions))
+                self.ME(labels, predictions))
             self.summary_file.write('Classification report:\n\n %s\n' % classification_report(
                 labels, predictions, 
                 target_names=["sensitive", "resistant"]
@@ -1288,6 +1238,39 @@ class phenotypes():
                 kmer, kmer_coef,
                 len(samples_with_kmer), " ".join(samples_with_kmer)
                 ))
+
+    # ---------------------------------------------------------
+    # Self-implemented performance measure functions
+    @staticmethod
+    def VME(targets, predictions):
+        # Function to calculate the very major error (VME) rate
+        VMEs = 0
+        for item in izip(targets, predictions):
+            if item[0] == 1 and item[1] == 0:
+                VMEs += 1
+        VME = str(float(VMEs)/len(targets)*100)+"%"
+        return VME
+
+    @staticmethod
+    def ME(targets, predictions):
+        # Function to calculate the major error (ME) rate
+        MEs = 0
+        for item in izip(targets, predictions):
+            if item[0] == 0 and item[1] == 1:
+                 MEs += 1
+        ME = str(float(MEs)/len(targets)*100)+"%"
+        return ME
+
+    @staticmethod
+    def within_1_tier_accuracy(targets, predictions):
+        # Calculate the plus/minus one dilution factor accuracy
+        # for predicted antibiotic resistance values.
+        within_1_tier = 0
+        for item in izip(targets, predictions):
+            if abs(item[0]-item[1]) <= 1:
+                within_1_tier +=1
+        accuracy = float(within_1_tier)/len(targets)
+        return accuracy
 
 def ReverseComplement(kmer):
     # Returns the reverse complement of kmer
