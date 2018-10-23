@@ -220,7 +220,8 @@ class Samples():
         call(["mkdir", "-p", "K-mer_lists"])
         call(
             ["glistmaker " + self.address + " -o K-mer_lists/" 
-            + self.name + " -w " + self.kmer_length + " -c " + self.cutoff], 
+            + self.name + " -w " + self.kmer_length + " -c " + self.cutoff
+            + " --num_threads " + self.num_threads], 
             shell=True
             )
         Input.lock.acquire()
@@ -239,7 +240,7 @@ class Samples():
                 [
                 "glistquery", "K-mer_lists/" + self.name + "_" + self.kmer_length +
                 ".list", "-l", "K-mer_lists/feature_vector_" + self.kmer_length +
-                ".list"
+                ".list", "--num_threads", self.num_threads
                 ]
                 , stdout=outputfile)
         Input.lock.acquire()
@@ -1137,7 +1138,7 @@ class phenotypes():
                     means, stds, params
                     ):
                 self.summary_file.write(
-                    "%0.3f (+/-%0.03f) for %r \n" % (mean, std * 2, params)
+                    "%0.3f (+/-%0.03f) for %r \n" % (mean, std * 2, param)
                     )
             self.summary_file.write("\nBest parameters found on development set: \n")
             for key, value in self.best_model.best_params_.iteritems():
