@@ -221,7 +221,7 @@ class Samples():
         call(
             ["glistmaker " + self.address + " -o K-mer_lists/" 
             + self.name + " -w " + self.kmer_length + " -c " + self.cutoff
-            + " --num_threads " + self.num_threads], 
+            + " --num_threads " + str(self.num_threads)], 
             shell=True
             )
         Input.lock.acquire()
@@ -240,7 +240,7 @@ class Samples():
                 [
                 "glistquery", "K-mer_lists/" + self.name + "_" + self.kmer_length +
                 ".list", "-l", "K-mer_lists/feature_vector_" + self.kmer_length +
-                ".list", "--num_threads", self.num_threads
+                ".list", "--num_threads", str(self.num_threads)
                 ]
                 , stdout=outputfile)
         Input.lock.acquire()
@@ -266,7 +266,8 @@ class Samples():
         glistmaker_args = ["glistmaker"] + \
             [sample.address for sample in Input.samples.values()] + \
             [
-            '-c', str(cls.cutoff), '-w', str(cls.kmer_length), '-o', 'K-mer_lists/feature_vector'
+            '-c', str(cls.cutoff), '-w', str(cls.kmer_length), '-o', 'K-mer_lists/feature_vector',
+            '--num_threads', str(cls.num_threads)
             ]
         call(" ".join(glistmaker_args), shell=True)
 
