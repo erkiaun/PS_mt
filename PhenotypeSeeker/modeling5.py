@@ -1,5 +1,7 @@
 #!/usr/bin/python2.7
 
+from __future__ import print_function
+
 __author__ = "Erki Aun"
 __version__ = "0.3.1"
 __maintainer__ = "Erki Aun"
@@ -50,17 +52,17 @@ class Input():
         samples = OrderedDict()
         Samples.take_logs = take_logs
         with open(inputfilename) as inputfile:
-            header = inputfile.readline().split()
-            Samples.phenotypes = header[2:]
-            Samples.no_phenotypes = len(header)-2
-            for pheno in Samples.phenotypes:
-                try:
-                    int(pheno)
-                    print("Warning! It seems that the input file is" \
-                        " missing the header row!")
-                except ValueError:
-                    pass
-            for line in inputfile:
+            for i, line in enumerate(inputfile):
+                if i == 0:
+                    firstline = line.split()
+                    Samples.no_phenotypes = len(firstline)-2
+                    if firstline[0] == "SampleID":
+                        Samples.phenotypes = firstline[2:]
+                        Samples.headerline = True
+                        continue
+                    else:
+                        for j in xrange(1, Samples.no_phenotypes + 1):
+                            Samples.phenotypes.append("phenotype_%s" %j)
                 sample_name = line.split()[0]
                 cls.samples[sample_name] = (
                     Samples.from_inputfile(line)
@@ -192,6 +194,7 @@ class Samples():
     no_phenoypes = 0
     phenotypes = []
     take_logs = None
+    headerline = None
 
     kmer_length = None
     cutoff = None
@@ -217,7 +220,8 @@ class Samples():
         call(["mkdir", "-p", "K-mer_lists"])
         call(
             ["glistmaker " + self.address + " -o K-mer_lists/" 
-            + self.name + " -w " + self.kmer_length + " -c " + self.cutoff], 
+            + self.name + " -w " + self.kmer_length + " -c " + self.cutoff
+            + " --num_threads " + str(self.num_threads)], 
             shell=True
             )
         Input.lock.acquire()
@@ -236,7 +240,7 @@ class Samples():
                 [
                 "glistquery", "K-mer_lists/" + self.name + "_" + self.kmer_length +
                 ".list", "-l", "K-mer_lists/feature_vector_" + self.kmer_length +
-                ".list"
+                ".list", "--num_threads", str(self.num_threads)
                 ]
                 , stdout=outputfile)
         Input.lock.acquire()
@@ -262,9 +266,10 @@ class Samples():
         glistmaker_args = ["glistmaker"] + \
             [sample.address for sample in Input.samples.values()] + \
             [
-            '-c', cls.cutoff, '-w', cls.kmer_length, '-o', 'K-mer_lists/feature_vector'
+            '-c', str(cls.cutoff), '-w', str(cls.kmer_length), '-o', 'K-mer_lists/feature_vector',
+            '--num_threads', str(cls.num_threads)
             ]
-        call(glistmaker_args)
+        call(" ".join(glistmaker_args), shell=True)
 
 
     # -------------------------------------------------------------------
@@ -272,7 +277,7 @@ class Samples():
     # input samples.
     
     def get_mash_sketches(self):
-        mash_args = "mash sketch -r " + self.address + " -o K-mer_lists/" + self.name
+    	mash_args = "cat " + self.address + "| mash sketch - -o K-mer_lists/" + self.name
     	process = Popen(mash_args, shell=True, stderr=PIPE)
         for line in iter(process.stderr.readline, ''):
             stderr_print(line.strip())
@@ -398,6 +403,7 @@ class phenotypes():
     vectors_as_multiple_input = []
     progress_checkpoint = Value("i", 0)
     no_kmers_to_analyse = Value("i", 0)
+    test_outputfiles = dict()
 
     # Filtering parameters
     pvalue_cutoff = None
@@ -408,6 +414,7 @@ class phenotypes():
     # Machine learning parameters
     model = None
     best_model = None
+    model_fitted = None
     clf = None
     penalty = None
     max_iter = None
@@ -445,13 +452,11 @@ class phenotypes():
         self.X_dataset = None
         self.y_dataset = None
         self.weights_dataset = None
-        self.model_fitted = None
-        self.test_output = None
 
     # -------------------------------------------------------------------
     # Functions for calculating the association test results for kmers.
     @classmethod
-    def start_kmer_testing(cls):
+    def preparations_for_kmer_testing(cls):
         if phenotypes.scale == "continuous":
             sys.stderr.write("\nConducting the k-mer specific Welch t-tests:\n")
         else:
@@ -513,16 +518,12 @@ class phenotypes():
         pvalues = []
         counter = 0
 
-        mt_code = split_of_kmer_lists[0][-5:]
-        if phenotypes.scale == "continuous":
-            test_results_file = open(
-                "t-test_results_" + self.name + "_" + mt_code + ".txt", "w"
-                )
-        else:
-            test_results_file = open(
-                "chi-squared_test_results_" + self.name + "_" + mt_code + ".txt", "w"
-                )
-
+        multithreading_code = split_of_kmer_lists[0][-5:]
+        test_results_file = open(self.test_result_output(
+            multithreading_code
+            ), "w")
+        text1_4_stderr = self.get_text1_4_stderr()
+        text2_4_stderr = "tests conducted."
         for line in izip_longest(
                 *[open(item) for item in split_of_kmer_lists], fillvalue = ''
             ):
@@ -532,7 +533,7 @@ class phenotypes():
                 stderr_print.currentKmerNum.value += self.progress_checkpoint.value
                 Input.lock.release()
                 stderr_print.check_progress(
-                    self.no_kmers_to_analyse.value, "tests conducted.", self.name + ": "
+                    self.no_kmers_to_analyse.value, text2_4_stderr, text1_4_stderr
                 )
             kmer = line[0].split()[0]
             kmer_presence_vector = [j.split()[1].strip() for j in line]
@@ -553,10 +554,35 @@ class phenotypes():
         stderr_print.currentKmerNum.value += counter%self.progress_checkpoint.value
         Input.lock.release()
         stderr_print.check_progress(
-            self.no_kmers_to_analyse.value, "tests conducted.", self.name + ": "
+            self.no_kmers_to_analyse.value, text2_4_stderr, text1_4_stderr
         )
         test_results_file.close()
         return(pvalues)
+
+    def test_result_output(self, code):
+        if phenotypes.scale == "continuous":
+            beginning_text = "t-test_results_"
+        else:
+            beginning_text = "chi-squared_test_results_"
+
+        if Samples.headerline:
+            outputfile = beginning_text + \
+                self.name + "_" + code + ".txt"
+        elif len(Input.phenotypes_to_analyse) > 1:
+            outputfile = beginning_text + \
+                self.name + "_" + code + ".txt"
+        else:
+            outputfile = beginning_text + code + ".txt"
+        return outputfile
+
+    def get_text1_4_stderr(self):
+        if Samples.headerline:
+            text1_4_stderr = self.name + ": "
+        elif len(Input.phenotypes_to_analyse) > 1:
+            text1_4_stderr = self.name + ": "
+        else:
+            text1_4_stderr = ""
+        return text1_4_stderr
 
     def conduct_t_test(
         self, kmer, kmer_presence_vector,
@@ -734,22 +760,48 @@ class phenotypes():
 
     def concatenate_test_files(self, phenotype):
         if phenotypes.scale == "continuous":
-            test_results = "t-test_results_"
+            beginning_text = "t-test_results_"
         else:
-            test_results = "chi-squared_test_results_"
-        self.test_output = test_results + phenotype + ".txt"
-        call(
-            [
-            "cat " + test_results + phenotype + "_* > " +
-            self.test_output
-            ],
-            shell=True
-            )
-        for l in xrange(Samples.num_threads):
+            beginning_text = "chi-squared_test_results_"
+        if Samples.no_phenotypes > 1:
+            outputfile = beginning_text + phenotype + ".txt"
+        else:
+            outputfile = beginning_text[:-1] + ".txt"
+        self.test_outputfiles[phenotype] = outputfile
+        if Samples.headerline:
             call(
                 [
-                "rm " + test_results + phenotype +
-                "_%05d.txt" % l
+                "cat " + beginning_text + phenotype + "_* > " +
+                outputfile
+                ],
+                shell=True
+                )
+            for l in xrange(Samples.num_threads):
+                call(
+                    [
+                    "rm " + beginning_text + phenotype +
+                    "_%05d.txt" % l
+                    ],
+                    shell=True
+                    )
+        elif Samples.no_phenotypes > 1:
+            call(
+                [
+                "cat " + beginning_text + phenotype + "_* > " +
+                outputfile
+                ],
+                shell=True
+                )
+            for l in xrange(Samples.num_threads):
+                call(
+                    ["rm " + beginning_text + phenotype + "_%05d.txt" %l],
+                    shell=True
+                    )     
+        else:
+            call(
+                [
+                "cat " + beginning_text + "* > " + outputfile +
+                " && rm " + beginning_text + "*"
                 ],
                 shell=True
                 )
@@ -768,9 +820,11 @@ class phenotypes():
 
         stderr_print.currentKmerNum.value = 0
         stderr_print.previousPercent.value = 0
+        text1_4_stderr = self.get_text1_4_stderr()
+        text2_4_stderr = "k-mers filtered."
         checkpoint = int(math.ceil(nr_of_kmers_tested/100))
-        inputfile = open(self.test_output)
-        outputfile = open("k-mers_filtered_by_pvalue_" + self.name + ".txt", "w")
+        inputfile = open(self.test_outputfiles[phenotype])
+        outputfile = open(self.kmers_filtered_output(phenotype), "w")
         self.write_headerline(outputfile)
 
         counter = 0
@@ -784,12 +838,12 @@ class phenotypes():
             if counter%checkpoint == 0:
                 stderr_print.currentKmerNum.value += checkpoint
                 stderr_print.check_progress(
-                    nr_of_kmers_tested, "k-mers filtered.", self.name + ": "
+                    nr_of_kmers_tested, text2_4_stderr, text1_4_stderr
                 )
 
         stderr_print.currentKmerNum.value += counter%checkpoint
         stderr_print.check_progress(
-            nr_of_kmers_tested, "k-mers filtered.", self.name + ": "
+            nr_of_kmers_tested, text2_4_stderr, text1_4_stderr
             )
         sys.stderr.write("\n")
         if len(self.kmers_for_ML) == 0:
@@ -799,7 +853,7 @@ class phenotypes():
 
     def get_pvalue_cutoff(self, pvalues, nr_of_kmers_tested):
         if self.B:
-            self.pvalue_cutoff = (self.pvalue_cutoff/nr_of_kmers_tested)
+            self.pvalue_cutoff = (cls.pvalue_cutoff/nr_of_kmers_tested)
         elif self.FDR:
             pvalue_cutoff_by_FDR = 0
             for index, pvalue in enumerate(pvalues):
@@ -811,6 +865,15 @@ class phenotypes():
                 elif item > pvalue:
                     break
             self.pvalue_cutoff = pvalue_cutoff_by_FDR
+
+    def kmers_filtered_output(self, phenotype):
+        if Samples.headerline:
+            outputfile = "k-mers_filtered_by_pvalue_" + self.name + ".txt"
+        elif Samples.no_phenotypes > 1:
+            outputfile = "k-mers_filtered_by_pvalue_" + self.name + ".txt"
+        else:
+            outputfile = "k-mers_filtered_by_pvalue.txt"
+        return outputfile
 
     @staticmethod
     def write_headerline(outputfile):
@@ -826,12 +889,21 @@ class phenotypes():
                 \tNo._of_samples_with_k-mer\tSamples_with_k-mer\n"
                 )
 
+    # -------------------------------------------------------------------
+    # Functions for generating the machine learning model.  
     @classmethod
-    def start_modeling(cls):
-        sys.stderr.write("Generating the " + cls.model_name_long + " model for phenotype: \n")
+    def preparations_for_modeling(cls):
+        if len(Input.phenotypes_to_analyse) > 1:
+            sys.stderr.write("Generating the " + cls.model_name_long + " model:\n")
+        elif Samples.headerline:
+            sys.stderr.write("Generating the " + cls.model_name_long + " model of " 
+                +  Samples.phenotypes[0] + " data...\n")
+        else:
+            sys.stderr.write("Generating the " + cls.model_name_long + " model...\n")
         cls.set_model()
         cls.set_hyperparameters()
         cls.get_best_model()
+
 
     @classmethod
     def set_model(cls):
@@ -853,8 +925,8 @@ class phenotypes():
                 #Defining logistic regression parameters
                 if cls.penalty == "L1":
                     cls.model = LogisticRegression(
-                        penalty='l1', solver='saga',
-                        max_iter=100, tol=0.0001
+                        penalty='l1', solver='liblinear',
+                        max_iter=cls.max_iter, tol=cls.tol
                         )        
                 elif cls.penalty == "L2":
                     cls.model = LogisticRegression(
@@ -928,7 +1000,9 @@ class phenotypes():
                 cls.best_model = cls.model
 
     def machine_learning_modelling(self):
-        sys.stderr.write("\t" + self.name + ".\n")
+        if len(Input.phenotypes_to_analyse) > 1:
+            sys.stderr.write("\tof " 
+                +  self.name + " data...\n")
         self.get_outputfile_names()
         if len(self.kmers_for_ML) == 0:
             self.summary_file.write("No k-mers passed the step of k-mer filtering for " \
@@ -944,7 +1018,7 @@ class phenotypes():
             self.summary_file.write('\nTest set:\n')
             self.predict(self.X_test, self.y_test)
 
-        joblib.dump(self.model_fitted, self.model_file)
+        joblib.dump(self.model, self.model_file)
         self.write_model_coefficients_to_file()
 
         self.summary_file.close()
@@ -953,11 +1027,29 @@ class phenotypes():
 
 
     def get_outputfile_names(self):
-        self.summary_file = open("summary_of_" + self.model_name_short + "_analysis_" \
-            + self.name + ".pkl", "w")
-        self.coeff_file = open("k-mers_and_coefficients_in_" + self.model_name_short \
-            + "_model_" + self.name + ".txt", "w")
-        self.model_file = open(self.model_name_short + "_model_" + self.name + ".pkl", "w")
+        if Samples.headerline:
+            summary_file = "summary_of_" + self.model_name_short + "_analysis_" \
+                + self.name + ".txt"
+            coeff_file = "k-mers_and_coefficients_in_" + self.model_name_short \
+                + "_model_" + self.name + ".txt"
+            model_file = self.model_name_short + "_model_" + self.name + ".pkl"
+        elif len(Input.phenotypes_to_analyse) > 1:
+            summary_file = "summary_of_" + self.model_name_short + "_analysis_" \
+                + self.name + ".txt"
+            coeff_file = "k-mers_and_coefficients_in_" + self.model_name_short \
+                + "_model_" + self.name + ".txt"
+            model_file = self.model_name_short +"_model_" + self.name + ".pkl"
+        else:
+            summary_file = "summary_of_" + self.model_name_short + "_analysis.txt"
+            coeff_file = "k-mers_and_coefficients_in_" + self.model_name_short \
+                + "_model.txt"
+            model_file = self.model_name_short + "_model.txt"
+        
+        self.summary_file = open(summary_file, "w")
+        self.coeff_file = open(coeff_file, "w")
+        self.model_file = open(model_file, "w")
+
+
 
     def get_dataframe_for_machine_learning(self):
         kmer_lists = ["K-mer_lists/" + sample + "_mapped.txt" for sample in Input.samples]
@@ -973,7 +1065,7 @@ class phenotypes():
             ]
         self.ML_df.index = Input.samples.keys()
         self.ML_df = self.ML_df.loc[self.ML_df.phenotype != 'NA']
-        #self.ML_df = self.ML_df.T.drop_duplicates().T
+        self.ML_df = self.ML_df.T.drop_duplicates().T
         self.skl_dataset = sklearn.datasets.base.Bunch(
             data=self.ML_df.iloc[:,0:-2].values, target=self.ML_df['phenotype'].values,
             target_names=np.array(["resistant", "sensitive"]),
@@ -1040,9 +1132,9 @@ class phenotypes():
                 self.summary_file.write("Grid scores (R2 score) on development set: \n")
             elif self.scale == "binary":
                 self.summary_file.write("Grid scores (mean accuracy) on development set: \n")
-            means = self.model_fitted.cv_results_['mean_test_score']
-            stds = self.model_fitted.cv_results_['std_test_score']
-            params = self.model_fitted.cv_results_['params']
+            means = self.best_model.cv_results_['mean_test_score']
+            stds = self.best_model.cv_results_['std_test_score']
+            params = self.best_model.cv_results_['params']
             for mean, std, param in izip(
                     means, stds, params
                     ):
@@ -1050,17 +1142,17 @@ class phenotypes():
                     "%0.3f (+/-%0.03f) for %r \n" % (mean, std * 2, param)
                     )
             self.summary_file.write("\nBest parameters found on development set: \n")
-            for key, value in self.model_fitted.best_params_.iteritems():
+            for key, value in self.best_model.best_params_.iteritems():
                 self.summary_file.write(key + " : " + str(value) + "\n")
 
     def predict(self, dataset, labels):
-        predictions = self.model_fitted.predict(dataset.values)
+        predictions = self.best_model.predict(dataset.values)
         self.summary_file.write("\nModel predictions on samples:\nSample_ID " \
             "Acutal_phenotype Predicted_phenotype\n")
         for index, row in dataset.iterrows():
                 self.summary_file.write('%s %s %s\n' % (
                     index, labels.loc[index].values[0],
-                    self.model_fitted.predict(row.reshape(1, -1))[0]
+                    self.best_model.predict(row.reshape(1, -1))[0]
                     ))
         if self.scale == "continuous":
             self.model_performance_regressor(dataset, labels.values.flatten(), predictions)
@@ -1071,7 +1163,7 @@ class phenotypes():
         self.summary_file.write('\nMean squared error: %s\n' % \
                  mean_squared_error(labels, predictions))
         self.summary_file.write("The coefficient of determination:"
-            + " %s\n" % self.model_fitted.score(dataset.values, labels))
+            + " %s\n" % self.best_model.score(dataset.values, labels))
         self.summary_file.write("The Spearman correlation coefficient and p-value:" \
             " %s, %s \n" % stats.spearmanr(labels, predictions))
         r_value, pval_r = \
@@ -1085,7 +1177,7 @@ class phenotypes():
             )
 
     def model_performance_classifier(self, dataset, labels, predictions):
-            self.summary_file.write("Mean accuracy: %s\n" % self.model_fitted.score(dataset, labels))
+            self.summary_file.write("Mean accuracy: %s\n" % self.best_model.score(dataset, labels))
             self.summary_file.write("Sensitivity: %s\n" % \
                     recall_score(labels, predictions))
             self.summary_file.write("Specificity: %s\n" % \
@@ -1098,7 +1190,7 @@ class phenotypes():
             self.summary_file.write("Average precision: %s\n" % \
                 average_precision_score(
                     labels, 
-                    self.model_fitted.predict_proba(dataset)[:,1]
+                    self.best_model.predict_proba(dataset)[:,1]
                     )                        )
             self.summary_file.write("MCC: %s\n" % \
                 matthews_corrcoef(labels, predictions))
@@ -1126,17 +1218,17 @@ class phenotypes():
         df_for_coeffs = self.ML_df.iloc[:,0:-2]
         if self.model_name_short == "lin_reg":
             df_for_coeffs.loc['coefficient'] = \
-                self.model_fitted.best_estimator_.coef_
+                self.best_model.best_estimator_.coef_
         elif self.model_name_short in ("RF"):
             df_for_coeffs.loc['coefficient'] = \
-                self.model_fitted.feature_importances_
+                self.best_model.feature_importances_
         elif self.model_name_short in ("XGBR", "XGBC"):
             df_for_coeffs.loc['coefficient'] = \
-                self.model_fitted.feature_importances_
+                self.best_model.feature_importances_
         elif self.model_name_short in ("SVM", "log_reg"):
             if self.kernel != "rbf":
                 df_for_coeffs.loc['coefficient'] = \
-                    self.model_fitted.best_estimator_.coef_[0]
+                    self.best_model.best_estimator_.coef_[0]
         for kmer in df_for_coeffs:
             if self.kernel == "rbf" or self.model_name_short == "NB":
                 kmer_coef = "NA"
@@ -1182,110 +1274,127 @@ class phenotypes():
         accuracy = float(within_1_tier)/len(targets)
         return accuracy
 
-    # Assembly methods
-    def ReverseComplement(self, kmer):
-        # Returns the reverse complement of kmer
-        seq_dict = {'A':'T','T':'A','G':'C','C':'G'}
-        return("".join([seq_dict[base] for base in reversed(kmer)]))
+def ReverseComplement(kmer):
+    # Returns the reverse complement of kmer
+    seq_dict = {'A':'T','T':'A','G':'C','C':'G'}
+    return("".join([seq_dict[base] for base in reversed(kmer)]))
 
-    def string_set(self, string_list):
-        # Removes subsequences from kmer_list
-        return set(i for i in string_list
-                   if not any(i in s for s in string_list if i != s))
+def string_set(string_list):
+    # Removes subsequences from kmer_list
+    return set(i for i in string_list
+               if not any(i in s for s in string_list if i != s))
 
-    def overlap(self, a, b, min_length=3):
-        # Returns the overlap of kmer_a and kmer_b if overlap equals or 
-        # exceeds the min_length. Otherwise returns 0.
-        start = 0
-        while True:
-            start = a.find(b[:min_length], start)
-            if start == -1:
-                return 0
-            if b.startswith(a[start:]):
-                return len(a) - start
-            start += 1
+def overlap(a, b, min_length=3):
+    # Returns the overlap of kmer_a and kmer_b if overlap equals or 
+    # exceeds the min_length. Otherwise returns 0.
+    start = 0
+    while True:
+        start = a.find(b[:min_length], start)
+        if start == -1:
+            return 0
+        if b.startswith(a[start:]):
+            return len(a) - start
+        start += 1
 
-    def pick_overlaps(self, reads, min_olap):
-        # Takes kmer_list as an Input. Generates pairwise permutations of 
-        # the kmers in kmer list. Finds the overlap of each pair. Returns 
-        # the lists of kmers and overlap lengths of the pairs which overlap
-        # by min_olap or more nucleotides.
-        reada, readb, olap_lens = [], [], []
-        for a, b in permutations(reads, 2):
-            olap_len = self.overlap(a, b, min_length=min_olap)
-            if olap_len > 0:
-                reada.append(a)
-                readb.append(b)
-                olap_lens.append(olap_len)
-        return reada, readb, olap_lens
+def pick_overlaps(reads, min_olap):
+    # Takes kmer_list as an Input. Generates pairwise permutations of 
+    # the kmers in kmer list. Finds the overlap of each pair. Returns 
+    # the lists of kmers and overlap lengths of the pairs which overlap
+    # by min_olap or more nucleotides.
+    reada, readb, olap_lens = [], [], []
+    for a, b in permutations(reads, 2):
+        olap_len = overlap(a, b, min_length=min_olap)
+        if olap_len > 0:
+            reada.append(a)
+            readb.append(b)
+            olap_lens.append(olap_len)
+    return reada, readb, olap_lens
 
-    def kmer_assembler(self, min_olap=None):
-        # Assembles the k-mers in kmer_list which overlap by at least 
-        # min_olap nucleotides.
-        if min_olap == None:
-            min_olap = int(Samples.kmer_length)-1
-        assembled_kmers = []
+def kmer_assembler(kmer_list, min_olap=None):
+    # Assembles the k-mers in kmer_list which overlap by at least 
+    # min_olap nucleotides.
 
-        # Adding the reverse-complement of each k-mer
-        kmer_list = list(self.kmers_for_ML) + map(
-            self.ReverseComplement, self.kmers_for_ML
+    kmer_length = len(kmer_list[0])
+    if min_olap == None:
+        min_olap = kmer_length-1
+    assembled_kmers = []
+
+    # Adding the reverse-complement of each k-mer
+    kmer_list = kmer_list + map(ReverseComplement, kmer_list)
+
+    # Find the overlaping k-mers
+    kmers_a, kmers_b, olap_lens = pick_overlaps(kmer_list, min_olap)
+
+    while olap_lens != []:
+        set_a = set(kmers_a)
+        set_b = set(kmers_b)
+
+        # Picking out the assembled k-mers which have no sufficient
+        # overlaps anymore.
+        for item in kmer_list:
+            if (item not in set_a and item not in set_b
+                    and ReverseComplement(item) not in assembled_kmers):
+                assembled_kmers.append(item)
+
+        # Generating new kmer_list, where overlaping elements from previous
+        # kmer_list are assembled.
+        kmer_list = []
+        for i, olap in enumerate(olap_lens):
+            kmer_list.append(kmers_a[i] + kmers_b[i][olap:])
+
+        # Removing substrings of other elements from kmer_list.
+        kmer_list = list(string_set(kmer_list))
+
+        # Find the overlaping elements in new generated kmer_list.
+        kmers_a, kmers_b, olap_lens = pick_overlaps(kmer_list, min_olap)
+
+    for item in kmer_list:
+        # Picking out the assembled k-mers to assembled_kmers set.
+        if (ReverseComplement(item) not in assembled_kmers):
+            assembled_kmers.append(item)
+    return(assembled_kmers)
+
+def assembling(kmers_passed_all_phenotypes, phenotypes_to_analyze):
+    # Assembles the input k-mers and writes assembled sequences
+    # into "assembled_kmers.txt" file in FastA format.
+
+    if len(phenotypes_to_analyze) > 1:
+        sys.stderr.write(
+            "Assembling the k-mers used in regression modeling of:\n"
+            )
+    elif Samples.headerline:
+        sys.stderr.write("Assembling the k-mers used in modeling of " 
+            +  Samples.phenotypes[0] + " data...\n")
+    else:
+        sys.stderr.write(
+            "Assembling the k-mers used in modeling...\n"
             )
 
-        # Find the overlaping k-mers
-        kmers_a, kmers_b, olap_lens = self.pick_overlaps(kmer_list, min_olap)
-
-        while olap_lens != []:
-            set_a = set(kmers_a)
-            set_b = set(kmers_b)
-
-            # Picking out the assembled k-mers which have no sufficient
-            # overlaps anymore.
-            for item in kmer_list:
-                if (item not in set_a and item not in set_b
-                        and self.ReverseComplement(item) not in assembled_kmers):
-                    assembled_kmers.append(item)
-
-            # Generating new kmer_list, where overlaping elements from previous
-            # kmer_list are assembled.
-            kmer_list = []
-            for i, olap in enumerate(olap_lens):
-                kmer_list.append(kmers_a[i] + kmers_b[i][olap:])
-
-            # Removing substrings of other elements from kmer_list.
-            kmer_list = list(self.string_set(kmer_list))
-
-            # Find the overlaping elements in new generated kmer_list.
-            kmers_a, kmers_b, olap_lens = self.pick_overlaps(kmer_list, min_olap)
-
-        for item in kmer_list:
-            # Picking out the assembled k-mers to assembled_kmers set.
-            if (self.ReverseComplement(item) not in assembled_kmers):
-                assembled_kmers.append(item)
-        return(assembled_kmers)
-
-    def assembling(self):
-        # Assembles the input k-mers and writes assembled sequences
-        # into "assembled_kmers.txt" file in FastA format.
-
-
-        #Open files to write the results of k-mer assembling
-        if Samples.no_phenotypes > 1:
-            f1 = open("assembled_kmers_" + self.name + ".fasta", "w+")
-            sys.stderr.write("\tof " + self.name + " data...\n")
-        else:
-            f1 = open("assembled_kmers.fasta", "w+")
-        if len(self.kmers_for_ML) == 0:
+    for j, k in enumerate(phenotypes_to_analyze):
+        phenotype = Samples.phenotypes[k]
+        if len(kmers_passed_all_phenotypes[j]) == 0:
             f1.write("No k-mers passed the step of k-mer selection for \
                 assembling.\n")
-            return
+            continue
+        #Open files to write the results of k-mer assembling
+        if Samples.headerline:
+            f1 = open("assembled_kmers_" + phenotype + ".fasta", "w+")
+            if len(phenotypes_to_analyze) > 1:
+                sys.stderr.write("\t" + phenotype + "...\n")
+        elif Samples.no_phenotypes > 1:
+            f1 = open("assembled_kmers_" + phenotype + ".fasta", "w+")
+            sys.stderr.write("\tphenotype " + phenotype + "...\n")
+        else:
+            f1 = open("assembled_kmers.fasta", "w+")
         
+        kmers_to_assemble = kmers_passed_all_phenotypes[j]
         assembled_kmers = sorted(
-            self.kmer_assembler(), key = len
+            kmer_assembler(kmers_to_assemble), key = len
             )[::-1]
         for i, item in enumerate(assembled_kmers):
             f1.write(">seq_" + str(i+1) + "_length_" 
                 + str(len(item)) + "\n" + item + "\n")
-        f1.close()
+    f1.close()
 
 def modeling(args):
     # The main function of "phenotypeseeker modeling"
@@ -1323,7 +1432,7 @@ def modeling(args):
         Samples.get_weights()
 
     # Analyses of phenotypes
-    phenotypes.start_kmer_testing()
+    phenotypes.preparations_for_kmer_testing()
     map(
         lambda x:  x.test_kmers_association_with_phenotype(), 
         Input.phenotypes_to_analyse.values()
@@ -1333,16 +1442,11 @@ def modeling(args):
         lambda x:  x.get_kmers_filtered(), 
         Input.phenotypes_to_analyse.values()
         )
-    phenotypes.start_modeling()
+    phenotypes.preparations_for_modeling()
     map(
         lambda x: x.machine_learning_modelling(),
         Input.phenotypes_to_analyse.values()
         )
 
     if args.assembly == "+":
-        sys.stderr.write("Assembling the k-mers used in modeling of " 
-            + Samples.phenotypes[0] + " data...\n")
-        map(
-            lambda x: x.assembling(),
-            Input.phenotypes_to_analyse.values()
-            )
+        assembling(kmers_passed_all_phenotypes, args.mpheno)
