@@ -965,6 +965,7 @@ class phenotypes():
             if line[0].split()[0] in self.kmers_for_ML:
                 self.ML_df[line[0].split()[0]] = [int(j.split()[1].strip()) for j in line]
         self.ML_df = self.ML_df.astype(bool).astype(int)
+        self.ML_df.to_csv('ML_df.csv')
         self.ML_df['phenotype'] = [
             sample.phenotypes[self.name] for sample in Input.samples.values()
             ]
